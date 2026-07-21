@@ -29,18 +29,16 @@ Every read gets tied to that contact — the next screenshot of the same person 
 
 The debate isn't hidden behind a loading state — Arthur, Clara, and Leo weigh in one by one, with a deliberate build-up before the final number locks in with a haptic buzz. It's built to feel like waiting for a verdict, not an API response. The behavioral design behind that is written up in [`docs/ux_hook_blueprint.md`](docs/ux_hook_blueprint.md).
 
-## Design, in progress
+## Design
 
-Two full visual directions are being explored side by side before either becomes real code — open them straight in a browser, no build step:
+Two full visual directions were explored side by side — open them straight in a browser, no build step:
 
-| | Direction | Vibe |
+| | Direction | Status |
 |---|---|---|
-| [`ui-spec-v1.html`](docs/design/ui-spec-v1.html) | **Airbnb-inspired** | Calm, minimal, hospitality-brand confidence. Hairline borders, restrained red accent. |
-| [`ui-spec-v2.html`](docs/design/ui-spec-v2.html) | **Dusk** | Warm frosted-glass and gradient light, blob "Social Mode" mascots, a rounded display face. All 9 screens — dashboard, live debate, saved contacts, sharing, recap, ranking. |
+| [`ui-spec-v1.html`](docs/design/ui-spec-v1.html) | **Airbnb-inspired** — calm, minimal, hairline borders, restrained red accent | Explored, kept for reference |
+| [`ui-spec-v2.html`](docs/design/ui-spec-v2.html) | **Dusk** — warm frosted glass, gradient light, blob "Social Mode" mascots, rounded display face | ✅ **Chosen — implemented in [`web/`](web/)** |
 
-A git-diffable summary of the current direction (tokens, screens, component list, motion spec) lives in [`docs/design/design.md`](docs/design/design.md); the source screenshots that shaped v2 are in [`docs/design/reference-images/`](docs/design/reference-images/).
-
-Neither has been turned into real frontend code yet — that starts once one direction is confirmed.
+The Dusk direction won and is now live as the Next.js app: session-wide Social Mode tinting (Hype / Chill / Romantic / Direct), clay-press buttons, glass cards, and the 3D mode mascots. A git-diffable summary of the system (tokens, screens, component list, motion spec) lives in [`docs/design/design.md`](docs/design/design.md); the source screenshots that shaped it are in [`docs/design/reference-images/`](docs/design/reference-images/).
 
 ## Tech stack
 
@@ -48,14 +46,15 @@ What's actually built and running today:
 
 | Layer | Choice |
 |---|---|
-| Mobile app | Expo (React Native) + TypeScript, Expo Router |
+| Web app (primary frontend) | Next.js + TypeScript, Tailwind CSS, Framer Motion, Zustand |
+| Mobile app | Expo (React Native) — the earlier client, superseded by `web/` |
 | Backend | Python, FastAPI, streamed over Server-Sent Events |
 | Agent orchestration | Plain `asyncio` — no LangChain/LangGraph, deliberately lean |
 | Vision + final synthesis | Claude (Anthropic) |
 | Debate agents (Arthur/Clara/Leo) | Groq or Gemini Flash — fast and cheap, run in parallel |
 | Relationship memory | Supabase (Postgres) + `pgvector` |
 
-Full architecture, diagrams, and data model: [`docs/architecture.md`](docs/architecture.md). (The v2 design direction targets a future Next.js + Tailwind + Framer Motion rebuild — see its [handoff notes](docs/design/design.md#handoff) — but that's downstream of picking a direction, not built yet.)
+Full architecture, diagrams, and data model: [`docs/architecture.md`](docs/architecture.md).
 
 ## Project structure
 
@@ -80,16 +79,18 @@ cp .env.example .env
 uvicorn main:app --reload
 ```
 
-**2. Run the mobile app**
+**2. Run the web app**
 
 ```bash
-cd mobile
+cd web
 npm install
-cp .env.example .env   # point EXPO_PUBLIC_API_BASE_URL at the backend above
-npx expo start
+cp .env.example .env.local   # NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+npm run dev
 ```
 
-Scan the QR code with Expo Go, or press `i` / `a` for a simulator. Upload any screenshot and watch the debate play out.
+Open [http://localhost:3000](http://localhost:3000) — pick your Social Mode, then describe a scenario for three instant openers, or attach a chat screenshot and watch Arthur, Clara, and Leo debate it live.
+
+(The earlier Expo mobile client still works too — see [`mobile/README.md`](mobile/README.md).)
 
 Want to skip the app and just see the pipeline run in your terminal?
 
@@ -98,15 +99,15 @@ cd backend
 python scripts/run_pipeline_mock.py
 ```
 
-More detail in [`backend/README.md`](backend/README.md) and [`mobile/README.md`](mobile/README.md).
+More detail in [`backend/README.md`](backend/README.md) and [`web/README.md`](web/README.md).
 
 ## Project status
 
 - ✅ The full pipeline (extraction → parallel debate → synthesis → memory) runs end-to-end against mock AI responses, with tests proving the three personas genuinely run concurrently
 - ✅ The FastAPI backend streams live debate events over SSE
 - ✅ The mobile app is a working Expo project (typechecked, dependencies resolved) covering the whole user flow
-- ✅ Two complete UI design directions written up for review — see [Design, in progress](#design-in-progress)
-- ✅ The Dusk direction is now implemented as a Next.js web app (`web/`) wired to the backend — live SSE debate, scenario openers, contacts; see [`web/README.md`](web/README.md)
+- ✅ Two complete UI design directions written up — see [Design](#design)
+- ✅ The Dusk direction is implemented as a Next.js web app (`web/`) wired to the backend — live SSE debate, scenario openers, contacts; see [`web/README.md`](web/README.md)
 - ⏳ Real LLM provider calls (Anthropic/Groq/Gemini) and a live Supabase database are wired with working code but need real API keys to activate — see `.env.example` in `backend/`
 - ⏳ Recap/Playbook/Profile still run on demo data — no backend for them yet
 - ⏳ Not yet deployed to an app store or a hosted backend
