@@ -18,8 +18,10 @@ from agents.prompts import (
     ARTHUR_SYSTEM_PROMPT,
     CLARA_SYSTEM_PROMPT,
     LEO_SYSTEM_PROMPT,
+    PERSONA_SYSTEM_PROMPT,
     SYNTHESIZER_SYSTEM_PROMPT,
     build_debate_user_prompt,
+    build_persona_user_prompt,
     build_rebuttal_user_prompt,
     build_synthesis_user_prompt,
 )
@@ -49,6 +51,12 @@ class MemoryStoreProtocol(Protocol):
 
     async def upsert_interaction(self, contact_id: str, result: SynthesisResult) -> None: ...
 
+    async def get_persona(self, contact_id: str) -> str | None: ...
+
+    async def upsert_persona(self, contact_id: str, persona: str) -> None: ...
+
+    async def get_read_count(self, contact_id: str) -> int: ...
+
 
 class SwarmOrchestrator:
     def __init__(
@@ -68,10 +76,14 @@ class SwarmOrchestrator:
         context = await self._extract_context(image_bytes, mime_type, contact_id)
         yield DebateEvent(type="extraction_done", payload=context.model_dump(mode="json"))
 
-        memory = await self._memory_store.get_contact_history(contact_id) if contact_id else []
+        memory: list[MemoryRecord] = []
+        persona: str | None = None
+        if contact_id:
+            memory = await self._memory_store.get_contact_history(contact_id)
+            persona = await self._memory_store.get_persona(contact_id)
 
         opinions: list[AgentOpinion] = []
-        async for event, opinion in self._run_debate_agents(context, memory):
+        async for event, opinion in self._run_debate_agents(context, memory, persona):
             yield event
             if opinion is not None:
                 opinions.append(opinion)
@@ -83,11 +95,21 @@ class SwarmOrchestrator:
             yield event
 
         yield DebateEvent(type="synthesis_started")
-        result = await self._synthesize(context, opinions)
+        result = await self._synthesize(context, opinions, persona)
         yield DebateEvent(type="synthesis_done", payload=result.model_dump(mode="json"))
 
         if contact_id:
             await self._memory_store.upsert_interaction(contact_id, result)
+            updated_persona = await self._update_persona(contact_id, persona, context, result)
+            read_count = await self._memory_store.get_read_count(contact_id)
+            yield DebateEvent(
+                type="memory_updated",
+                payload={
+                    "contact_id": contact_id,
+                    "read_count": read_count,
+                    "persona": updated_persona,
+                },
+            )
 
     async def _extract_context(
         self, image_bytes: bytes, mime_type: str, contact_id: str | None
@@ -98,7 +120,10 @@ class SwarmOrchestrator:
         return context
 
     async def _run_debate_agents(
-        self, context: ConversationContext, memory: list[MemoryRecord]
+        self,
+        context: ConversationContext,
+        memory: list[MemoryRecord],
+        persona: str | None = None,
     ) -> AsyncIterator[tuple[DebateEvent, AgentOpinion | None]]:
         """Runs Arthur, Clara, and Leo concurrently, streaming progress events as they land.
 
@@ -111,7 +136,7 @@ class SwarmOrchestrator:
 
         async def run_one(agent_name: AgentName, system_prompt: str) -> AgentOpinion:
             await queue.put(DebateEvent(type="agent_started", agent=agent_name))
-            user_prompt = build_debate_user_prompt(context, memory)
+            user_prompt = build_debate_user_prompt(context, memory, persona)
             analysis = await self._debate_client.complete_text(system_prompt, user_prompt)
             opinion = AgentOpinion(
                 agent=agent_name,
@@ -153,12 +178,38 @@ class SwarmOrchestrator:
             yield DebateEvent(type="agent_reply", agent=agent_name, payload={"text": text})
 
     async def _synthesize(
-        self, context: ConversationContext, opinions: list[AgentOpinion]
+        self,
+        context: ConversationContext,
+        opinions: list[AgentOpinion],
+        persona: str | None = None,
     ) -> SynthesisResult:
-        user_prompt = build_synthesis_user_prompt(context, opinions)
+        user_prompt = build_synthesis_user_prompt(context, opinions, persona)
         schema = SynthesisResult.model_json_schema()
         data = await self._vision_client.complete_json(SYNTHESIZER_SYSTEM_PROMPT, user_prompt, schema)
         return SynthesisResult.model_validate(data)
+
+    async def _update_persona(
+        self,
+        contact_id: str,
+        old_persona: str | None,
+        context: ConversationContext,
+        result: SynthesisResult,
+    ) -> str:
+        """Distills this read into the contact's evolving persona document.
+
+        Runs on the vision/synthesis client (needs judgment, not speed) and is the
+        mechanism by which the app 'learns' a contact across reads.
+        """
+        result_summary = (
+            f"Attraction {result.attraction_level}/10. {result.dynamic_analysis} "
+            f"Lesson: {result.coaching_lesson}"
+        )
+        persona = await self._vision_client.complete_text(
+            PERSONA_SYSTEM_PROMPT,
+            build_persona_user_prompt(old_persona, context, result_summary),
+        )
+        await self._memory_store.upsert_persona(contact_id, persona)
+        return persona
 
 
 def _extract_key_points(analysis: str, limit: int = 3) -> list[str]:

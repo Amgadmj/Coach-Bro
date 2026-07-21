@@ -3,7 +3,7 @@
 import { create } from "zustand";
 
 import { analyzeScreenshot } from "./api";
-import type { AgentName, DebateEvent, SynthesisResult } from "./types";
+import type { AgentName, DebateEvent, MemoryUpdate, SynthesisResult } from "./types";
 
 export type AgentStatus = "pending" | "active" | "done";
 
@@ -25,6 +25,8 @@ interface AnalysisState {
   /** The visible conversation: three takes, then the agents debating each other. */
   messages: DebateMessage[];
   result: SynthesisResult | null;
+  /** Set when the backend confirms the contact's memory/persona was updated. */
+  memoryUpdate: MemoryUpdate | null;
   scenario: string | null;
   error: string | null;
   run: (image: File | Blob, contactId?: string | null, scenario?: string | null) => Promise<void>;
@@ -39,6 +41,7 @@ const INITIAL = {
   >,
   messages: [] as DebateMessage[],
   result: null,
+  memoryUpdate: null,
   scenario: null,
   error: null,
 };
@@ -90,6 +93,9 @@ export const useAnalysis = create<AnalysisState>((set, get) => ({
         // let the last bubble breathe before the continue button appears
         await sleep(700);
         set({ status: "done", result: event.payload as unknown as SynthesisResult });
+      }
+      if (event.type === "memory_updated" && event.payload) {
+        set({ memoryUpdate: event.payload as unknown as MemoryUpdate });
       }
       if (event.type === "error") {
         set({ status: "error", error: String(event.payload?.message ?? "analysis failed") });

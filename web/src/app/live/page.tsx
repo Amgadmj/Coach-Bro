@@ -81,9 +81,23 @@ export default function LiveScenarioInput() {
             </span>
           </button>
         ))}
-        <span className="flex flex-none items-center rounded-full border border-dashed border-hairline bg-glass px-3.5 py-1 text-[11px] font-bold text-ink3">
+        <button
+          type="button"
+          onClick={() => {
+            const name = window.prompt("Who are you talking to? (first name is fine)")?.trim();
+            if (!name) return;
+            const id = name.toLowerCase();
+            setContacts((prev) =>
+              prev.some((c) => c.id === id)
+                ? prev
+                : [...prev, { id, display_name: name, session_count: 0 }],
+            );
+            setSelectedContact(id);
+          }}
+          className="flex flex-none items-center rounded-full border border-dashed border-hairline bg-glass px-3.5 py-1 text-[11px] font-bold text-ink3"
+        >
           ＋ New
-        </span>
+        </button>
       </div>
 
       <GlassCard className="mt-4 p-3.5">

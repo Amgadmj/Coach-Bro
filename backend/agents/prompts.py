@@ -101,9 +101,47 @@ def build_suggest_user_prompt(scenario: str, mode: str) -> str:
     )
 
 
-def build_debate_user_prompt(context: ConversationContext, memory: list[MemoryRecord]) -> str:
+PERSONA_SYSTEM_PROMPT = """\
+You maintain Bro Coach's relationship memory. After each analyzed conversation with a \
+contact, you merge what was already known about her with what this conversation revealed, \
+and return the UPDATED persona document.
+
+The persona must capture, only where the evidence supports it:
+- Communication style and humor (dry, emoji-heavy, slow replier, voice notes...)
+- Interests, running topics, and inside jokes worth calling back
+- How she tests (compliance tests, push-pull, pace checks) and how she responds when he holds frame
+- Pace and boundaries she has signaled - and anything she has clearly said no to
+- What has worked and what has flopped for this user specifically
+- The current dynamic and the attraction trend across reads (warming, cooling, steady)
+
+Rules: under 250 words, plain prose with short headers, no speculation beyond the \
+conversations, never pathologize her - this is a memory aid for being a better \
+conversation partner, not a dossier. Return ONLY the updated persona text.
+"""
+
+
+def build_persona_user_prompt(
+    old_persona: str | None, context: ConversationContext, result_summary: str
+) -> str:
     lines = [f"{m.sender}: {m.text}" for m in context.messages]
     transcript = "\n".join(lines)
+    previous = old_persona or "(first read - no persona yet)"
+    return (
+        f"PERSONA UPDATE for this contact.\n\n"
+        f"Previous persona:\n{previous}\n\n"
+        f"New conversation:\n{transcript}\n\n"
+        f"This read's verdict:\n{result_summary}\n\n"
+        "Return the updated persona."
+    )
+
+
+def build_debate_user_prompt(
+    context: ConversationContext, memory: list[MemoryRecord], persona: str | None = None
+) -> str:
+    lines = [f"{m.sender}: {m.text}" for m in context.messages]
+    transcript = "\n".join(lines)
+
+    persona_block = persona or "(no persona yet - this is the first read of this contact)"
 
     history_block = "(no prior history with this contact)"
     if memory:
@@ -112,8 +150,11 @@ def build_debate_user_prompt(context: ConversationContext, memory: list[MemoryRe
 
     return (
         f"Conversation so far:\n{transcript}\n\n"
-        f"Prior history with this contact:\n{history_block}\n\n"
-        "Give your analysis of this conversation from your specific role's perspective."
+        f"What we know about her from previous reads:\n{persona_block}\n\n"
+        f"Recent read history:\n{history_block}\n\n"
+        "Give your analysis of this conversation from your specific role's perspective, "
+        "using the persona to calibrate - reference inside jokes, known tests, and the "
+        "attraction trend where relevant."
     )
 
 
@@ -148,7 +189,9 @@ def build_rebuttal_user_prompt(
     )
 
 
-def build_synthesis_user_prompt(context: ConversationContext, opinions: list[AgentOpinion]) -> str:
+def build_synthesis_user_prompt(
+    context: ConversationContext, opinions: list[AgentOpinion], persona: str | None = None
+) -> str:
     lines = [f"{m.sender}: {m.text}" for m in context.messages]
     transcript = "\n".join(lines)
 
@@ -156,8 +199,14 @@ def build_synthesis_user_prompt(context: ConversationContext, opinions: list[Age
         f"--- {opinion.agent.title()}'s analysis ---\n{opinion.analysis}" for opinion in opinions
     )
 
+    persona_block = ""
+    if persona:
+        persona_block = f"Known persona for this contact:\n{persona}\n\n"
+
     return (
         f"Conversation:\n{transcript}\n\n"
+        f"{persona_block}"
         f"Debate:\n{opinion_blocks}\n\n"
-        "Resolve these into the final JSON result."
+        "Resolve these into the final JSON result. If the persona mentions inside jokes or "
+        "known tests, prefer responses that use them."
     )

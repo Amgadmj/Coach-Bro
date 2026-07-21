@@ -57,6 +57,7 @@ class DebateEvent(BaseModel):
         "agent_reply",
         "synthesis_started",
         "synthesis_done",
+        "memory_updated",
         "error",
     ]
     agent: AgentName | None = None

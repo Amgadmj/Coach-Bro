@@ -18,7 +18,7 @@ const AGENT_DOTS = [
 
 export default function ResultScreen() {
   const router = useRouter();
-  const { result, reset } = useAnalysis();
+  const { result, memoryUpdate, reset } = useAnalysis();
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
 
@@ -147,6 +147,15 @@ export default function ResultScreen() {
         </div>
         <span className="text-[10px] text-ink3">Synthesized from all three takes</span>
       </div>
+
+      {memoryUpdate && (
+        <div className="mt-2.5 rounded-2xl border border-glass-line bg-glass px-3.5 py-2.5 text-center">
+          <span className="text-[10.5px] text-ink2">
+            🧠 Saved to <b className="font-display">{memoryUpdate.contact_id}</b>&apos;s memory —
+            read #{memoryUpdate.read_count}. The next one gets sharper.
+          </span>
+        </div>
+      )}
     </main>
   );
 }

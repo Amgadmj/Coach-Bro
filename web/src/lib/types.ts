@@ -49,7 +49,14 @@ export type DebateEventType =
   | "agent_reply"
   | "synthesis_started"
   | "synthesis_done"
+  | "memory_updated"
   | "error";
+
+export interface MemoryUpdate {
+  contact_id: string;
+  read_count: number;
+  persona: string;
+}
 
 export interface DebateEvent {
   type: DebateEventType;

@@ -17,13 +17,22 @@ from models.schemas import ContactSummary, MemoryRecord, SynthesisResult
 
 
 class NoOpMemoryStore:
-    """Fallback used whenever SUPABASE_DB_URL is unset. Never persists anything."""
+    """In-memory-nothing store for tests. Never persists anything."""
 
     async def get_contact_history(self, contact_id: str) -> list[MemoryRecord]:
         return []
 
     async def upsert_interaction(self, contact_id: str, result: SynthesisResult) -> None:
         return None
+
+    async def get_persona(self, contact_id: str) -> str | None:
+        return None
+
+    async def upsert_persona(self, contact_id: str, persona: str) -> None:
+        return None
+
+    async def get_read_count(self, contact_id: str) -> int:
+        return 0
 
     async def list_contacts(self) -> list[ContactSummary]:
         return []
@@ -91,6 +100,40 @@ class MemoryStore:
         finally:
             await conn.close()
 
+    async def get_persona(self, contact_id: str) -> str | None:
+        import asyncpg
+
+        conn = await asyncpg.connect(self._db_url)
+        try:
+            return await conn.fetchval("select persona from contacts where id = $1", contact_id)
+        finally:
+            await conn.close()
+
+    async def upsert_persona(self, contact_id: str, persona: str) -> None:
+        import asyncpg
+
+        conn = await asyncpg.connect(self._db_url)
+        try:
+            await conn.execute(
+                "update contacts set persona = $2 where id = $1", contact_id, persona
+            )
+        finally:
+            await conn.close()
+
+    async def get_read_count(self, contact_id: str) -> int:
+        import asyncpg
+
+        conn = await asyncpg.connect(self._db_url)
+        try:
+            return (
+                await conn.fetchval(
+                    "select count(*) from memory_embeddings where contact_id = $1", contact_id
+                )
+                or 0
+            )
+        finally:
+            await conn.close()
+
     async def list_contacts(self) -> list[ContactSummary]:
         import asyncpg
 
@@ -119,9 +162,18 @@ class MemoryStore:
         ]
 
 
-def get_memory_store() -> NoOpMemoryStore | MemoryStore:
-    """Factory used by `main.py`'s DI: real store if configured, safe no-op otherwise."""
+def get_memory_store():
+    """Factory used by `main.py`'s DI.
+
+    SUPABASE_DB_URL set -> Postgres/pgvector store (scale path).
+    Otherwise -> local SQLite (backend/data/memory.db by default), so
+    Relationship Memory and personas work with zero configuration.
+    """
     db_url = os.environ.get("SUPABASE_DB_URL")
-    if not db_url:
-        return NoOpMemoryStore()
-    return MemoryStore(db_url)
+    if db_url:
+        return MemoryStore(db_url)
+
+    from memory.sqlite_store import SQLiteMemoryStore
+
+    db_path = os.environ.get("MEMORY_DB_PATH", "data/memory.db")
+    return SQLiteMemoryStore(db_path)

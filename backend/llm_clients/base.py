@@ -86,6 +86,16 @@ class MockLLMClient:
 
     async def complete_text(self, system: str, user: str) -> str:
         await asyncio.sleep(self._latency_seconds)
+        if "PERSONA UPDATE" in user:
+            reads = 1 if "(first read - no persona yet)" in user else 2
+            return (
+                "Style: playful, replies warm up once teased back; light emoji use.\n"
+                "Running topics: her favorite book (callback available), late-night coffee.\n"
+                "Tests: compliance checks ('depends what you're offering') - responds well "
+                "when he holds frame with humor.\n"
+                f"Trend: warming across {reads} read(s). Works: playful misdirection. "
+                "Flopped: over-explaining."
+            )
         persona = _detect_persona(system)
         if "Debate round:" in user:
             return _MOCK_REBUTTALS.get(persona, "No further objections.")
