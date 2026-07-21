@@ -14,9 +14,10 @@ from fastapi import FastAPI, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
+from agents.prompts import SUGGEST_SYSTEM_PROMPT, build_suggest_user_prompt
 from llm_clients.base import LLMClient, MockLLMClient
 from memory.store import get_memory_store
-from models.schemas import ContactSummary, MemoryRecord
+from models.schemas import ContactSummary, MemoryRecord, SuggestRequest, SuggestResponse
 from swarm_orchestrator import SwarmOrchestrator
 
 app = FastAPI(title="RESET AI backend")
@@ -61,6 +62,19 @@ async def analyze(image: UploadFile, contact_id: str | None = Form(default=None)
             yield f"data: {event.model_dump_json()}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+@app.post("/suggest")
+async def suggest(request: SuggestRequest) -> SuggestResponse:
+    """Text-only scenario -> three suggested openers. No debate, no memory write -
+    the lighter sibling of /analyze for when there's no screenshot yet."""
+    vision_client, _ = _build_llm_clients()
+    data = await vision_client.complete_json(
+        SUGGEST_SYSTEM_PROMPT,
+        build_suggest_user_prompt(request.scenario, request.mode),
+        SuggestResponse.model_json_schema(),
+    )
+    return SuggestResponse.model_validate(data)
 
 
 @app.get("/contacts")
