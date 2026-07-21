@@ -12,6 +12,36 @@ IMAGE_BYTES = b"<fake-screenshot-bytes>"
 MIME_TYPE = "image/png"
 
 
+class _FlakyDebateClient(MockLLMClient):
+    """Simulates a provider outage/rate-limit partway through the debate."""
+
+    async def complete_text(self, system: str, user: str) -> str:  # type: ignore[override]
+        raise RuntimeError("simulated provider rate limit")
+
+
+def test_provider_failure_yields_clean_error_event_not_a_crash() -> None:
+    """Live-observed bug: a Groq rate-limit mid-debate used to propagate as an
+    unhandled exception, killing the SSE stream as a raw dropped connection with
+    no signal the client could show the user. The pipeline must always end with
+    a DebateEvent, never an exception escaping run_pipeline."""
+
+    async def run() -> list[str]:
+        orchestrator = SwarmOrchestrator(
+            vision_client=MockLLMClient(),
+            debate_client=_FlakyDebateClient(),
+            memory_store=NoOpMemoryStore(),
+        )
+        return [
+            e.type
+            async for e in orchestrator.run_pipeline(IMAGE_BYTES, MIME_TYPE, contact_id=None)
+        ]
+
+    event_types = asyncio.run(run())
+
+    assert event_types[-1] == "error"
+    assert "synthesis_done" not in event_types
+
+
 def test_pipeline_produces_valid_result() -> None:
     async def run() -> tuple[list[str], SynthesisResult | None]:
         orchestrator = SwarmOrchestrator(

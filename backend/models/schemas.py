@@ -52,9 +52,10 @@ class ConversationContext(BaseModel):
 
 class AgentOpinion(BaseModel):
     agent: AgentName
+    # One punchy sentence - always visible in the debate feed's chat bubble.
+    headline: str
+    # 2-3 sentences of supporting reasoning - shown only on tap/hover expand.
     analysis: str
-    key_points: list[str]
-    suggested_response: str | None = None
 
 
 class AlternativeResponses(BaseModel):

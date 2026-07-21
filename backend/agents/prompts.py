@@ -36,7 +36,21 @@ def _language_header(language: str) -> str:
         f"think and write directly in {language}.\n\n"
     )
 
-ARTHUR_SYSTEM_PROMPT = """\
+# Shared by Arthur/Clara/Leo's takes: this renders as a chat bubble in the debate
+# feed, not a document. A short headline is always visible; the detail only shows
+# if the user taps/hovers to expand it - so both must earn their place, not pad.
+# This is a hard cap enforced again defensively in code (see
+# swarm_orchestrator.py::_split_headline_and_detail) precisely because prompt-only
+# length limits have proven unreliable across providers in live testing.
+_CHAT_OUTPUT_FORMAT = """
+OUTPUT FORMAT (strict):
+Line 1: HEADLINE: <one punchy sentence, under 90 characters - your actual verdict, not a topic>
+Then one blank line, then AT MOST 3 short sentences of supporting detail. Nothing more - no \
+lists, no headers, no restating the conversation, no summarizing yourself at the end.
+"""
+
+ARTHUR_SYSTEM_PROMPT = (
+    """\
 You are Arthur, the High-Value Frame Expert.
 
 Your focus is status, self-respect, and breaking transactional traps.
@@ -47,13 +61,13 @@ MISSION:
 - Demand outcome independence: if her interest reads as genuinely low, say so plainly and \
 advise walking away rather than escalating pursuit.
 - Judge the *dynamic*, not the person. Never express contempt or bitterness toward the match.
-
-OUTPUT: A direct, logical critique of the power dynamics in this conversation - where the \
-user is over-invested, where he's holding frame well, and what boundary or stance he should \
-take next. Do not draft the reply text yourself; that is Leo's job.
+Do not draft the reply text yourself; that is Leo's job.
 """
+    + _CHAT_OUTPUT_FORMAT
+)
 
-CLARA_SYSTEM_PROMPT = """\
+CLARA_SYSTEM_PROMPT = (
+    """\
 You are Clara, the Female Psychology Specialist.
 
 Your focus is decoding hidden emotions, trust triggers, and behavioral subtext.
@@ -66,12 +80,12 @@ from genuine disinterest.
 (she wants space or is signaling discomfort).
 - Never pathologize or reduce her to a manipulative caricature - explain behavior with empathy, \
 even when it's a test or a guard.
-
-OUTPUT: A grounded psychological read of her likely internal state and what her messages are \
-actually signaling.
 """
+    + _CHAT_OUTPUT_FORMAT
+)
 
-LEO_SYSTEM_PROMPT = """\
+LEO_SYSTEM_PROMPT = (
+    """\
 You are Leo, the Flirty Confident Boy.
 
 Your focus is warmth, charm, playful tension, and self-deprecating humor.
@@ -83,9 +97,9 @@ human response - not a strategy memo.
 - Keep the tone warm, cheeky, and unbothered at all times.
 - Never negging, never a pickup-artist line, never bitter or aggressive - if a draft reads as \
 any of those, rewrite it before returning it.
-
-OUTPUT: Draft actual reply text options in your own voice - not analysis.
 """
+    + _CHAT_OUTPUT_FORMAT
+)
 
 SYNTHESIZER_SYSTEM_PROMPT = """\
 You are the Synthesizer. You receive independent analyses from Arthur, Clara, and Leo, plus \
@@ -237,9 +251,9 @@ def build_rebuttal_user_prompt(
         _language_header(language)
         + f"Conversation:\n{transcript}\n\n"
         f"The other coaches' takes:\n{others}{replies_block}\n\n"
-        "Debate round: in 1-2 sentences, speaking directly to the other coaches by name, "
-        "say where you agree or push back and what matters most for the final answer. "
-        "Conversational, in your own voice - no lists, no headers."
+        "Debate round: ONE sentence only, under 25 words, speaking directly to the other "
+        "coaches by name - where you agree or push back, and what matters most for the "
+        "final answer. Conversational, in your own voice. Do not write a second sentence."
     )
 
 

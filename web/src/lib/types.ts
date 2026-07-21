@@ -27,9 +27,8 @@ export interface ConversationContext {
 
 export interface AgentOpinion {
   agent: AgentName;
-  analysis: string;
-  key_points: string[];
-  suggested_response?: string | null;
+  headline: string; // one short sentence, always visible in the debate feed
+  analysis: string; // 2-3 sentences of supporting detail, shown on expand
 }
 
 export interface AlternativeResponses {

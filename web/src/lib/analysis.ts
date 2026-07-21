@@ -10,7 +10,11 @@ export type AgentStatus = "pending" | "active" | "done";
 
 export interface DebateMessage {
   agent: AgentName;
-  text: string;
+  /** Always visible in the chat bubble - one short sentence. */
+  headline: string;
+  /** Fuller reasoning, shown only on tap/hover expand. Empty for "reply" kind -
+   * rebuttals are already one short sentence, nothing to expand into. */
+  detail: string;
   /** "take" = round-1 read of the screenshot; "reply" = round-2 debate rebuttal. */
   kind: "take" | "reply";
 }
@@ -77,17 +81,25 @@ export const useAnalysis = create<AnalysisState>((set, get) => ({
       }
       if (event.type === "agent_done" && event.agent) {
         await pace();
-        const analysis = (event.payload as { analysis?: string } | null)?.analysis ?? "";
+        const payload = event.payload as { headline?: string; analysis?: string } | null;
         set((s) => ({
           agentStatus: { ...s.agentStatus, [event.agent!]: "done" },
-          messages: [...s.messages, { agent: event.agent!, text: analysis, kind: "take" }],
+          messages: [
+            ...s.messages,
+            {
+              agent: event.agent!,
+              headline: payload?.headline ?? "",
+              detail: payload?.analysis ?? "",
+              kind: "take",
+            },
+          ],
         }));
       }
       if (event.type === "agent_reply" && event.agent) {
         await pace();
         const text = (event.payload as { text?: string } | null)?.text ?? "";
         set((s) => ({
-          messages: [...s.messages, { agent: event.agent!, text, kind: "reply" }],
+          messages: [...s.messages, { agent: event.agent!, headline: text, detail: "", kind: "reply" }],
         }));
       }
       if (event.type === "synthesis_done" && event.payload) {

@@ -10,9 +10,12 @@ straight over SSE.
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 from collections.abc import AsyncIterator
 from typing import Protocol
+
+logger = logging.getLogger(__name__)
 
 from agents.prompts import (
     ARTHUR_SYSTEM_PROMPT,
@@ -78,50 +81,63 @@ class SwarmOrchestrator:
         contact_id: str | None,
         language: SupportedLanguage = "auto",
     ) -> AsyncIterator[DebateEvent]:
-        yield DebateEvent(type="extraction_started")
-        context = await self._extract_context(image_bytes, mime_type, contact_id)
-        yield DebateEvent(type="extraction_done", payload=context.model_dump(mode="json"))
+        """Yields DebateEvents for each stage; any failure anywhere in the pipeline
+        (provider timeout, rate limit, bad key) is caught and turned into one final
+        `error` event instead of an unhandled exception, which would otherwise kill
+        the SSE stream as a raw dropped connection - the client has no way to
+        distinguish that from a network blip. Confirmed live: a mid-debate Groq
+        rate-limit error used to abort the HTTP response with no signal at all."""
+        try:
+            yield DebateEvent(type="extraction_started")
+            context = await self._extract_context(image_bytes, mime_type, contact_id)
+            yield DebateEvent(type="extraction_done", payload=context.model_dump(mode="json"))
 
-        # Resolved once, after extraction sees the screenshot: an explicit user
-        # preference forces this language; "auto" follows whatever the screenshot's
-        # conversation is actually written in (falls back to English if undetected).
-        response_language = resolve_response_language(language, context.detected_language)
+            # Resolved once, after extraction sees the screenshot: an explicit user
+            # preference forces this language; "auto" follows whatever the screenshot's
+            # conversation is actually written in (falls back to English if undetected).
+            response_language = resolve_response_language(language, context.detected_language)
 
-        memory: list[MemoryRecord] = []
-        persona: str | None = None
-        if contact_id:
-            memory = await self._memory_store.get_contact_history(contact_id)
-            persona = await self._memory_store.get_persona(contact_id)
+            memory: list[MemoryRecord] = []
+            persona: str | None = None
+            if contact_id:
+                memory = await self._memory_store.get_contact_history(contact_id)
+                persona = await self._memory_store.get_persona(contact_id)
 
-        opinions: list[AgentOpinion] = []
-        async for event, opinion in self._run_debate_agents(
-            context, memory, persona, response_language
-        ):
-            yield event
-            if opinion is not None:
-                opinions.append(opinion)
+            opinions: list[AgentOpinion] = []
+            async for event, opinion in self._run_debate_agents(
+                context, memory, persona, response_language
+            ):
+                yield event
+                if opinion is not None:
+                    opinions.append(opinion)
 
-        # Round 2: each agent reacts to the other takes, sequentially, so later
-        # speakers can reference earlier replies - this is the visible "debate"
-        # the client renders as a conversation feed.
-        async for event in self._run_rebuttal_round(context, opinions, response_language):
-            yield event
+            # Round 2: each agent reacts to the other takes, sequentially, so later
+            # speakers can reference earlier replies - this is the visible "debate"
+            # the client renders as a conversation feed.
+            async for event in self._run_rebuttal_round(context, opinions, response_language):
+                yield event
 
-        yield DebateEvent(type="synthesis_started")
-        result = await self._synthesize(context, opinions, persona, response_language)
-        yield DebateEvent(type="synthesis_done", payload=result.model_dump(mode="json"))
+            yield DebateEvent(type="synthesis_started")
+            result = await self._synthesize(context, opinions, persona, response_language)
+            yield DebateEvent(type="synthesis_done", payload=result.model_dump(mode="json"))
 
-        if contact_id:
-            await self._memory_store.upsert_interaction(contact_id, result)
-            updated_persona = await self._update_persona(contact_id, persona, context, result)
-            read_count = await self._memory_store.get_read_count(contact_id)
+            if contact_id:
+                await self._memory_store.upsert_interaction(contact_id, result)
+                updated_persona = await self._update_persona(contact_id, persona, context, result)
+                read_count = await self._memory_store.get_read_count(contact_id)
+                yield DebateEvent(
+                    type="memory_updated",
+                    payload={
+                        "contact_id": contact_id,
+                        "read_count": read_count,
+                        "persona": updated_persona,
+                    },
+                )
+        except Exception:
+            logger.exception("swarm pipeline failed")
             yield DebateEvent(
-                type="memory_updated",
-                payload={
-                    "contact_id": contact_id,
-                    "read_count": read_count,
-                    "persona": updated_persona,
-                },
+                type="error",
+                payload={"message": "Something went wrong talking to the AI - please try again in a moment."},
             )
 
     async def _extract_context(
@@ -151,19 +167,25 @@ class SwarmOrchestrator:
         async def run_one(agent_name: AgentName, system_prompt: str) -> AgentOpinion:
             await queue.put(DebateEvent(type="agent_started", agent=agent_name))
             user_prompt = build_debate_user_prompt(context, memory, persona, response_language)
-            analysis = await self._debate_client.complete_text(system_prompt, user_prompt)
-            opinion = AgentOpinion(
-                agent=agent_name,
-                analysis=analysis,
-                key_points=_extract_key_points(analysis),
-            )
+            raw = await self._debate_client.complete_text(system_prompt, user_prompt)
+            headline, detail = _split_headline_and_detail(raw)
+            opinion = AgentOpinion(agent=agent_name, headline=headline, analysis=detail)
             await queue.put(DebateEvent(type="agent_done", agent=agent_name, payload=opinion.model_dump(mode="json")))
             return opinion
 
         async def run_all() -> list[AgentOpinion]:
-            results = await asyncio.gather(*(run_one(name, prompt) for name, prompt in _DEBATE_AGENTS))
-            await queue.put(_SENTINEL)
-            return list(results)
+            # The sentinel must go out even if an agent raises - otherwise the
+            # consumer loop below awaits queue.get() forever, since nothing else
+            # will ever put another item on the queue. Confirmed live: without
+            # this `finally`, one failed agent call deadlocked the whole request
+            # instead of surfacing an error (asyncio.gather's default behavior on
+            # an exception is to propagate it to the *awaiter*, not to whatever
+            # else was consuming a side-channel queue those tasks happened to use).
+            try:
+                results = await asyncio.gather(*(run_one(name, prompt) for name, prompt in _DEBATE_AGENTS))
+                return list(results)
+            finally:
+                await queue.put(_SENTINEL)
 
         gather_task = asyncio.create_task(run_all())
 
@@ -192,7 +214,8 @@ class SwarmOrchestrator:
             user_prompt = build_rebuttal_user_prompt(
                 context, opinions, prior_replies, agent_name, response_language
             )
-            text = await self._debate_client.complete_text(system_prompt, user_prompt)
+            raw = await self._debate_client.complete_text(system_prompt, user_prompt)
+            text = _cap_sentences(raw, max_sentences=1, max_chars=220)
             prior_replies.append((agent_name, text))
             yield DebateEvent(type="agent_reply", agent=agent_name, payload={"text": text})
 
@@ -232,6 +255,50 @@ class SwarmOrchestrator:
         return persona
 
 
-def _extract_key_points(analysis: str, limit: int = 3) -> list[str]:
-    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", analysis) if s.strip()]
-    return sentences[:limit]
+_HEADLINE_RE = re.compile(r"^\s*headline\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
+
+
+def _split_sentences(text: str) -> list[str]:
+    return [s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()]
+
+
+def _truncate(text: str, max_chars: int) -> str:
+    text = text.strip()
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 1].rstrip() + "…"
+
+
+def _split_headline_and_detail(
+    raw: str, max_detail_sentences: int = 3, max_headline_chars: int = 90
+) -> tuple[str, str]:
+    """Parses the agent's `HEADLINE: ...` + detail format (see
+    agents/prompts.py::_CHAT_OUTPUT_FORMAT) into a short always-visible headline
+    and a capped expandable detail.
+
+    Must never simply trust the prompt was followed: live testing has produced
+    multi-paragraph essays from real providers despite an explicit strict format
+    and a hard sentence limit. Both branches below cap detail length in code, so
+    a debate bubble can never balloon into a wall of text regardless of what the
+    model actually returned.
+    """
+    match = _HEADLINE_RE.search(raw)
+    if match:
+        headline = _truncate(match.group(1), max_headline_chars)
+        detail_source = raw[match.end() :].strip()
+    else:
+        sentences = _split_sentences(raw)
+        headline = _truncate(sentences[0], max_headline_chars) if sentences else _truncate(raw, max_headline_chars)
+        detail_source = raw
+
+    detail_sentences = _split_sentences(detail_source)[:max_detail_sentences]
+    detail = " ".join(detail_sentences) if detail_sentences else headline
+    return headline, detail
+
+
+def _cap_sentences(text: str, max_sentences: int = 1, max_chars: int = 220) -> str:
+    """Defensive cap for rebuttal replies, which should already be one short
+    sentence by prompt instruction but aren't always in practice."""
+    sentences = _split_sentences(text)[:max_sentences]
+    capped = " ".join(sentences) if sentences else text.strip()
+    return _truncate(capped, max_chars)

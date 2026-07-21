@@ -5,44 +5,31 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { ClayButton } from "@/components/ClayButton";
+import { AgentAvatar, DebateBubble } from "@/components/DebateBubble";
 import { GlassCard } from "@/components/GlassCard";
 import { TopBar } from "@/components/TopBar";
 import { useAnalysis } from "@/lib/analysis";
 import { useT } from "@/lib/i18n";
 import type { AgentName } from "@/lib/types";
-
-const AGENT_META: Record<AgentName, { name: string; colorVar: string }> = {
-  arthur: { name: "Arthur", colorVar: "var(--arthur)" },
-  clara: { name: "Clara", colorVar: "var(--clara)" },
-  leo: { name: "Leo", colorVar: "var(--leo)" },
-};
+import { clsx } from "@/lib/clsx";
 
 const AGENT_ORDER: AgentName[] = ["arthur", "clara", "leo"];
 
-function Avatar({ agent, size = 34 }: { agent: AgentName; size?: number }) {
-  const meta = AGENT_META[agent];
+function TypingRow({ agent, side }: { agent: AgentName; side: "left" | "right" }) {
   return (
-    <div
-      className="flex flex-none items-center justify-center rounded-full font-display font-extrabold text-white"
-      style={{ background: meta.colorVar, width: size, height: size, fontSize: size * 0.4 }}
-    >
-      {meta.name[0]}
+    <div className={clsx("flex items-center gap-2", side === "right" && "flex-row-reverse")}>
+      <AgentAvatar agent={agent} size={26} />
+      <div className="flex gap-1 rounded-2xl border border-glass-line bg-glass px-3 py-2.5">
+        {[0, 1, 2].map((i) => (
+          <motion.span
+            key={i}
+            className="h-1.5 w-1.5 rounded-full bg-ink3"
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.18 }}
+          />
+        ))}
+      </div>
     </div>
-  );
-}
-
-function TypingDots({ label }: { label: string }) {
-  return (
-    <span className="inline-flex gap-1" aria-label={label} role="status">
-      {[0, 1, 2].map((i) => (
-        <motion.span
-          key={i}
-          className="h-1.5 w-1.5 rounded-full bg-ink3"
-          animate={{ opacity: [0.3, 1, 0.3] }}
-          transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.18 }}
-        />
-      ))}
-    </span>
   );
 }
 
@@ -93,35 +80,18 @@ export default function DebateRoom() {
               initial={{ opacity: 0, y: 14, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 22 }}
-              className={msg.kind === "reply" ? "ps-6" : undefined}
             >
-              <GlassCard className="flex gap-3 p-3.5">
-                <Avatar agent={msg.agent} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="font-display text-[13px] font-extrabold">
-                      {AGENT_META[msg.agent].name}
-                    </span>
-                    <span className="text-[9px] text-ink3">
-                      {msg.kind === "take" ? t(`read.agentRoles.${msg.agent}`) : t("read.inDebate")}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[11.5px] leading-relaxed text-ink2">{msg.text}</p>
-                </div>
-              </GlassCard>
+              <DebateBubble message={msg} side={i % 2 === 0 ? "left" : "right"} />
             </motion.div>
           ))}
         </AnimatePresence>
 
-        {typingAgents.map((agent) => (
-          <div key={agent} className="flex items-center gap-3 px-3.5 py-1">
-            <Avatar agent={agent} size={26} />
-            <TypingDots label={t("read.typing")} />
-          </div>
+        {typingAgents.map((agent, i) => (
+          <TypingRow key={agent} agent={agent} side={(messages.length + i) % 2 === 0 ? "left" : "right"} />
         ))}
         {debating && (
-          <div className="flex items-center gap-2 px-3.5 py-1 text-[10.5px] text-ink3">
-            <TypingDots label={t("read.typing")} /> {t("read.goingBackAndForth")}
+          <div className="flex items-center justify-center gap-2 px-3.5 py-1 text-[10.5px] text-ink3">
+            {t("read.goingBackAndForth")}
           </div>
         )}
       </div>

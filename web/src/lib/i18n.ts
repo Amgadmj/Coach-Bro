@@ -86,6 +86,8 @@ export interface Dict {
     threeTakes: string;
     seeRead: string;
     typing: string;
+    showMore: string;
+    showLess: string;
     agentRoles: { arthur: string; clara: string; leo: string };
   };
   result: {
@@ -173,6 +175,8 @@ const en: Dict = {
     threeTakes: "Three takes, one debate, then one answer.",
     seeRead: "See your read",
     typing: "typing",
+    showMore: "Tap to see why",
+    showLess: "Hide",
     agentRoles: { arthur: "Frame expert", clara: "Psychology", leo: "The charmer" },
   },
   result: {
@@ -277,6 +281,8 @@ const es: Dict = {
     threeTakes: "Tres lecturas, un debate, y luego una respuesta.",
     seeRead: "Ver tu lectura",
     typing: "escribiendo",
+    showMore: "Toca para ver por qué",
+    showLess: "Ocultar",
     agentRoles: { arthur: "Experto en actitud", clara: "Psicología", leo: "El encantador" },
   },
   result: {
@@ -381,6 +387,8 @@ const fr: Dict = {
     threeTakes: "Trois avis, un débat, puis une réponse.",
     seeRead: "Voir ta lecture",
     typing: "en train d'écrire",
+    showMore: "Touche pour voir pourquoi",
+    showLess: "Masquer",
     agentRoles: { arthur: "Expert en posture", clara: "Psychologie", leo: "Le charmeur" },
   },
   result: {
@@ -485,6 +493,8 @@ const pt: Dict = {
     threeTakes: "Três leituras, um debate, depois uma resposta.",
     seeRead: "Ver sua leitura",
     typing: "digitando",
+    showMore: "Toque para ver o porquê",
+    showLess: "Ocultar",
     agentRoles: { arthur: "Especialista em postura", clara: "Psicologia", leo: "O charmoso" },
   },
   result: {
@@ -589,6 +599,8 @@ const hi: Dict = {
     threeTakes: "तीन राय, एक बहस, फिर एक जवाब।",
     seeRead: "अपनी रीड देखें",
     typing: "टाइप कर रहे हैं",
+    showMore: "वजह देखने के लिए टैप करें",
+    showLess: "छुपाएं",
     agentRoles: { arthur: "फ़्रेम एक्सपर्ट", clara: "साइकोलॉजी", leo: "चार्मर" },
   },
   result: {
@@ -693,6 +705,8 @@ const ar: Dict = {
     threeTakes: "ثلاث آراء، نقاش واحد، ثم إجابة واحدة.",
     seeRead: "شاهد قراءتك",
     typing: "يكتب",
+    showMore: "اضغط لمعرفة السبب",
+    showLess: "إخفاء",
     agentRoles: { arthur: "خبير الهيبة", clara: "عِلم النفس", leo: "الساحر" },
   },
   result: {

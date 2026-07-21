@@ -116,36 +116,29 @@ def _detect_persona(system_prompt: str) -> str:
 
 
 _MOCK_REBUTTALS: dict[str, str] = {
-    "arthur": (
-        "Clara, agreed it's warm - but warmth is exactly when guys over-give. Leo, keep the "
-        "reply short; the frame does the flirting."
-    ),
-    "clara": (
-        "Arthur, don't read the 15-minute gap as a power move - she re-opened the conversation "
-        "herself. Leo, lean playful, she's inviting banter, not a negotiation."
-    ),
-    "leo": (
-        "You're both right - so we tease the test instead of answering it. Arthur gets his "
-        "scarcity, Clara gets her warmth, and she gets a reason to smile at her phone."
-    ),
+    "arthur": "Clara, agreed it's warm, but Leo, keep the reply short - the frame does the flirting.",
+    "clara": "Arthur, that gap's not a power move, she re-opened the conversation herself.",
+    "leo": "You're both right, so let's tease the test instead of answering it directly.",
 }
 
+# HEADLINE: format matches the real prompt contract (see agents/prompts.py
+# _CHAT_OUTPUT_FORMAT) so the mock path exercises the same parsing as production.
 _MOCK_OPINIONS: dict[str, str] = {
     "arthur": (
-        "He double-texted after a 42-second reply gap on his side but she took 15 minutes "
-        "to respond — investment is currently asymmetric. 'Depends what you're offering' is "
-        "a soft compliance test, not rejection. Hold frame: do not over-explain or over-give. "
+        "HEADLINE: Investment's asymmetric right now - hold the frame, don't chase.\n\n"
+        "He double-texted after a 42-second gap but she took 15 minutes to reply. "
+        "'Depends what you're offering' is a soft compliance test, not rejection. "
         "State value once, plainly, and let the silence do the work."
     ),
     "clara": (
-        "'hey stranger' is a warm re-opener, not a cold one — she initiated. The compliance "
-        "test ('depends what you're offering') is flirtatious probing, checking if he'll "
-        "get needy or stay grounded. This reads as genuine interest with a boundary check "
-        "attached, not disinterest."
+        "HEADLINE: She's testing whether he'll get needy, not shutting him down.\n\n"
+        "'Hey stranger' is a warm re-opener, not a cold one - she initiated. The compliance "
+        "test is flirtatious probing. This reads as genuine interest with a boundary "
+        "check attached."
     ),
     "leo": (
-        "Play with the test instead of answering it literally — flip it into a callback tease "
-        "that keeps the tension light and makes her smile instead of interrogate. Confident, "
-        "warm, zero chase energy."
+        "HEADLINE: Flip the test into a callback tease instead of answering it straight.\n\n"
+        "Keep the tension light and make her smile instead of interrogate. "
+        "Confident, warm, zero chase energy."
     ),
 }
