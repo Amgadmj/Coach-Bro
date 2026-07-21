@@ -10,7 +10,11 @@ from __future__ import annotations
 
 import os
 
-from fastapi import FastAPI, Form, UploadFile
+from dotenv import load_dotenv
+
+load_dotenv()  # backend/.env - keys and mode; must run before any os.environ reads
+
+from fastapi import Depends, FastAPI, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
@@ -18,15 +22,27 @@ from agents.prompts import SUGGEST_SYSTEM_PROMPT, build_suggest_user_prompt
 from llm_clients.base import LLMClient, MockLLMClient
 from memory.store import get_memory_store
 from models.schemas import ContactSummary, MemoryRecord, SuggestRequest, SuggestResponse
+from rate_limit import RateLimiter
 from swarm_orchestrator import SwarmOrchestrator
 
 app = FastAPI(title="RESET AI backend")
 
+# Comma-separated origins in prod (e.g. "https://brocoach.app"); "*" only for local dev.
+_origins = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "*").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # dev-only; scope this down before shipping a real deployment
+    allow_origins=_origins,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# Per-IP limits on the two routes that spend LLM tokens. In-memory, so per-instance -
+# good enough for a single-instance MVP; swap for Redis when horizontally scaling.
+analyze_limiter = RateLimiter(
+    max_requests=int(os.environ.get("ANALYZE_RATE_LIMIT_PER_HOUR", "20")), window_seconds=3600
+)
+suggest_limiter = RateLimiter(
+    max_requests=int(os.environ.get("SUGGEST_RATE_LIMIT_PER_HOUR", "60")), window_seconds=3600
 )
 
 
@@ -51,7 +67,7 @@ def get_orchestrator() -> SwarmOrchestrator:
     )
 
 
-@app.post("/analyze")
+@app.post("/analyze", dependencies=[Depends(analyze_limiter)])
 async def analyze(image: UploadFile, contact_id: str | None = Form(default=None)) -> StreamingResponse:
     orchestrator = get_orchestrator()
     image_bytes = await image.read()
@@ -64,7 +80,7 @@ async def analyze(image: UploadFile, contact_id: str | None = Form(default=None)
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
-@app.post("/suggest")
+@app.post("/suggest", dependencies=[Depends(suggest_limiter)])
 async def suggest(request: SuggestRequest) -> SuggestResponse:
     """Text-only scenario -> three suggested openers. No debate, no memory write -
     the lighter sibling of /analyze for when there's no screenshot yet."""

@@ -1,0 +1,41 @@
+# Render blueprint - deploy the backend by connecting this GitHub repo at
+# https://dashboard.render.com/blueprints (New > Blueprint). Render reads this
+# file, builds backend/ from its Dockerfile, and prompts for the secret values.
+#
+# The starter plan includes a persistent disk so SQLite relationship memory
+# survives restarts. On the free plan (no disk): delete the `disk:` block and
+# the MEMORY_DB_PATH var - memory then resets on each deploy, or set
+# SUPABASE_DB_URL to use Postgres instead.
+
+services:
+  - type: web
+    name: bro-coach-api
+    runtime: docker
+    rootDir: backend
+    plan: starter
+    healthCheckPath: /health
+    disk:
+      name: memory
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: LLM_MODE
+        value: real
+      - key: ANTHROPIC_API_KEY
+        sync: false # prompted in the dashboard, never committed
+      - key: ANTHROPIC_VISION_MODEL
+        value: claude-sonnet-5
+      - key: FAST_LLM_PROVIDER
+        value: gemini
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: MEMORY_DB_PATH
+        value: /var/data/memory.db
+      - key: ALLOWED_ORIGINS
+        value: http://localhost:3000 # add your Vercel URL after the web deploy
+      - key: ANALYZE_RATE_LIMIT_PER_HOUR
+        value: "20"
+      - key: SUGGEST_RATE_LIMIT_PER_HOUR
+        value: "60"
