@@ -75,6 +75,8 @@ no manipulation tactics, no contempt, no pathologizing. If a suggested response 
 rewrite it before including it.
 5. Output ONLY the JSON object matching the provided schema. No markdown, no commentary outside \
 the JSON.
+6. what_she_is_thinking is always a JSON array of short strings (2-3 separate thoughts), even if \
+you only have one thought - never a single combined string.
 """
 
 

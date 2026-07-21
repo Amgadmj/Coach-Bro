@@ -8,7 +8,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 AgentName = Literal["arthur", "clara", "leo"]
 
@@ -16,7 +16,11 @@ AgentName = Literal["arthur", "clara", "leo"]
 class Message(BaseModel):
     sender: Literal["user", "match"]
     text: str
-    timestamp: datetime | None = None
+    # Verbatim as displayed on-screen ("Today 9:41 PM", "2h ago", "Yesterday") - not
+    # parsed to an absolute datetime. Real screenshots show relative/ambiguous times
+    # a vision model can't reliably convert without the current date as context, so
+    # forcing ISO here just produces validation failures on real (non-mock) input.
+    timestamp: str | None = None
     bubble_color: str | None = None
     response_lag_seconds: float | None = None
 
@@ -46,6 +50,16 @@ class SynthesisResult(BaseModel):
     best_response: str
     alternative_responses: AlternativeResponses
     coaching_lesson: str
+
+    @field_validator("what_she_is_thinking", mode="before")
+    @classmethod
+    def _coerce_single_string_to_list(cls, v: object) -> object:
+        # Forced tool-use models occasionally collapse a short list field into a
+        # single string despite the array schema (seen live with claude-sonnet-5).
+        # Wrap rather than reject - a one-item read is still a valid read.
+        if isinstance(v, str):
+            return [v]
+        return v
 
 
 class DebateEvent(BaseModel):
