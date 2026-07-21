@@ -2,6 +2,8 @@
 
 Markdown companion to [`ui-spec-v2.html`](ui-spec-v2.html) — same content, git-diffable. The HTML file is the visual reference (open it to actually see the screens); this file is what to read/grep/link to from code and PRs. Kept alongside [`ui-spec-v1.html`](ui-spec-v1.html) (the earlier Airbnb-inspired direction) for comparison, not as its replacement.
 
+Visual reference screenshots this direction was translated from (a travel-planning app called "dayo" — frosted glass, gradient accents, blob mood characters) live in [`reference-images/`](reference-images/).
+
 ## Thesis
 
 **Confidence has a golden hour.** A warmer, glass-and-gradient take on RESET AI, built around the five minutes before you walk in — not just the debate over what to text. Where v1 borrowed hospitality-brand calm, v2 borrows the warmth of a friend hyping you up in the bathroom mirror before you walk back out.
