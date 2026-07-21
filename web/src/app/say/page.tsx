@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { GhostButton } from "@/components/ClayButton";
 import { TopBar } from "@/components/TopBar";
 import { suggestOpeners } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import type { Suggestion } from "@/lib/types";
 
@@ -19,7 +20,8 @@ const CARD_GRADIENTS = [
 function WhatToSayNext() {
   const params = useSearchParams();
   const scenario = params.get("scenario") ?? "";
-  const mode = useSession((s) => s.mode);
+  const { mode, language } = useSession();
+  const t = useT();
   const [suggestions, setSuggestions] = useState<Suggestion[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<number | null>(null);
@@ -28,10 +30,10 @@ function WhatToSayNext() {
   useEffect(() => {
     setSuggestions(null);
     setError(null);
-    suggestOpeners(scenario, mode)
+    suggestOpeners(scenario, mode, language)
       .then((r) => setSuggestions(r.suggestions))
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
-  }, [scenario, mode, round]);
+  }, [scenario, mode, language, round]);
 
   async function copy(text: string, i: number) {
     await navigator.clipboard.writeText(text);
@@ -41,7 +43,7 @@ function WhatToSayNext() {
 
   return (
     <main>
-      <TopBar title="What to say next" />
+      <TopBar title={t("say.title")} />
 
       {scenario && (
         <div className="mt-3.5 flex items-center gap-2 rounded-2xl border border-glass-line bg-glass px-3.5 py-2.5">
@@ -72,19 +74,19 @@ function WhatToSayNext() {
                   onClick={() => copy(s.text, i)}
                   className="rounded-full bg-white/20 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.08em]"
                 >
-                  {copied === i ? "Copied!" : "Copy"}
+                  {copied === i ? t("say.copied") : t("say.copy")}
                 </button>
               )}
             </div>
             <p className="mt-1.5 min-h-5 text-[13.5px] font-semibold leading-relaxed">
-              {s ? `"${s.text}"` : "Thinking…"}
+              {s ? `"${s.text}"` : t("say.thinking")}
             </p>
           </motion.div>
         ))}
       </div>
 
       <GhostButton className="mt-5" onClick={() => setRound((r) => r + 1)}>
-        Give me three more
+        {t("say.giveMeThree")}
       </GhostButton>
     </main>
   );

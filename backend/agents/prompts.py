@@ -7,7 +7,34 @@ these prompts must respect.
 
 from __future__ import annotations
 
-from models.schemas import AgentOpinion, ConversationContext, MemoryRecord
+from models.schemas import (
+    LANGUAGE_NAMES,
+    AgentOpinion,
+    ConversationContext,
+    MemoryRecord,
+    SupportedLanguage,
+)
+
+
+def resolve_response_language(preference: SupportedLanguage, detected: str | None = None) -> str:
+    """Language every AI output should be written in for this request.
+
+    An explicit preference always wins (forces the language regardless of what the
+    screenshot/scenario is actually in). "auto" defers to the language detected from
+    the screenshot during extraction (see llm_clients/anthropic_client.py); text-only
+    /suggest has nothing to detect, so "auto" there falls back to English.
+    """
+    if preference != "auto":
+        return LANGUAGE_NAMES[preference]
+    return detected or "English"
+
+
+def _language_header(language: str) -> str:
+    return (
+        f"RESPOND ENTIRELY IN: {language}. Every string you output (analysis, dialogue, "
+        f"the final answer) must be written in {language}, not translated afterward - "
+        f"think and write directly in {language}.\n\n"
+    )
 
 ARTHUR_SYSTEM_PROMPT = """\
 You are Arthur, the High-Value Frame Expert.
@@ -85,9 +112,17 @@ You are Bro Coach's opener writer - Leo's voice, Arthur's boundaries, Clara's re
 
 The user describes an in-person social scenario (no screenshot). Produce exactly three \
 suggested things to say, each in a different register:
-1. label "Be bold" - confident, higher-energy.
-2. label "Playful tease" - warm, cheeky, light.
-3. label "Direct" - simple, honest, no games.
+1. Confident, higher-energy.
+2. Warm, cheeky, playful tease.
+3. Simple, honest, direct - no games.
+
+The `label` field for each is a short (1-3 word) category tag naming that register - write \
+it in the same language as everything else in your response, never left in English unless \
+the response language IS English.
+
+You must always fill the top-level `language` field with the language you are responding in \
+- never skip it, never guess a language unrelated to the scenario's own wording or an explicit \
+override. Do not let the Social Mode's name (e.g. "romantic") bias your choice of language.
 
 Calibrate all three to the user's declared Social Mode. Keep each line short enough to \
 actually say out loud. Never negging, never a pickup-artist script, never bitter - warm, \
@@ -95,11 +130,22 @@ respectful, win-win only.
 """
 
 
-def build_suggest_user_prompt(scenario: str, mode: str) -> str:
+def build_suggest_user_prompt(scenario: str, mode: str, language: str | None = None) -> str:
+    """`language=None` is the "auto" case (no screenshot to pre-detect from).
+
+    Relies on `SuggestResponse.language` (see models/schemas.py) as the actual
+    reliability mechanism, not prose here - live-testing found both a bare
+    unconstrained prompt and a self-referential "respond in the scenario's own
+    language" instruction unreliable (an English scenario in "romantic" Social
+    Mode came back in French on repeated attempts either way). Committing to a
+    language in an ordered schema field before the suggestions measurably fixed it.
+    """
+    header = _language_header(language) if language else ""
     return (
-        f"Social Mode: {mode}\n"
+        header + f"Social Mode: {mode}\n"
         f"Scenario: {scenario}\n\n"
-        "Give the three suggestions."
+        "Detect the scenario's language and fill the `language` field with it before "
+        "writing the suggestions, unless a language override is specified above."
     )
 
 
@@ -138,7 +184,10 @@ def build_persona_user_prompt(
 
 
 def build_debate_user_prompt(
-    context: ConversationContext, memory: list[MemoryRecord], persona: str | None = None
+    context: ConversationContext,
+    memory: list[MemoryRecord],
+    persona: str | None = None,
+    language: str = "English",
 ) -> str:
     lines = [f"{m.sender}: {m.text}" for m in context.messages]
     transcript = "\n".join(lines)
@@ -151,7 +200,8 @@ def build_debate_user_prompt(
         history_block = "\n".join(history_lines)
 
     return (
-        f"Conversation so far:\n{transcript}\n\n"
+        _language_header(language)
+        + f"Conversation so far:\n{transcript}\n\n"
         f"What we know about her from previous reads:\n{persona_block}\n\n"
         f"Recent read history:\n{history_block}\n\n"
         "Give your analysis of this conversation from your specific role's perspective, "
@@ -165,6 +215,7 @@ def build_rebuttal_user_prompt(
     opinions: list[AgentOpinion],
     prior_replies: list[tuple[str, str]],
     agent_name: str,
+    language: str = "English",
 ) -> str:
     """Round 2: the agent reacts to the other two takes (and any replies already made).
 
@@ -183,7 +234,8 @@ def build_rebuttal_user_prompt(
         )
 
     return (
-        f"Conversation:\n{transcript}\n\n"
+        _language_header(language)
+        + f"Conversation:\n{transcript}\n\n"
         f"The other coaches' takes:\n{others}{replies_block}\n\n"
         "Debate round: in 1-2 sentences, speaking directly to the other coaches by name, "
         "say where you agree or push back and what matters most for the final answer. "
@@ -192,7 +244,10 @@ def build_rebuttal_user_prompt(
 
 
 def build_synthesis_user_prompt(
-    context: ConversationContext, opinions: list[AgentOpinion], persona: str | None = None
+    context: ConversationContext,
+    opinions: list[AgentOpinion],
+    persona: str | None = None,
+    language: str = "English",
 ) -> str:
     lines = [f"{m.sender}: {m.text}" for m in context.messages]
     transcript = "\n".join(lines)
@@ -206,7 +261,8 @@ def build_synthesis_user_prompt(
         persona_block = f"Known persona for this contact:\n{persona}\n\n"
 
     return (
-        f"Conversation:\n{transcript}\n\n"
+        _language_header(language)
+        + f"Conversation:\n{transcript}\n\n"
         f"{persona_block}"
         f"Debate:\n{opinion_blocks}\n\n"
         "Resolve these into the final JSON result. If the persona mentions inside jokes or "

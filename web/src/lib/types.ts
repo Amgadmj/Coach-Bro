@@ -5,6 +5,10 @@
 
 export type AgentName = "arthur" | "clara" | "leo";
 export type SocialMode = "hype" | "chill" | "romantic" | "direct";
+// "auto" = match whatever language the screenshot/scenario is actually in;
+// see backend/models/schemas.py::SupportedLanguage and lib/i18n.ts::LanguageCode
+// (the same set - i18n.ts re-declares it since it also needs UI-dictionary keys).
+export type SupportedLanguage = "auto" | "en" | "es" | "ar" | "fr" | "pt" | "hi";
 
 export interface Message {
   sender: "user" | "match";
@@ -18,6 +22,7 @@ export interface ConversationContext {
   contact_id?: string | null;
   messages: Message[];
   extracted_at: string;
+  detected_language?: string | null;
 }
 
 export interface AgentOpinion {

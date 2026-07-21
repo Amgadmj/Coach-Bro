@@ -4,6 +4,7 @@ import type {
   MemoryRecord,
   SocialMode,
   SuggestResponse,
+  SupportedLanguage,
 } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -16,10 +17,12 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8
 export async function* analyzeScreenshot(
   image: File | Blob,
   contactId?: string | null,
+  language: SupportedLanguage = "auto",
 ): AsyncGenerator<DebateEvent> {
   const form = new FormData();
   form.append("image", image, image instanceof File ? image.name : "screenshot.png");
   if (contactId) form.append("contact_id", contactId);
+  form.append("language", language);
 
   const response = await fetch(`${API_BASE_URL}/analyze`, { method: "POST", body: form });
   if (!response.ok || !response.body) {
@@ -51,11 +54,15 @@ export async function* analyzeScreenshot(
   }
 }
 
-export async function suggestOpeners(scenario: string, mode: SocialMode): Promise<SuggestResponse> {
+export async function suggestOpeners(
+  scenario: string,
+  mode: SocialMode,
+  language: SupportedLanguage = "auto",
+): Promise<SuggestResponse> {
   const response = await fetch(`${API_BASE_URL}/suggest`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ scenario, mode }),
+    body: JSON.stringify({ scenario, mode, language }),
   });
   if (!response.ok) throw new Error(`/suggest failed: ${response.status} ${await response.text()}`);
   return response.json();

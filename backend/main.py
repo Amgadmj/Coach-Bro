@@ -21,7 +21,14 @@ from fastapi.responses import StreamingResponse
 from agents.prompts import SUGGEST_SYSTEM_PROMPT, build_suggest_user_prompt
 from llm_clients.base import LLMClient, MockLLMClient
 from memory.store import get_memory_store
-from models.schemas import ContactSummary, MemoryRecord, SuggestRequest, SuggestResponse
+from models.schemas import (
+    LANGUAGE_NAMES,
+    ContactSummary,
+    MemoryRecord,
+    SuggestRequest,
+    SuggestResponse,
+    SupportedLanguage,
+)
 from rate_limit import RateLimiter
 from swarm_orchestrator import SwarmOrchestrator
 
@@ -68,13 +75,17 @@ def get_orchestrator() -> SwarmOrchestrator:
 
 
 @app.post("/analyze", dependencies=[Depends(analyze_limiter)])
-async def analyze(image: UploadFile, contact_id: str | None = Form(default=None)) -> StreamingResponse:
+async def analyze(
+    image: UploadFile,
+    contact_id: str | None = Form(default=None),
+    language: SupportedLanguage = Form(default="auto"),
+) -> StreamingResponse:
     orchestrator = get_orchestrator()
     image_bytes = await image.read()
     mime_type = image.content_type or "image/jpeg"
 
     async def event_stream():
-        async for event in orchestrator.run_pipeline(image_bytes, mime_type, contact_id):
+        async for event in orchestrator.run_pipeline(image_bytes, mime_type, contact_id, language):
             yield f"data: {event.model_dump_json()}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
@@ -84,10 +95,16 @@ async def analyze(image: UploadFile, contact_id: str | None = Form(default=None)
 async def suggest(request: SuggestRequest) -> SuggestResponse:
     """Text-only scenario -> three suggested openers. No debate, no memory write -
     the lighter sibling of /analyze for when there's no screenshot yet."""
+    # No screenshot to detect a language from. "auto" sends no directive at all
+    # (see build_suggest_user_prompt) so the model mirrors the scenario's language
+    # on its own - live-testing showed a self-referential "detect and match the
+    # language below" instruction is unreliable and can misfire to a third language.
+    response_language = None if request.language == "auto" else LANGUAGE_NAMES[request.language]
+
     vision_client, _ = _build_llm_clients()
     data = await vision_client.complete_json(
         SUGGEST_SYSTEM_PROMPT,
-        build_suggest_user_prompt(request.scenario, request.mode),
+        build_suggest_user_prompt(request.scenario, request.mode, response_language),
         SuggestResponse.model_json_schema(),
     )
     return SuggestResponse.model_validate(data)

@@ -3,6 +3,7 @@
 import { create } from "zustand";
 
 import { analyzeScreenshot } from "./api";
+import { useSession } from "./session";
 import type { AgentName, DebateEvent, MemoryUpdate, SynthesisResult } from "./types";
 
 export type AgentStatus = "pending" | "active" | "done";
@@ -103,7 +104,8 @@ export const useAnalysis = create<AnalysisState>((set, get) => ({
     }
 
     try {
-      for await (const event of analyzeScreenshot(image, contactId)) {
+      const language = useSession.getState().language;
+      for await (const event of analyzeScreenshot(image, contactId, language)) {
         await applyEvent(event);
       }
       // stream ended without a synthesis_done (backend crash mid-run, dropped

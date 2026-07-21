@@ -9,6 +9,7 @@ import { Gauge } from "@/components/Gauge";
 import { GlassCard } from "@/components/GlassCard";
 import { TopBar } from "@/components/TopBar";
 import { useAnalysis } from "@/lib/analysis";
+import { useT } from "@/lib/i18n";
 
 const AGENT_DOTS = [
   { initial: "A", colorVar: "var(--arthur)" },
@@ -19,6 +20,7 @@ const AGENT_DOTS = [
 export default function ResultScreen() {
   const router = useRouter();
   const { result, memoryUpdate, reset } = useAnalysis();
+  const t = useT();
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
 
@@ -41,12 +43,12 @@ export default function ResultScreen() {
   async function shareRead() {
     if (!result) return;
     const text =
-      `Attraction Gauge: ${result.attraction_level * 10}/100\n` +
-      `Lesson: ${result.coaching_lesson}\n` +
-      `— read by Bro Coach`;
+      `${t("result.attractionGauge")}: ${result.attraction_level * 10}/100\n` +
+      `${t("result.lesson")}: ${result.coaching_lesson}\n` +
+      `— Bro Coach`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: "My read — Bro Coach", text });
+        await navigator.share({ title: `${t("result.title")} — Bro Coach`, text });
       } else {
         await navigator.clipboard.writeText(text);
         setShared(true);
@@ -59,20 +61,18 @@ export default function ResultScreen() {
 
   return (
     <main>
-      <TopBar title="Your read" action={shared ? "✓" : "↗"} onAction={shareRead} />
+      <TopBar title={t("result.title")} action={shared ? "✓" : "↗"} onAction={shareRead} />
       {shared && (
         <p className="mt-1.5 text-center text-[10.5px] text-ink3" role="status">
-          Copied a shareable summary — paste it anywhere.
+          {t("result.shareCopied")}
         </p>
       )}
 
       <GlassCard className="mt-3 rounded-[20px] p-3.5">
-        <div className="font-display text-[13px] font-extrabold">
-          What she might actually be thinking…
-        </div>
+        <div className="font-display text-[13px] font-extrabold">{t("result.thinkingHeading")}</div>
         <ul className="mt-1 text-[11.5px] leading-relaxed text-ink2">
-          {result.what_she_is_thinking.map((t, i) => (
-            <li key={i}>· {t}</li>
+          {result.what_she_is_thinking.map((thought, i) => (
+            <li key={i}>· {thought}</li>
           ))}
         </ul>
       </GlassCard>
@@ -85,7 +85,7 @@ export default function ResultScreen() {
         <GlassCard className="mt-3.5 p-4">
           <Gauge
             value={result.attraction_level * 10}
-            label="Attraction Gauge"
+            label={t("result.attractionGauge")}
             caption={result.dynamic_analysis}
           />
         </GlassCard>
@@ -93,13 +93,13 @@ export default function ResultScreen() {
 
       <div className="mt-3 rounded-[20px] border border-glass-line bg-glass px-3.5 py-3 text-center">
         <span className="text-[11px] font-semibold tracking-[0.04em] text-clara">
-          LESSON · {result.coaching_lesson}
+          {t("result.lesson")} · {result.coaching_lesson}
         </span>
       </div>
 
       <div className="mt-3 rounded-[20px] border border-glass-line bg-accent-soft p-3.5 shadow-card">
         <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-accent-deep">
-          Best response
+          {t("result.bestResponse")}
         </div>
         <p className="mt-1.5 text-[13px] font-semibold leading-relaxed">
           &ldquo;{result.best_response}&rdquo;
@@ -107,13 +107,13 @@ export default function ResultScreen() {
         <div className="mt-2.5 flex gap-2">
           <details className="group">
             <summary className="cursor-pointer list-none rounded-full border border-hairline bg-white/40 px-3 py-1.5 font-display text-[10px] font-bold text-ink2 dark:bg-white/10">
-              Playful alt
+              {t("result.playfulAlt")}
             </summary>
             <p className="mt-1.5 text-[12px] text-ink2">{result.alternative_responses.playful}</p>
           </details>
           <details className="group">
             <summary className="cursor-pointer list-none rounded-full border border-hairline bg-white/40 px-3 py-1.5 font-display text-[10px] font-bold text-ink2 dark:bg-white/10">
-              Direct alt
+              {t("result.directAlt")}
             </summary>
             <p className="mt-1.5 text-[12px] text-ink2">{result.alternative_responses.direct}</p>
           </details>
@@ -121,7 +121,7 @@ export default function ResultScreen() {
       </div>
 
       <ClayButton className="mt-4" onClick={copyBest}>
-        {copied ? "Copied!" : "Copy response"}
+        {copied ? t("result.copied") : t("result.copyResponse")}
       </ClayButton>
       <GhostButton
         className="mt-2.5"
@@ -130,7 +130,7 @@ export default function ResultScreen() {
           router.push("/live");
         }}
       >
-        Try again
+        {t("result.tryAgain")}
       </GhostButton>
 
       <div className="mt-3.5 flex items-center justify-center gap-2">
@@ -139,20 +139,23 @@ export default function ResultScreen() {
             <span
               key={d.initial}
               className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-ground font-display text-[8px] font-extrabold text-white"
-              style={{ background: d.colorVar, marginLeft: i === 0 ? 0 : -6 }}
+              style={{ background: d.colorVar, marginInlineStart: i === 0 ? 0 : -6 }}
             >
               {d.initial}
             </span>
           ))}
         </div>
-        <span className="text-[10px] text-ink3">Synthesized from all three takes</span>
+        <span className="text-[10px] text-ink3">{t("result.synthesizedFrom")}</span>
       </div>
 
       {memoryUpdate && (
         <div className="mt-2.5 rounded-2xl border border-glass-line bg-glass px-3.5 py-2.5 text-center">
           <span className="text-[10.5px] text-ink2">
-            🧠 Saved to <b className="font-display">{memoryUpdate.contact_id}</b>&apos;s memory —
-            read #{memoryUpdate.read_count}. The next one gets sharper.
+            🧠{" "}
+            {t("result.savedToMemory", {
+              name: memoryUpdate.contact_id,
+              count: memoryUpdate.read_count,
+            })}
           </span>
         </div>
       )}

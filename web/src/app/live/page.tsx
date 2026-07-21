@@ -7,18 +7,20 @@ import { GlassCard } from "@/components/GlassCard";
 import { TabBar } from "@/components/TabBar";
 import { fetchContacts } from "@/lib/api";
 import { useAnalysis } from "@/lib/analysis";
+import { useT } from "@/lib/i18n";
 import type { ContactSummary } from "@/lib/types";
 import { clsx } from "@/lib/clsx";
 
-const MISSION_CHIPS = [
-  { label: "Icebreaker", bg: "var(--hype-soft)", color: "var(--hype)" },
-  { label: "Vibe Shift", bg: "var(--chill-soft)", color: "var(--chill)" },
-  { label: "Exit Strategy", bg: "var(--direct-soft)", color: "var(--direct)" },
-];
+const MISSION_KEYS = [
+  { key: "icebreaker", bg: "var(--hype-soft)", color: "var(--hype)" },
+  { key: "vibeShift", bg: "var(--chill-soft)", color: "var(--chill)" },
+  { key: "exitStrategy", bg: "var(--direct-soft)", color: "var(--direct)" },
+] as const;
 
 export default function LiveScenarioInput() {
   const router = useRouter();
   const runAnalysis = useAnalysis((s) => s.run);
+  const t = useT();
   const [scenario, setScenario] = useState("");
   const [contacts, setContacts] = useState<ContactSummary[]>([]);
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
@@ -52,9 +54,9 @@ export default function LiveScenarioInput() {
       </div>
 
       <div className="mt-4 flex items-baseline justify-between">
-        <h2 className="font-display text-[15px] font-extrabold">Your reads</h2>
+        <h2 className="font-display text-[15px] font-extrabold">{t("live.yourReads")}</h2>
         <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-accent-deep">
-          See all
+          {t("common.seeAll")}
         </span>
       </div>
       <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [-webkit-mask-image:linear-gradient(90deg,#000_88%,transparent)]">
@@ -76,7 +78,7 @@ export default function LiveScenarioInput() {
                 {c.display_name}
               </span>
               <span className="block text-[9px] leading-tight text-ink3">
-                {c.session_count} {c.session_count === 1 ? "read" : "reads"}
+                {c.session_count} {c.session_count === 1 ? t("live.read") : t("live.reads")}
               </span>
             </span>
           </button>
@@ -84,7 +86,7 @@ export default function LiveScenarioInput() {
         <button
           type="button"
           onClick={() => {
-            const name = window.prompt("Who are you talking to? (first name is fine)")?.trim();
+            const name = window.prompt(t("live.newContactPrompt"))?.trim();
             if (!name) return;
             const id = name.toLowerCase();
             setContacts((prev) =>
@@ -96,16 +98,18 @@ export default function LiveScenarioInput() {
           }}
           className="flex flex-none items-center rounded-full border border-dashed border-hairline bg-glass px-3.5 py-1 text-[11px] font-bold text-ink3"
         >
-          ＋ New
+          {t("live.newChip")}
         </button>
       </div>
 
       <GlassCard className="mt-4 p-3.5">
-        <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-ink3">Scenario</div>
+        <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-ink3">
+          {t("live.scenarioLabel")}
+        </div>
         <textarea
           value={scenario}
           onChange={(e) => setScenario(e.target.value)}
-          placeholder={'Describe the situation… e.g. "At a coffee shop, she\'s reading my favorite book."'}
+          placeholder={t("live.scenarioPlaceholder")}
           rows={3}
           className="mt-1.5 w-full resize-none bg-transparent text-[13px] leading-relaxed text-ink outline-none placeholder:text-ink3"
         />
@@ -125,36 +129,34 @@ export default function LiveScenarioInput() {
               screenshot ? "border-accent text-accent-deep" : "border-hairline bg-glass text-ink2",
             )}
           >
-            {screenshot ? `✓ ${screenshot.name.slice(0, 18)}` : "Add screenshot"}
+            {screenshot ? `✓ ${screenshot.name.slice(0, 18)}` : t("live.addScreenshot")}
           </button>
           <button
             type="button"
-            aria-label="Send"
+            aria-label={t("live.send")}
             onClick={submit}
             disabled={!screenshot && !scenario.trim()}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(160deg,var(--mode),var(--mode-deep))] shadow-clay transition-transform active:translate-y-0.5 disabled:opacity-40"
           >
-            <svg width="14" height="14" viewBox="0 0 14 14">
+            <svg width="14" height="14" viewBox="0 0 14 14" className="rtl:-scale-x-100">
               <path d="M3 2 L11 7 L3 12 Z" fill="#fff" />
             </svg>
           </button>
         </div>
       </GlassCard>
-      <p className="mt-3 text-center text-[11px] text-ink3">
-        Screenshots get the full Arthur · Clara · Leo debate.
-      </p>
+      <p className="mt-3 text-center text-[11px] text-ink3">{t("live.screenshotHint")}</p>
 
-      <h2 className="mt-4 font-display text-[15px] font-extrabold">Or start from a mission</h2>
+      <h2 className="mt-4 font-display text-[15px] font-extrabold">{t("live.orMission")}</h2>
       <div className="mt-2 flex flex-wrap gap-1.5">
-        {MISSION_CHIPS.map((chip) => (
+        {MISSION_KEYS.map((chip) => (
           <button
-            key={chip.label}
+            key={chip.key}
             type="button"
-            onClick={() => setScenario(`${chip.label}: `)}
+            onClick={() => setScenario(`${t(`missions.${chip.key}.title`)}: `)}
             className="rounded-full px-3.5 py-2 font-display text-[11px] font-bold"
             style={{ background: chip.bg, color: chip.color }}
           >
-            {chip.label}
+            {t(`missions.${chip.key}.title`)}
           </button>
         ))}
       </div>

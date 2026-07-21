@@ -45,6 +45,7 @@ class MockLLMClient:
         return ConversationContext(
             contact_id=None,
             extracted_at=datetime.now(timezone.utc),
+            detected_language="English",
             messages=[
                 Message(sender="match", text="hey stranger 👀", response_lag_seconds=None),
                 Message(sender="user", text="just thinking about you, wyd", response_lag_seconds=42.0),
@@ -56,6 +57,7 @@ class MockLLMClient:
         await asyncio.sleep(self._latency_seconds)
         if "suggestions" in json_schema.get("properties", {}):
             return {
+                "language": "English",
                 "suggestions": [
                     {"label": "Be bold", "text": "What's the craziest thing you've done tonight?"},
                     {"label": "Playful tease", "text": "You look like trouble, in a good way."},

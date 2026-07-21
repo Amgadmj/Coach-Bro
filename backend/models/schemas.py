@@ -12,6 +12,21 @@ from pydantic import BaseModel, Field, field_validator
 
 AgentName = Literal["arthur", "clara", "leo"]
 
+# "auto" = match whatever language the screenshot/scenario is actually in
+# (detected at extraction time, or left to the model for text-only /suggest).
+# A specific code forces every AI output into that language regardless of
+# the source material's language - see agents/prompts.py::resolve_response_language.
+SupportedLanguage = Literal["auto", "en", "es", "ar", "fr", "pt", "hi"]
+
+LANGUAGE_NAMES: dict[str, str] = {
+    "en": "English",
+    "es": "Spanish",
+    "ar": "Arabic",
+    "fr": "French",
+    "pt": "Portuguese",
+    "hi": "Hindi",
+}
+
 
 class Message(BaseModel):
     sender: Literal["user", "match"]
@@ -29,6 +44,10 @@ class ConversationContext(BaseModel):
     contact_id: str | None = None
     messages: list[Message]
     extracted_at: datetime
+    # Free-text language name as the model identifies it (e.g. "Spanish", "Egyptian
+    # Arabic") - not restricted to SupportedLanguage, since detection can be more
+    # specific than the fixed override list. None if the model couldn't tell.
+    detected_language: str | None = None
 
 
 class AgentOpinion(BaseModel):
@@ -93,15 +112,35 @@ SocialMode = Literal["hype", "chill", "romantic", "direct"]
 class SuggestRequest(BaseModel):
     scenario: str = Field(min_length=1, max_length=2000)
     mode: SocialMode = "hype"
+    language: SupportedLanguage = "auto"
 
 
 class Suggestion(BaseModel):
-    label: str
-    text: str
+    # Field-level descriptions matter here, not just prompt prose: forced tool-use
+    # was observed live writing `text` in English but `label` in Portuguese for the
+    # same response with no language override active - a schema-level reminder,
+    # scoped to the exact field, is more reliable than a paragraph elsewhere.
+    label: str = Field(description="Short 1-3 word category tag, in the exact same language as `text`.")
+    text: str = Field(description="The actual suggested line to say out loud.")
 
 
 class SuggestResponse(BaseModel):
+    # Declared BEFORE suggestions deliberately: forced tool-use fills schema fields
+    # in order, so committing to a language here first measurably steers the
+    # suggestions that follow - live-tested after plain "respond in English" prose
+    # elsewhere in the prompt proved unreliable (a neutral English scenario in
+    # "romantic" mode came back in French on 3/3 repeated attempts).
+    language: str = Field(
+        description="The language you detected the scenario is written in (e.g. 'English', "
+        "'Spanish') - or the explicitly requested language if one was given. Every "
+        "suggestion's label and text below must be written in this exact language."
+    )
     suggestions: list[Suggestion] = Field(min_length=3, max_length=3)
+
+    @field_validator("language", mode="before")
+    @classmethod
+    def _default_missing_language_to_english(cls, v: object) -> object:
+        return v or "English"
 
 
 class MemoryRecord(BaseModel):

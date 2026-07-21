@@ -24,6 +24,7 @@ from agents.prompts import (
     build_persona_user_prompt,
     build_rebuttal_user_prompt,
     build_synthesis_user_prompt,
+    resolve_response_language,
 )
 from llm_clients.base import LLMClient
 from models.schemas import (
@@ -32,6 +33,7 @@ from models.schemas import (
     ConversationContext,
     DebateEvent,
     MemoryRecord,
+    SupportedLanguage,
     SynthesisResult,
 )
 
@@ -70,11 +72,20 @@ class SwarmOrchestrator:
         self._memory_store = memory_store
 
     async def run_pipeline(
-        self, image_bytes: bytes, mime_type: str, contact_id: str | None
+        self,
+        image_bytes: bytes,
+        mime_type: str,
+        contact_id: str | None,
+        language: SupportedLanguage = "auto",
     ) -> AsyncIterator[DebateEvent]:
         yield DebateEvent(type="extraction_started")
         context = await self._extract_context(image_bytes, mime_type, contact_id)
         yield DebateEvent(type="extraction_done", payload=context.model_dump(mode="json"))
+
+        # Resolved once, after extraction sees the screenshot: an explicit user
+        # preference forces this language; "auto" follows whatever the screenshot's
+        # conversation is actually written in (falls back to English if undetected).
+        response_language = resolve_response_language(language, context.detected_language)
 
         memory: list[MemoryRecord] = []
         persona: str | None = None
@@ -83,7 +94,9 @@ class SwarmOrchestrator:
             persona = await self._memory_store.get_persona(contact_id)
 
         opinions: list[AgentOpinion] = []
-        async for event, opinion in self._run_debate_agents(context, memory, persona):
+        async for event, opinion in self._run_debate_agents(
+            context, memory, persona, response_language
+        ):
             yield event
             if opinion is not None:
                 opinions.append(opinion)
@@ -91,11 +104,11 @@ class SwarmOrchestrator:
         # Round 2: each agent reacts to the other takes, sequentially, so later
         # speakers can reference earlier replies - this is the visible "debate"
         # the client renders as a conversation feed.
-        async for event in self._run_rebuttal_round(context, opinions):
+        async for event in self._run_rebuttal_round(context, opinions, response_language):
             yield event
 
         yield DebateEvent(type="synthesis_started")
-        result = await self._synthesize(context, opinions, persona)
+        result = await self._synthesize(context, opinions, persona, response_language)
         yield DebateEvent(type="synthesis_done", payload=result.model_dump(mode="json"))
 
         if contact_id:
@@ -124,6 +137,7 @@ class SwarmOrchestrator:
         context: ConversationContext,
         memory: list[MemoryRecord],
         persona: str | None = None,
+        response_language: str = "English",
     ) -> AsyncIterator[tuple[DebateEvent, AgentOpinion | None]]:
         """Runs Arthur, Clara, and Leo concurrently, streaming progress events as they land.
 
@@ -136,7 +150,7 @@ class SwarmOrchestrator:
 
         async def run_one(agent_name: AgentName, system_prompt: str) -> AgentOpinion:
             await queue.put(DebateEvent(type="agent_started", agent=agent_name))
-            user_prompt = build_debate_user_prompt(context, memory, persona)
+            user_prompt = build_debate_user_prompt(context, memory, persona, response_language)
             analysis = await self._debate_client.complete_text(system_prompt, user_prompt)
             opinion = AgentOpinion(
                 agent=agent_name,
@@ -168,11 +182,16 @@ class SwarmOrchestrator:
         await gather_task  # already complete; surfaces exceptions if any agent raised
 
     async def _run_rebuttal_round(
-        self, context: ConversationContext, opinions: list[AgentOpinion]
+        self,
+        context: ConversationContext,
+        opinions: list[AgentOpinion],
+        response_language: str = "English",
     ) -> AsyncIterator[DebateEvent]:
         prior_replies: list[tuple[str, str]] = []
         for agent_name, system_prompt in _DEBATE_AGENTS:
-            user_prompt = build_rebuttal_user_prompt(context, opinions, prior_replies, agent_name)
+            user_prompt = build_rebuttal_user_prompt(
+                context, opinions, prior_replies, agent_name, response_language
+            )
             text = await self._debate_client.complete_text(system_prompt, user_prompt)
             prior_replies.append((agent_name, text))
             yield DebateEvent(type="agent_reply", agent=agent_name, payload={"text": text})
@@ -182,8 +201,9 @@ class SwarmOrchestrator:
         context: ConversationContext,
         opinions: list[AgentOpinion],
         persona: str | None = None,
+        response_language: str = "English",
     ) -> SynthesisResult:
-        user_prompt = build_synthesis_user_prompt(context, opinions, persona)
+        user_prompt = build_synthesis_user_prompt(context, opinions, persona, response_language)
         schema = SynthesisResult.model_json_schema()
         data = await self._vision_client.complete_json(SYNTHESIZER_SYSTEM_PROMPT, user_prompt, schema)
         return SynthesisResult.model_validate(data)

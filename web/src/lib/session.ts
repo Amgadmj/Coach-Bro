@@ -3,44 +3,29 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import type { LanguageCode } from "./i18n";
 import type { SocialMode } from "./types";
 
-export const MODES: Record<
-  SocialMode,
-  { name: string; desc: string; img: string; buttonLabel: string }
-> = {
-  hype: {
-    name: "Hype",
-    desc: "Big energy, loud room.",
-    img: "/mascots/mascot-hype.png",
-    buttonLabel: "Lock in Hype",
-  },
-  chill: {
-    name: "Chill",
-    desc: "Low-key, easy pace.",
-    img: "/mascots/mascot-chill.png",
-    buttonLabel: "Lock in Chill",
-  },
-  romantic: {
-    name: "Romantic",
-    desc: "Slow down, one-on-one.",
-    img: "/mascots/mascot-romantic.png",
-    buttonLabel: "Lock in Romantic",
-  },
-  direct: {
-    name: "Direct",
-    desc: "No games, say the thing.",
-    img: "/mascots/mascot-direct.png",
-    buttonLabel: "Lock in Direct",
-  },
+/** Language-independent assets only - names/descriptions live in i18n.ts
+ * (translations.<lang>.modes.<mode>) so they translate with the rest of the app. */
+export const MODE_IMAGES: Record<SocialMode, string> = {
+  hype: "/mascots/mascot-hype.png",
+  chill: "/mascots/mascot-chill.png",
+  romantic: "/mascots/mascot-romantic.png",
+  direct: "/mascots/mascot-direct.png",
 };
 
 interface SessionState {
   mode: SocialMode;
   /** Whether the once-per-session Vibe Check-in sheet has been answered. */
   modeLocked: boolean;
+  /** Drives both the UI chrome's language and the AI response-language override
+   * sent to the backend (see lib/api.ts). "auto" = English UI, AI matches the
+   * screenshot's own language. */
+  language: LanguageCode;
   setMode: (mode: SocialMode) => void;
   lockMode: (mode: SocialMode) => void;
+  setLanguage: (language: LanguageCode) => void;
 }
 
 export const useSession = create<SessionState>()(
@@ -48,8 +33,10 @@ export const useSession = create<SessionState>()(
     (set) => ({
       mode: "hype",
       modeLocked: false,
+      language: "auto",
       setMode: (mode) => set({ mode }),
       lockMode: (mode) => set({ mode, modeLocked: true }),
+      setLanguage: (language) => set({ language }),
     }),
     { name: "bro-coach-session" },
   ),

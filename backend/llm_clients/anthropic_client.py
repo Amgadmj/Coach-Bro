@@ -26,11 +26,15 @@ Look at this chat screenshot. Extract every message in order as structured data:
 - sender: "user" if the bubble is the phone owner's own outgoing message (usually right-aligned \
 / blue/dark bubble), "match" if it's the other person's incoming message (usually left-aligned \
 / grey/light bubble).
-- text: the exact message text.
+- text: the exact message text, transcribed verbatim in its ORIGINAL language and script - \
+never translate it here, this is a literal transcription step.
 - timestamp: if visible, else omit.
 - bubble_color: the visible bubble color/style if distinguishable, else omit.
 - response_lag_seconds: estimated seconds since the prior message if a time gap is visible \
 (e.g. "2 hours ago" between bubbles), else omit.
+- detected_language: the specific language (and dialect/region if identifiable, e.g. "Mexican \
+Spanish", "Egyptian Arabic") the conversation is actually written in. Judge this from the message \
+text itself, not the phone's UI chrome. If the conversation mixes languages, name the dominant one.
 
 Call the record_conversation tool with the extracted data.
 """
