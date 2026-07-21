@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "RESET AI",
+    "slug": "reset-ai",
+    "scheme": "resetai",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-router"],
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "RESET AI needs access to your photos so you can upload a chat screenshot to analyze."
+      }
+    },
+    "android": {
+      "permissions": ["READ_EXTERNAL_STORAGE"]
+    }
+  }
+}
