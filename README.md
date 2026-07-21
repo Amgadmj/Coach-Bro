@@ -61,7 +61,8 @@ Full architecture, diagrams, and data model: [`docs/architecture.md`](docs/archi
 
 ```
 backend/    FastAPI service — vision extraction, the swarm orchestrator, the SSE API, pgvector memory
-mobile/     Expo app — upload, live debate reveal, results, contact history, story-card export
+web/        Next.js app (Dusk design system) — dashboard, live reads, debate reveal, results, recap
+mobile/     Expo app — the earlier native client; superseded by web/ as the active frontend
 docs/       Architecture, behavioral/UX design docs, and the two UI design specs
 ```
 
@@ -105,8 +106,9 @@ More detail in [`backend/README.md`](backend/README.md) and [`mobile/README.md`]
 - ✅ The FastAPI backend streams live debate events over SSE
 - ✅ The mobile app is a working Expo project (typechecked, dependencies resolved) covering the whole user flow
 - ✅ Two complete UI design directions written up for review — see [Design, in progress](#design-in-progress)
+- ✅ The Dusk direction is now implemented as a Next.js web app (`web/`) wired to the backend — live SSE debate, scenario openers, contacts; see [`web/README.md`](web/README.md)
 - ⏳ Real LLM provider calls (Anthropic/Groq/Gemini) and a live Supabase database are wired with working code but need real API keys to activate — see `.env.example` in `backend/`
-- ⏳ A design direction hasn't been picked yet — no Next.js/production frontend code exists
+- ⏳ Recap/Playbook/Profile still run on demo data — no backend for them yet
 - ⏳ Not yet deployed to an app store or a hosted backend
 
 For engineering ground rules and decisions behind this scaffold (why no LangChain, the content/safety boundary, model routing), see [`CLAUDE.md`](CLAUDE.md).

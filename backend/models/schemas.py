@@ -71,6 +71,23 @@ class AnalyzeResponse(BaseModel):
     result: SynthesisResult
 
 
+SocialMode = Literal["hype", "chill", "romantic", "direct"]
+
+
+class SuggestRequest(BaseModel):
+    scenario: str = Field(min_length=1, max_length=2000)
+    mode: SocialMode = "hype"
+
+
+class Suggestion(BaseModel):
+    label: str
+    text: str
+
+
+class SuggestResponse(BaseModel):
+    suggestions: list[Suggestion] = Field(min_length=3, max_length=3)
+
+
 class MemoryRecord(BaseModel):
     contact_id: str
     session_id: str | None = None

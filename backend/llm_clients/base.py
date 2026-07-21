@@ -54,6 +54,14 @@ class MockLLMClient:
 
     async def complete_json(self, system: str, user: str, json_schema: dict[str, Any]) -> dict[str, Any]:
         await asyncio.sleep(self._latency_seconds)
+        if "suggestions" in json_schema.get("properties", {}):
+            return {
+                "suggestions": [
+                    {"label": "Be bold", "text": "What's the craziest thing you've done tonight?"},
+                    {"label": "Playful tease", "text": "You look like trouble, in a good way."},
+                    {"label": "Direct", "text": "I'm glad I came over to talk to you."},
+                ]
+            }
         return {
             "attraction_level": 7,
             "dynamic_analysis": (

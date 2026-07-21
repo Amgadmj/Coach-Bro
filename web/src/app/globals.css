@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dusk system v2.1 tokens - single source: docs/design/design.md.
+   --mode* is the session's Social Mode tint, set by ModeProvider. */
+:root {
+  --ground: #fbf3ec;
+  --ground2: #f6e8df;
+  --ink: #2a1e26;
+  --ink2: #6e5c68;
+  --ink3: #a0909a;
+  --hairline: rgba(42, 30, 38, 0.14);
+  --accent: #e24e71;
+  --accent-soft: #fce7ec;
+  --accent-deep: #b93359;
+  --accent-glow: rgba(226, 78, 113, 0.32);
+  --hype: #de8a1e;
+  --hype-soft: #fbeed8;
+  --hype-deep: #b96e12;
+  --chill: #1f8c7f;
+  --chill-soft: #e1f3ef;
+  --chill-deep: #14685e;
+  --romantic: #e24e71;
+  --romantic-soft: #fce7ec;
+  --romantic-deep: #b93359;
+  --direct: #5b4b9c;
+  --direct-soft: #ebe7f6;
+  --direct-deep: #443875;
+  --arthur: #3b6ea5;
+  --clara: #9c4f8f;
+  --leo: #d6592f;
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-strong: rgba(255, 255, 255, 0.82);
+  --glass-line: rgba(255, 255, 255, 0.75);
+  --card-shadow: 0 1px 2px rgba(42, 20, 30, 0.08), 0 16px 36px rgba(196, 90, 110, 0.16);
+  --shadow-tint: rgba(196, 90, 110, 0.18);
+  --scrim: rgba(30, 18, 26, 0.34);
+  --page-bg: radial-gradient(120% 70% at 20% 0%, #fce2c7 0%, transparent 55%),
+    radial-gradient(120% 70% at 100% 10%, #f6c9d6 0%, transparent 55%),
+    linear-gradient(180deg, #fdf6ef 0%, #f8eae0 100%);
+  --mode: var(--hype);
+  --mode-soft: var(--hype-soft);
+  --mode-deep: var(--hype-deep);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #1c1420;
+    --ground2: #241b29;
+    --ink: #f5ece8;
+    --ink2: #c4b3be;
+    --ink3: #8e7c8a;
+    --hairline: rgba(255, 240, 245, 0.14);
+    --accent: #ff6e8e;
+    --accent-soft: #3a1f2a;
+    --accent-deep: #ff9ab0;
+    --accent-glow: rgba(255, 110, 142, 0.22);
+    --hype: #e8a544;
+    --hype-soft: #35291a;
+    --hype-deep: #8a5b14;
+    --chill: #46c4b3;
+    --chill-soft: #163330;
+    --chill-deep: #14685e;
+    --romantic: #ff6e8e;
+    --romantic-soft: #3a1f2a;
+    --romantic-deep: #b93359;
+    --direct: #9284d9;
+    --direct-soft: #241e3a;
+    --direct-deep: #443875;
+    --arthur: #7ca8de;
+    --clara: #d98bcb;
+    --leo: #eb8355;
+    --glass: rgba(44, 33, 44, 0.6);
+    --glass-strong: rgba(44, 33, 44, 0.85);
+    --glass-line: rgba(255, 255, 255, 0.12);
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 16px 36px rgba(0, 0, 0, 0.4);
+    --shadow-tint: rgba(0, 0, 0, 0.4);
+    --scrim: rgba(8, 4, 10, 0.5);
+    --page-bg: radial-gradient(120% 70% at 20% 0%, rgba(232, 165, 68, 0.13) 0%, transparent 55%),
+      radial-gradient(120% 70% at 100% 10%, rgba(255, 110, 142, 0.15) 0%, transparent 55%),
+      linear-gradient(180deg, #231927 0%, #1c1420 100%);
+  }
+}
+
+:root[data-theme="light"] {
+  --ground: #fbf3ec;
+  --ground2: #f6e8df;
+  --ink: #2a1e26;
+  --ink2: #6e5c68;
+  --ink3: #a0909a;
+  --hairline: rgba(42, 30, 38, 0.14);
+  --accent: #e24e71;
+  --accent-soft: #fce7ec;
+  --accent-deep: #b93359;
+  --accent-glow: rgba(226, 78, 113, 0.32);
+  --hype: #de8a1e;
+  --hype-soft: #fbeed8;
+  --hype-deep: #b96e12;
+  --chill: #1f8c7f;
+  --chill-soft: #e1f3ef;
+  --chill-deep: #14685e;
+  --romantic: #e24e71;
+  --romantic-soft: #fce7ec;
+  --romantic-deep: #b93359;
+  --direct: #5b4b9c;
+  --direct-soft: #ebe7f6;
+  --direct-deep: #443875;
+  --arthur: #3b6ea5;
+  --clara: #9c4f8f;
+  --leo: #d6592f;
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-strong: rgba(255, 255, 255, 0.82);
+  --glass-line: rgba(255, 255, 255, 0.75);
+  --card-shadow: 0 1px 2px rgba(42, 20, 30, 0.08), 0 16px 36px rgba(196, 90, 110, 0.16);
+  --shadow-tint: rgba(196, 90, 110, 0.18);
+  --scrim: rgba(30, 18, 26, 0.34);
+  --page-bg: radial-gradient(120% 70% at 20% 0%, #fce2c7 0%, transparent 55%),
+    radial-gradient(120% 70% at 100% 10%, #f6c9d6 0%, transparent 55%),
+    linear-gradient(180deg, #fdf6ef 0%, #f8eae0 100%);
+}
+
+:root[data-theme="dark"] {
+  --ground: #1c1420;
+  --ground2: #241b29;
+  --ink: #f5ece8;
+  --ink2: #c4b3be;
+  --ink3: #8e7c8a;
+  --hairline: rgba(255, 240, 245, 0.14);
+  --accent: #ff6e8e;
+  --accent-soft: #3a1f2a;
+  --accent-deep: #ff9ab0;
+  --accent-glow: rgba(255, 110, 142, 0.22);
+  --hype: #e8a544;
+  --hype-soft: #35291a;
+  --hype-deep: #8a5b14;
+  --chill: #46c4b3;
+  --chill-soft: #163330;
+  --chill-deep: #14685e;
+  --romantic: #ff6e8e;
+  --romantic-soft: #3a1f2a;
+  --romantic-deep: #b93359;
+  --direct: #9284d9;
+  --direct-soft: #241e3a;
+  --direct-deep: #443875;
+  --arthur: #7ca8de;
+  --clara: #d98bcb;
+  --leo: #eb8355;
+  --glass: rgba(44, 33, 44, 0.6);
+  --glass-strong: rgba(44, 33, 44, 0.85);
+  --glass-line: rgba(255, 255, 255, 0.12);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 16px 36px rgba(0, 0, 0, 0.4);
+  --shadow-tint: rgba(0, 0, 0, 0.4);
+  --scrim: rgba(8, 4, 10, 0.5);
+  --page-bg: radial-gradient(120% 70% at 20% 0%, rgba(232, 165, 68, 0.13) 0%, transparent 55%),
+    radial-gradient(120% 70% at 100% 10%, rgba(255, 110, 142, 0.15) 0%, transparent 55%),
+    linear-gradient(180deg, #231927 0%, #1c1420 100%);
+}
+
+body {
+  background: var(--page-bg);
+  background-attachment: fixed;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

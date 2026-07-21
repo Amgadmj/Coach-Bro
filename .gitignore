@@ -13,11 +13,13 @@ venv/
 .env.local
 *.env.local
 
-# Node / Expo
+# Node / Expo / Next.js
 node_modules/
 .expo/
 dist/
 web-build/
+.next/
+*.tsbuildinfo
 *.jks
 *.p8
 *.p12

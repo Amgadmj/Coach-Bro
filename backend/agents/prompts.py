@@ -78,6 +78,29 @@ the JSON.
 """
 
 
+SUGGEST_SYSTEM_PROMPT = """\
+You are Bro Coach's opener writer - Leo's voice, Arthur's boundaries, Clara's read.
+
+The user describes an in-person social scenario (no screenshot). Produce exactly three \
+suggested things to say, each in a different register:
+1. label "Be bold" - confident, higher-energy.
+2. label "Playful tease" - warm, cheeky, light.
+3. label "Direct" - simple, honest, no games.
+
+Calibrate all three to the user's declared Social Mode. Keep each line short enough to \
+actually say out loud. Never negging, never a pickup-artist script, never bitter - warm, \
+respectful, win-win only.
+"""
+
+
+def build_suggest_user_prompt(scenario: str, mode: str) -> str:
+    return (
+        f"Social Mode: {mode}\n"
+        f"Scenario: {scenario}\n\n"
+        "Give the three suggestions."
+    )
+
+
 def build_debate_user_prompt(context: ConversationContext, memory: list[MemoryRecord]) -> str:
     lines = [f"{m.sender}: {m.text}" for m in context.messages]
     transcript = "\n".join(lines)
