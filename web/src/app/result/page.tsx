@@ -2,14 +2,47 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { ClayButton, GhostButton } from "@/components/ClayButton";
+import { ExpandChevron, useExpandable } from "@/components/ExpandHint";
 import { Gauge } from "@/components/Gauge";
 import { GlassCard } from "@/components/GlassCard";
 import { TopBar } from "@/components/TopBar";
 import { useAnalysis } from "@/lib/analysis";
 import { useT } from "@/lib/i18n";
+
+function GaugeDetail({ summary, detail }: { summary: string; detail: string }) {
+  const { open, toggle, hoverHandlers } = useExpandable();
+  const t = useT();
+
+  return (
+    <button type="button" onClick={toggle} {...hoverHandlers} className="mt-2.5 w-full text-center">
+      <p className="text-[11px] font-medium text-ink2">{summary}</p>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <p className="mt-1.5 border-t border-hairline pt-1.5 text-[11px] leading-relaxed text-ink2">
+              {detail}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <ExpandChevron
+        open={open}
+        moreLabel={t("read.showMore")}
+        lessLabel={t("read.showLess")}
+        className="mt-1 flex items-center justify-center gap-1 text-[9px] font-bold text-ink3"
+      />
+    </button>
+  );
+}
 
 const AGENT_DOTS = [
   { initial: "A", colorVar: "var(--arthur)" },
@@ -83,11 +116,8 @@ export default function ResultScreen() {
         transition={{ type: "spring", stiffness: 200, damping: 18 }}
       >
         <GlassCard className="mt-3.5 p-4">
-          <Gauge
-            value={result.attraction_level * 10}
-            label={t("result.attractionGauge")}
-            caption={result.dynamic_analysis}
-          />
+          <Gauge value={result.attraction_level * 10} label={t("result.attractionGauge")} />
+          <GaugeDetail summary={result.dynamic_summary} detail={result.dynamic_analysis} />
         </GlassCard>
       </motion.div>
 

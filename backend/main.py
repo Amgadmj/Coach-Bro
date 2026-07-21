@@ -115,11 +115,12 @@ async def suggest(request: SuggestRequest) -> SuggestResponse:
     # on its own - live-testing showed a self-referential "detect and match the
     # language below" instruction is unreliable and can misfire to a third language.
     response_language = None if request.language == "auto" else LANGUAGE_NAMES[request.language]
+    user_style = await get_memory_store().get_user_style()
 
     vision_client, _ = _build_llm_clients()
     data = await vision_client.complete_json(
         SUGGEST_SYSTEM_PROMPT,
-        build_suggest_user_prompt(request.scenario, request.mode, response_language),
+        build_suggest_user_prompt(request.scenario, request.mode, response_language, user_style),
         SuggestResponse.model_json_schema(),
     )
     return SuggestResponse.model_validate(data)

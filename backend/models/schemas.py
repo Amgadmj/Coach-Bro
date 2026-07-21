@@ -10,6 +10,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from text_utils import cap_sentences
+
 AgentName = Literal["arthur", "clara", "leo"]
 
 # "auto" = match whatever language the screenshot/scenario is actually in
@@ -65,11 +67,24 @@ class AlternativeResponses(BaseModel):
 
 class SynthesisResult(BaseModel):
     attraction_level: int = Field(ge=1, le=10)
-    dynamic_analysis: str
+    # One short punchy sentence - always visible under the Attraction Gauge.
+    # Declared before dynamic_analysis so forced tool-use commits to the
+    # headline first, same ordering trick used for SuggestResponse.language.
+    dynamic_summary: str = Field(
+        description="ONE short punchy sentence (under 90 characters) - the headline verdict "
+        "shown under the gauge. Never restated inside dynamic_analysis."
+    )
+    dynamic_analysis: str = Field(
+        description="2-3 sentences of supporting detail, shown only if the user taps to "
+        "expand - do not repeat dynamic_summary verbatim."
+    )
     what_she_is_thinking: list[str]
     best_response: str
     alternative_responses: AlternativeResponses
-    coaching_lesson: str
+    coaching_lesson: str = Field(
+        description="2-3 sentences, phrased in the USER's own texting voice/register (see "
+        "the user voice profile in the prompt, if provided) - not generic coaching-speak."
+    )
 
     @field_validator("what_she_is_thinking", mode="before")
     @classmethod
@@ -80,6 +95,24 @@ class SynthesisResult(BaseModel):
         if isinstance(v, str):
             return [v]
         return v
+
+    # Defensive caps, same rationale as the debate room's headline/detail split:
+    # prompt-only length instructions have proven unreliable across providers in
+    # live testing, so these run regardless of what the model actually returned.
+    @field_validator("dynamic_summary", mode="after")
+    @classmethod
+    def _cap_summary(cls, v: str) -> str:
+        return cap_sentences(v, max_sentences=1, max_chars=110)
+
+    @field_validator("dynamic_analysis", mode="after")
+    @classmethod
+    def _cap_analysis(cls, v: str) -> str:
+        return cap_sentences(v, max_sentences=3, max_chars=500)
+
+    @field_validator("coaching_lesson", mode="after")
+    @classmethod
+    def _cap_lesson(cls, v: str) -> str:
+        return cap_sentences(v, max_sentences=3, max_chars=400)
 
 
 class DebateEvent(BaseModel):

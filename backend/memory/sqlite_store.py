@@ -31,6 +31,12 @@ create table if not exists reads (
   created_at text not null
 );
 create index if not exists idx_reads_contact on reads(contact_id, created_at desc);
+-- Global (not per-contact): the app's own user's texting voice, learned from
+-- his "user"-sender messages across every read. Single-row table.
+create table if not exists user_style (
+  id integer primary key check (id = 1),
+  style text
+);
 """
 
 
@@ -121,6 +127,25 @@ class SQLiteMemoryStore:
             return row["read_count"] if row else 0
 
         return await asyncio.to_thread(work)
+
+    async def get_user_style(self) -> str | None:
+        def work() -> str | None:
+            with self._connect() as conn:
+                row = conn.execute("select style from user_style where id = 1").fetchone()
+            return row["style"] if row else None
+
+        return await asyncio.to_thread(work)
+
+    async def upsert_user_style(self, style: str) -> None:
+        def work() -> None:
+            with self._connect() as conn:
+                conn.execute(
+                    "insert into user_style (id, style) values (1, ?) "
+                    "on conflict(id) do update set style = excluded.style",
+                    (style,),
+                )
+
+        await asyncio.to_thread(work)
 
     async def list_contacts(self) -> list[ContactSummary]:
         def work() -> list[ContactSummary]:

@@ -118,6 +118,13 @@ rewrite it before including it.
 the JSON.
 6. what_she_is_thinking is always a JSON array of short strings (2-3 separate thoughts), even if \
 you only have one thought - never a single combined string.
+7. dynamic_summary is ONE short punchy sentence (under 90 characters) - the headline verdict, shown \
+by default. dynamic_analysis is 2-3 sentences of supporting detail, shown only if the user taps to \
+expand - it must add real information, never just restate dynamic_summary in longer words.
+8. coaching_lesson must be phrased in the USER's own voice, using the "How the user actually talks" \
+profile provided below if one is given: match his real register (casual/formal, slang, directness, \
+humor style) so it reads like a friend who talks like him giving advice, not a generic coaching \
+voice. If no profile is given yet, use Leo's warm-but-grounded default tone instead.
 """
 
 
@@ -144,7 +151,9 @@ respectful, win-win only.
 """
 
 
-def build_suggest_user_prompt(scenario: str, mode: str, language: str | None = None) -> str:
+def build_suggest_user_prompt(
+    scenario: str, mode: str, language: str | None = None, user_style: str | None = None
+) -> str:
     """`language=None` is the "auto" case (no screenshot to pre-detect from).
 
     Relies on `SuggestResponse.language` (see models/schemas.py) as the actual
@@ -155,11 +164,45 @@ def build_suggest_user_prompt(scenario: str, mode: str, language: str | None = N
     language in an ordered schema field before the suggestions measurably fixed it.
     """
     header = _language_header(language) if language else ""
+    style_block = f"How the user actually talks:\n{user_style}\n\n" if user_style else ""
     return (
-        header + f"Social Mode: {mode}\n"
+        header
+        + style_block
+        + f"Social Mode: {mode}\n"
         f"Scenario: {scenario}\n\n"
         "Detect the scenario's language and fill the `language` field with it before "
         "writing the suggestions, unless a language override is specified above."
+    )
+
+
+USER_STYLE_SYSTEM_PROMPT = """\
+You maintain Bro Coach's profile of the USER's OWN texting voice - not the match's, not \
+coaching advice, his actual real-world texting style - so future coaching can sound like \
+something he'd genuinely say and land in his own register instead of generic coaching-speak.
+
+Look ONLY at the messages explicitly labeled as his own below. Merge with the previous profile \
+rather than replacing it outright - keep what's still true, update what this new evidence shows.
+
+Capture, only where the evidence supports it:
+- Typical tone/register (casual vs formal, deadpan vs expressive, low-effort vs high-effort)
+- Slang, catchphrases, characteristic words, emoji/punctuation habits, capitalization habits
+- Typical message length and structure (one-liners? run-ons? questions?)
+- Sense of humor (dry, silly, sarcastic, wholesome, teasing...)
+- Language(s) and dialect he actually writes in
+
+Rules: under 150 words, plain prose, no judgment or critique of him - this is a voice reference \
+for drafting in his style, not a review of his texting. If the new messages are too few or too \
+generic to add anything, just return the previous profile unchanged. Return ONLY the profile text.
+"""
+
+
+def build_user_style_user_prompt(old_style: str | None, user_lines: list[str]) -> str:
+    transcript = "\n".join(f"him: {line}" for line in user_lines)
+    previous = old_style or "(no profile yet - this is the first evidence)"
+    return (
+        f"Previous voice profile:\n{previous}\n\n"
+        f"His messages in this new screenshot:\n{transcript}\n\n"
+        "Return the updated voice profile."
     )
 
 
@@ -201,6 +244,7 @@ def build_debate_user_prompt(
     context: ConversationContext,
     memory: list[MemoryRecord],
     persona: str | None = None,
+    user_style: str | None = None,
     language: str = "English",
 ) -> str:
     lines = [f"{m.sender}: {m.text}" for m in context.messages]
@@ -213,14 +257,18 @@ def build_debate_user_prompt(
         history_lines = [f"- {record.summary}" for record in memory]
         history_block = "\n".join(history_lines)
 
+    style_block = f"How the user actually talks:\n{user_style}\n\n" if user_style else ""
+
     return (
         _language_header(language)
         + f"Conversation so far:\n{transcript}\n\n"
         f"What we know about her from previous reads:\n{persona_block}\n\n"
         f"Recent read history:\n{history_block}\n\n"
+        f"{style_block}"
         "Give your analysis of this conversation from your specific role's perspective, "
         "using the persona to calibrate - reference inside jokes, known tests, and the "
-        "attraction trend where relevant."
+        "attraction trend where relevant. Leo: use the user's own voice profile (if given) "
+        "when drafting how he'd actually phrase things."
     )
 
 
@@ -261,6 +309,7 @@ def build_synthesis_user_prompt(
     context: ConversationContext,
     opinions: list[AgentOpinion],
     persona: str | None = None,
+    user_style: str | None = None,
     language: str = "English",
 ) -> str:
     lines = [f"{m.sender}: {m.text}" for m in context.messages]
@@ -270,15 +319,16 @@ def build_synthesis_user_prompt(
         f"--- {opinion.agent.title()}'s analysis ---\n{opinion.analysis}" for opinion in opinions
     )
 
-    persona_block = ""
-    if persona:
-        persona_block = f"Known persona for this contact:\n{persona}\n\n"
+    persona_block = f"Known persona for this contact:\n{persona}\n\n" if persona else ""
+    style_block = f"How the user actually talks:\n{user_style}\n\n" if user_style else ""
 
     return (
         _language_header(language)
         + f"Conversation:\n{transcript}\n\n"
         f"{persona_block}"
+        f"{style_block}"
         f"Debate:\n{opinion_blocks}\n\n"
         "Resolve these into the final JSON result. If the persona mentions inside jokes or "
-        "known tests, prefer responses that use them."
+        "known tests, prefer responses that use them. Phrase coaching_lesson in the user's "
+        "own voice per the profile above, if one was given."
     )

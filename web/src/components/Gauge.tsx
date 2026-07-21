@@ -3,8 +3,10 @@
 import { motion, useReducedMotion } from "framer-motion";
 
 /** 0-100 gauge with the tri-mode gradient fill. Backend's attraction_level is 1-10;
- * callers multiply by 10 (the design presents 0-100). */
-export function Gauge({ value, label, caption }: { value: number; label: string; caption?: string }) {
+ * callers multiply by 10 (the design presents 0-100). Caption/detail text lives in
+ * the caller now (see result/page.tsx's expandable summary) - Gauge just draws the
+ * number and the track. */
+export function Gauge({ value, label }: { value: number; label: string }) {
   const reduce = useReducedMotion();
   const clamped = Math.max(0, Math.min(100, value));
   return (
@@ -22,7 +24,6 @@ export function Gauge({ value, label, caption }: { value: number; label: string;
           transition={{ type: "spring", stiffness: 60, damping: 16 }}
         />
       </div>
-      {caption && <div className="mt-2 text-[11px] text-ink2">{caption}</div>}
     </div>
   );
 }

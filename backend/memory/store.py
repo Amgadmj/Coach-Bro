@@ -34,6 +34,12 @@ class NoOpMemoryStore:
     async def get_read_count(self, contact_id: str) -> int:
         return 0
 
+    async def get_user_style(self) -> str | None:
+        return None
+
+    async def upsert_user_style(self, style: str) -> None:
+        return None
+
     async def list_contacts(self) -> list[ContactSummary]:
         return []
 
@@ -130,6 +136,28 @@ class MemoryStore:
                     "select count(*) from memory_embeddings where contact_id = $1", contact_id
                 )
                 or 0
+            )
+        finally:
+            await conn.close()
+
+    async def get_user_style(self) -> str | None:
+        import asyncpg
+
+        conn = await asyncpg.connect(self._db_url)
+        try:
+            return await conn.fetchval("select style from user_style where id = 1")
+        finally:
+            await conn.close()
+
+    async def upsert_user_style(self, style: str) -> None:
+        import asyncpg
+
+        conn = await asyncpg.connect(self._db_url)
+        try:
+            await conn.execute(
+                "insert into user_style (id, style) values (1, $1) "
+                "on conflict (id) do update set style = excluded.style",
+                style,
             )
         finally:
             await conn.close()

@@ -66,6 +66,7 @@ class MockLLMClient:
             }
         return {
             "attraction_level": 7,
+            "dynamic_summary": "She's testing if you'll chase, not shutting things down.",
             "dynamic_analysis": (
                 "She's throwing a light compliance test ('depends what you're offering') "
                 "rather than shutting the conversation down. Engagement is genuine but she "
@@ -88,6 +89,16 @@ class MockLLMClient:
 
     async def complete_text(self, system: str, user: str) -> str:
         await asyncio.sleep(self._latency_seconds)
+        if "Previous voice profile:" in user:
+            first_read = "(no profile yet - this is the first evidence)" in user
+            return (
+                "Casual and warm, lowercase-heavy, likes short punchy lines over long "
+                "paragraphs. Leans playful/teasing rather than sincere-by-default; "
+                "comfortable with a bit of confident dryness."
+                if first_read
+                else "Casual and warm, lowercase-heavy, short punchy lines, playful/teasing "
+                "tone confirmed across multiple reads; comfortable with confident dryness."
+            )
         if "PERSONA UPDATE" in user:
             reads = 1 if "(first read - no persona yet)" in user else 2
             return (

@@ -38,7 +38,8 @@ export interface AlternativeResponses {
 
 export interface SynthesisResult {
   attraction_level: number; // 1-10
-  dynamic_analysis: string;
+  dynamic_summary: string; // one short sentence, always visible under the gauge
+  dynamic_analysis: string; // 2-3 sentences, shown only on expand
   what_she_is_thinking: string[];
   best_response: string;
   alternative_responses: AlternativeResponses;

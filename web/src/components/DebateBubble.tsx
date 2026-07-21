@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import type { DebateMessage } from "@/lib/analysis";
 import { useT } from "@/lib/i18n";
 import type { AgentName } from "@/lib/types";
 import { clsx } from "@/lib/clsx";
+import { ExpandChevron, useExpandable } from "./ExpandHint";
 
 export const AGENT_META: Record<AgentName, { name: string; colorVar: string }> = {
   arthur: { name: "Arthur", colorVar: "var(--arthur)" },
@@ -26,16 +26,6 @@ export function AgentAvatar({ agent, size = 32 }: { agent: AgentName; size?: num
   );
 }
 
-/** True only for a real mouse/trackpad - guards against mobile Safari's sticky
- * synthetic hover on tap, which would otherwise leave a bubble stuck open. */
-function useCanHover() {
-  const [canHover, setCanHover] = useState(false);
-  useEffect(() => {
-    setCanHover(window.matchMedia("(hover: hover) and (pointer: fine)").matches);
-  }, []);
-  return canHover;
-}
-
 export function DebateBubble({
   message,
   side,
@@ -43,23 +33,20 @@ export function DebateBubble({
   message: DebateMessage;
   side: "left" | "right";
 }) {
-  const [pinned, setPinned] = useState(false);
-  const [hovering, setHovering] = useState(false);
-  const canHover = useCanHover();
+  const { open, toggle, hoverHandlers } = useExpandable();
   const t = useT();
 
   const meta = AGENT_META[message.agent];
   const expandable = message.kind === "take" && message.detail.length > 0;
-  const open = expandable && (pinned || hovering);
+  const isOpen = expandable && open;
 
   return (
     <div className={clsx("flex items-end gap-2", side === "right" && "flex-row-reverse")}>
       <AgentAvatar agent={message.agent} />
       <button
         type="button"
-        onClick={() => expandable && setPinned((p) => !p)}
-        onMouseEnter={() => canHover && setHovering(true)}
-        onMouseLeave={() => canHover && setHovering(false)}
+        onClick={() => expandable && toggle()}
+        {...hoverHandlers}
         className={clsx(
           "max-w-[78%] rounded-2xl border border-glass-line bg-glass px-3.5 py-2.5 text-start shadow-card transition-colors",
           side === "left" ? "rounded-bl-md" : "rounded-br-md",
@@ -81,7 +68,7 @@ export function DebateBubble({
         {expandable && (
           <>
             <AnimatePresence initial={false}>
-              {open && (
+              {isOpen && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
@@ -95,25 +82,7 @@ export function DebateBubble({
                 </motion.div>
               )}
             </AnimatePresence>
-            <div className="mt-1 flex items-center gap-1 text-[9px] font-bold text-ink3">
-              <motion.svg
-                width="8"
-                height="8"
-                viewBox="0 0 8 8"
-                animate={{ rotate: open ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <path
-                  d="M1 2 L4 6 L7 2"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </motion.svg>
-              {open ? t("read.showLess") : t("read.showMore")}
-            </div>
+            <ExpandChevron open={isOpen} moreLabel={t("read.showMore")} lessLabel={t("read.showLess")} />
           </>
         )}
       </button>

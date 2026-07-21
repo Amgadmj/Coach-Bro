@@ -11,11 +11,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
 from collections.abc import AsyncIterator
 from typing import Protocol
-
-logger = logging.getLogger(__name__)
 
 from agents.prompts import (
     ARTHUR_SYSTEM_PROMPT,
@@ -23,10 +20,12 @@ from agents.prompts import (
     LEO_SYSTEM_PROMPT,
     PERSONA_SYSTEM_PROMPT,
     SYNTHESIZER_SYSTEM_PROMPT,
+    USER_STYLE_SYSTEM_PROMPT,
     build_debate_user_prompt,
     build_persona_user_prompt,
     build_rebuttal_user_prompt,
     build_synthesis_user_prompt,
+    build_user_style_user_prompt,
     resolve_response_language,
 )
 from llm_clients.base import LLMClient
@@ -39,6 +38,9 @@ from models.schemas import (
     SupportedLanguage,
     SynthesisResult,
 )
+from text_utils import cap_sentences, split_headline_and_detail
+
+logger = logging.getLogger(__name__)
 
 _DEBATE_AGENTS: tuple[tuple[AgentName, str], ...] = (
     ("arthur", ARTHUR_SYSTEM_PROMPT),
@@ -61,6 +63,12 @@ class MemoryStoreProtocol(Protocol):
     async def upsert_persona(self, contact_id: str, persona: str) -> None: ...
 
     async def get_read_count(self, contact_id: str) -> int: ...
+
+    # Global (not per-contact): the app's own user's texting voice, learned from
+    # his "user"-sender messages across every read regardless of which contact.
+    async def get_user_style(self) -> str | None: ...
+
+    async def upsert_user_style(self, style: str) -> None: ...
 
 
 class SwarmOrchestrator:
@@ -103,9 +111,14 @@ class SwarmOrchestrator:
                 memory = await self._memory_store.get_contact_history(contact_id)
                 persona = await self._memory_store.get_persona(contact_id)
 
+            # Global, independent of contact_id: how the app's own user actually
+            # talks, so drafted replies sound like him and the coaching lesson
+            # lands in his own register instead of generic coaching-speak.
+            user_style = await self._memory_store.get_user_style()
+
             opinions: list[AgentOpinion] = []
             async for event, opinion in self._run_debate_agents(
-                context, memory, persona, response_language
+                context, memory, persona, user_style, response_language
             ):
                 yield event
                 if opinion is not None:
@@ -118,8 +131,14 @@ class SwarmOrchestrator:
                 yield event
 
             yield DebateEvent(type="synthesis_started")
-            result = await self._synthesize(context, opinions, persona, response_language)
+            result = await self._synthesize(context, opinions, persona, user_style, response_language)
             yield DebateEvent(type="synthesis_done", payload=result.model_dump(mode="json"))
+
+            # Learn the user's own voice from whatever he actually sent in this
+            # screenshot - unconditional on contact_id, since this is about him,
+            # not about any particular match. Skips the LLM call entirely if this
+            # screenshot had no "user"-sender messages (nothing new to learn).
+            await self._update_user_style(context)
 
             if contact_id:
                 await self._memory_store.upsert_interaction(contact_id, result)
@@ -153,6 +172,7 @@ class SwarmOrchestrator:
         context: ConversationContext,
         memory: list[MemoryRecord],
         persona: str | None = None,
+        user_style: str | None = None,
         response_language: str = "English",
     ) -> AsyncIterator[tuple[DebateEvent, AgentOpinion | None]]:
         """Runs Arthur, Clara, and Leo concurrently, streaming progress events as they land.
@@ -166,9 +186,11 @@ class SwarmOrchestrator:
 
         async def run_one(agent_name: AgentName, system_prompt: str) -> AgentOpinion:
             await queue.put(DebateEvent(type="agent_started", agent=agent_name))
-            user_prompt = build_debate_user_prompt(context, memory, persona, response_language)
+            user_prompt = build_debate_user_prompt(
+                context, memory, persona, user_style, response_language
+            )
             raw = await self._debate_client.complete_text(system_prompt, user_prompt)
-            headline, detail = _split_headline_and_detail(raw)
+            headline, detail = split_headline_and_detail(raw)
             opinion = AgentOpinion(agent=agent_name, headline=headline, analysis=detail)
             await queue.put(DebateEvent(type="agent_done", agent=agent_name, payload=opinion.model_dump(mode="json")))
             return opinion
@@ -215,7 +237,7 @@ class SwarmOrchestrator:
                 context, opinions, prior_replies, agent_name, response_language
             )
             raw = await self._debate_client.complete_text(system_prompt, user_prompt)
-            text = _cap_sentences(raw, max_sentences=1, max_chars=220)
+            text = cap_sentences(raw, max_sentences=1, max_chars=220)
             prior_replies.append((agent_name, text))
             yield DebateEvent(type="agent_reply", agent=agent_name, payload={"text": text})
 
@@ -224,9 +246,12 @@ class SwarmOrchestrator:
         context: ConversationContext,
         opinions: list[AgentOpinion],
         persona: str | None = None,
+        user_style: str | None = None,
         response_language: str = "English",
     ) -> SynthesisResult:
-        user_prompt = build_synthesis_user_prompt(context, opinions, persona, response_language)
+        user_prompt = build_synthesis_user_prompt(
+            context, opinions, persona, user_style, response_language
+        )
         schema = SynthesisResult.model_json_schema()
         data = await self._vision_client.complete_json(SYNTHESIZER_SYSTEM_PROMPT, user_prompt, schema)
         return SynthesisResult.model_validate(data)
@@ -254,51 +279,24 @@ class SwarmOrchestrator:
         await self._memory_store.upsert_persona(contact_id, persona)
         return persona
 
+    async def _update_user_style(self, context: ConversationContext) -> None:
+        """Distills the user's own texting voice from his "user"-sender messages
+        in this screenshot, merged with whatever was already known. Global, not
+        per-contact - the same profile is used no matter which match this was.
 
-_HEADLINE_RE = re.compile(r"^\s*headline\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
+        This is also how "iterations on our suggestions" get learned, without any
+        special diffing logic: whatever he actually ends up sending - whether it's
+        our best_response verbatim or something he rewrote in his own words - just
+        shows up as his next "user" message the next time a screenshot of that
+        conversation is uploaded, and folds into the profile like any other read.
+        """
+        user_lines = [m.text for m in context.messages if m.sender == "user"]
+        if not user_lines:
+            return  # nothing new to learn from this screenshot
 
-
-def _split_sentences(text: str) -> list[str]:
-    return [s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()]
-
-
-def _truncate(text: str, max_chars: int) -> str:
-    text = text.strip()
-    if len(text) <= max_chars:
-        return text
-    return text[: max_chars - 1].rstrip() + "…"
-
-
-def _split_headline_and_detail(
-    raw: str, max_detail_sentences: int = 3, max_headline_chars: int = 90
-) -> tuple[str, str]:
-    """Parses the agent's `HEADLINE: ...` + detail format (see
-    agents/prompts.py::_CHAT_OUTPUT_FORMAT) into a short always-visible headline
-    and a capped expandable detail.
-
-    Must never simply trust the prompt was followed: live testing has produced
-    multi-paragraph essays from real providers despite an explicit strict format
-    and a hard sentence limit. Both branches below cap detail length in code, so
-    a debate bubble can never balloon into a wall of text regardless of what the
-    model actually returned.
-    """
-    match = _HEADLINE_RE.search(raw)
-    if match:
-        headline = _truncate(match.group(1), max_headline_chars)
-        detail_source = raw[match.end() :].strip()
-    else:
-        sentences = _split_sentences(raw)
-        headline = _truncate(sentences[0], max_headline_chars) if sentences else _truncate(raw, max_headline_chars)
-        detail_source = raw
-
-    detail_sentences = _split_sentences(detail_source)[:max_detail_sentences]
-    detail = " ".join(detail_sentences) if detail_sentences else headline
-    return headline, detail
-
-
-def _cap_sentences(text: str, max_sentences: int = 1, max_chars: int = 220) -> str:
-    """Defensive cap for rebuttal replies, which should already be one short
-    sentence by prompt instruction but aren't always in practice."""
-    sentences = _split_sentences(text)[:max_sentences]
-    capped = " ".join(sentences) if sentences else text.strip()
-    return _truncate(capped, max_chars)
+        old_style = await self._memory_store.get_user_style()
+        updated_style = await self._vision_client.complete_text(
+            USER_STYLE_SYSTEM_PROMPT,
+            build_user_style_user_prompt(old_style, user_lines),
+        )
+        await self._memory_store.upsert_user_style(updated_style)
