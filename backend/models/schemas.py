@@ -54,12 +54,16 @@ class Message(BaseModel):
 
 class ConversationContext(BaseModel):
     contact_id: str | None = None
-    messages: list[Message]
-    extracted_at: datetime
+    # Declared before `messages` so forced tool-use commits to it first, as a
+    # cheap early decision - the same ordering trick used for
+    # SynthesisResult.dynamic_summary and SuggestResponse.language. Seen live:
+    # placed after a long `messages` array, the model would just skip it.
     # Free-text language name as the model identifies it (e.g. "Spanish", "Egyptian
     # Arabic") - not restricted to SupportedLanguage, since detection can be more
     # specific than the fixed override list. None if the model couldn't tell.
     detected_language: str | None = None
+    messages: list[Message]
+    extracted_at: datetime
 
 
 class AgentOpinion(BaseModel):

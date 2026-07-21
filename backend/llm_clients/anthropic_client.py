@@ -27,8 +27,14 @@ EXTRACTION_MAX_TOKENS = 4096
 
 EXTRACTION_PROMPT = """\
 Look at the attached chat screenshot(s) - there may be one or several, e.g. because the user \
-scrolled up to capture more of the conversation. Extract every message as ONE single, \
-chronologically ordered list:
+scrolled up to capture more of the conversation.
+
+First, fill detected_language: the specific language (and dialect/region if identifiable, e.g. \
+"Mexican Spanish", "Egyptian Arabic") the conversation is actually written in, judged from the \
+message text itself, not the phone's UI chrome. If the conversation mixes languages, name the \
+dominant one. Always fill this - never skip it, even if it feels obvious.
+
+Then extract every message as ONE single, chronologically ordered list:
 
 - If there is more than one screenshot, merge them into a single conversation. They are NOT \
 necessarily attached in chronological order - use the actual conversation flow, visible \
@@ -59,9 +65,6 @@ these as a small emoji badge overlapping the corner of the bubble (heart, thumbs
 !!, ?); WhatsApp/Instagram/etc show a small emoji chip below or beside the bubble. List every \
 reacted emoji exactly as shown, e.g. ["❤️"] or ["😂", "👍"]. Empty list if none. Do not confuse \
 these with emoji typed as part of the message text itself.
-- detected_language: the specific language (and dialect/region if identifiable, e.g. "Mexican \
-Spanish", "Egyptian Arabic") the conversation is actually written in. Judge this from the message \
-text itself, not the phone's UI chrome. If the conversation mixes languages, name the dominant one.
 
 Call the record_conversation tool with the extracted data.
 """
