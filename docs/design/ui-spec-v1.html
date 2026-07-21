@@ -1,0 +1,774 @@
+<title>RESET AI — Mobile UI Design Spec</title>
+<style>
+  :root {
+    --ground: #FFFFFF;
+    --ground-2: #F7F6F6;
+    --ground-3: #F1EFEF;
+    --ink: #222222;
+    --ink-2: #6A6768;
+    --ink-3: #9C989A;
+    --hairline: #E8E5E6;
+    --accent: #FF385C;
+    --accent-soft: #FFF0F3;
+    --accent-deep: #D70043;
+    --arthur: #008489;
+    --arthur-soft: #E6F4F4;
+    --clara: #8C2F63;
+    --clara-soft: #F6EAF1;
+    --leo: #E4571F;
+    --leo-soft: #FCEEE7;
+    --card-shadow: 0 1px 2px rgba(34,34,34,.06), 0 6px 20px rgba(34,34,34,.07);
+    --wf-fill: #ECEAEB;
+    --wf-line: #C9C5C7;
+    --sans: "Avenir Next", "Futura", "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: "SF Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #191517;
+      --ground-2: #211C1E;
+      --ground-3: #2A2427;
+      --ink: #F3EFF1;
+      --ink-2: #B4ADB0;
+      --ink-3: #837C7F;
+      --hairline: #362F32;
+      --accent: #FF5A78;
+      --accent-soft: #352227;
+      --accent-deep: #FF89A0;
+      --arthur: #35B8BD;
+      --arthur-soft: #12292B;
+      --clara: #D06AA4;
+      --clara-soft: #301F2A;
+      --leo: #F0824D;
+      --leo-soft: #33231B;
+      --card-shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35);
+      --wf-fill: #2A2427;
+      --wf-line: #4A4245;
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #FFFFFF; --ground-2: #F7F6F6; --ground-3: #F1EFEF;
+    --ink: #222222; --ink-2: #6A6768; --ink-3: #9C989A; --hairline: #E8E5E6;
+    --accent: #FF385C; --accent-soft: #FFF0F3; --accent-deep: #D70043;
+    --arthur: #008489; --arthur-soft: #E6F4F4;
+    --clara: #8C2F63; --clara-soft: #F6EAF1;
+    --leo: #E4571F; --leo-soft: #FCEEE7;
+    --card-shadow: 0 1px 2px rgba(34,34,34,.06), 0 6px 20px rgba(34,34,34,.07);
+    --wf-fill: #ECEAEB; --wf-line: #C9C5C7;
+  }
+  :root[data-theme="dark"] {
+    --ground: #191517; --ground-2: #211C1E; --ground-3: #2A2427;
+    --ink: #F3EFF1; --ink-2: #B4ADB0; --ink-3: #837C7F; --hairline: #362F32;
+    --accent: #FF5A78; --accent-soft: #352227; --accent-deep: #FF89A0;
+    --arthur: #35B8BD; --arthur-soft: #12292B;
+    --clara: #D06AA4; --clara-soft: #301F2A;
+    --leo: #F0824D; --leo-soft: #33231B;
+    --card-shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35);
+    --wf-fill: #2A2427; --wf-line: #4A4245;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 32px; }
+  a { color: var(--accent-deep); }
+
+  /* ---------- document typography ---------- */
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--accent-deep); font-weight: 600;
+  }
+  h1 { font-size: clamp(34px, 5vw, 52px); line-height: 1.08; letter-spacing: -0.02em; font-weight: 700; margin: 14px 0 18px; text-wrap: balance; }
+  h2 { font-size: 27px; letter-spacing: -0.015em; font-weight: 700; margin: 0 0 6px; text-wrap: balance; }
+  h3 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .lede { font-size: 19px; color: var(--ink-2); max-width: 58ch; margin: 0; }
+  p { max-width: 68ch; }
+  section { padding: 56px 0; border-top: 1px solid var(--hairline); }
+  .section-head { margin-bottom: 34px; }
+  .section-head p { color: var(--ink-2); margin: 8px 0 0; }
+
+  /* ---------- hero ---------- */
+  header.hero { padding: 72px 0 56px; }
+  .hero-grid { display: flex; gap: 48px; align-items: center; flex-wrap: wrap; }
+  .hero-copy { flex: 1 1 420px; min-width: 300px; }
+  .hero-meta { display: flex; gap: 24px; margin-top: 28px; flex-wrap: wrap; }
+  .hero-meta div { font-size: 13px; color: var(--ink-2); }
+  .hero-meta b { display: block; color: var(--ink); font-size: 14px; }
+  .hero-swatchline { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 34px; max-width: 320px; }
+  .hero-swatchline i { flex: 1; }
+
+  /* ---------- principles ---------- */
+  .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px; }
+  .principle {
+    background: var(--ground-2); border: 1px solid var(--hairline);
+    border-radius: 16px; padding: 22px 22px 20px;
+  }
+  .principle .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; color: var(--ink-3); text-transform: uppercase; }
+  .principle h3 { margin-top: 8px; }
+  .principle p { font-size: 14px; color: var(--ink-2); margin: 6px 0 0; }
+
+  /* ---------- foundations ---------- */
+  .swatch-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+  .swatch { border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; background: var(--ground-2); }
+  .swatch .chip { height: 74px; }
+  .swatch .meta { padding: 10px 14px 12px; }
+  .swatch .meta b { display: block; font-size: 14px; }
+  .swatch .meta span { font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
+  .swatch .meta em { display: block; font-style: normal; font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+  .foundation-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; margin-top: 44px; }
+  .type-spec div { border-bottom: 1px solid var(--hairline); padding: 12px 0; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  .type-spec .sample { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .type-spec .note { font-family: var(--mono); font-size: 11px; color: var(--ink-3); flex-shrink: 0; }
+  .t-display { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; }
+  .t-title { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .t-head { font-size: 17px; font-weight: 600; }
+  .t-body { font-size: 15px; }
+  .t-caption { font-size: 13px; color: var(--ink-2); }
+  .t-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+
+  .shape-list { list-style: none; margin: 0; padding: 0; }
+  .shape-list li { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--hairline); font-size: 14px; align-items: center; }
+  .shape-list .k { font-family: var(--mono); font-size: 11px; color: var(--ink-3); width: 118px; flex-shrink: 0; }
+
+  table.spec { border-collapse: collapse; width: 100%; font-size: 14px; }
+  table.spec th { text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; padding: 8px 14px 8px 0; border-bottom: 1px solid var(--hairline); }
+  table.spec td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  table.spec td:first-child { font-weight: 600; white-space: nowrap; }
+  table.spec code { font-family: var(--mono); font-size: 12px; background: var(--ground-3); padding: 1px 6px; border-radius: 5px; }
+  .table-scroll { overflow-x: auto; }
+
+  /* ---------- flow ---------- */
+  .flow { display: flex; gap: 0; align-items: stretch; overflow-x: auto; padding: 8px 0 16px; }
+  .flow-node { background: var(--ground-2); border: 1px solid var(--hairline); border-radius: 14px; padding: 16px 18px; min-width: 168px; flex-shrink: 0; }
+  .flow-node b { display: block; font-size: 15px; }
+  .flow-node span { font-size: 12.5px; color: var(--ink-2); display: block; margin-top: 3px; line-height: 1.45; }
+  .flow-node .stage { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-deep); }
+  .flow-arrow { align-self: center; padding: 0 10px; color: var(--ink-3); flex-shrink: 0; font-size: 18px; }
+  .flow-side { font-size: 13.5px; color: var(--ink-2); max-width: 62ch; }
+
+  /* ---------- phones ---------- */
+  .screens { display: flex; gap: 34px; flex-wrap: wrap; align-items: flex-start; }
+  .screen-block { flex: 1 1 300px; max-width: 330px; min-width: 280px; }
+  .screen-block .caption { margin-top: 16px; }
+  .screen-block .caption b { font-size: 15px; display: block; }
+  .screen-block .caption p { font-size: 13.5px; color: var(--ink-2); margin: 5px 0 0; }
+  .screen-block .caption .file { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+
+  .phone {
+    width: 100%; aspect-ratio: 320 / 660; border-radius: 34px;
+    border: 1px solid var(--hairline); box-shadow: var(--card-shadow);
+    overflow: hidden; position: relative;
+    /* app ships light-first — mockups are pinned to the light palette on purpose */
+    background: #FFFFFF; color: #222222;
+    font-size: 12px; line-height: 1.45;
+  }
+  .phone .status { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px 4px; font-size: 10.5px; font-weight: 600; color: #222; }
+  .phone .status .pill-notch { width: 64px; height: 16px; background: #111; border-radius: 9px; }
+  .phone .home-ind { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); width: 96px; height: 4px; border-radius: 2px; background: #D9D5D6; }
+  .p-pad { padding: 10px 18px 0; }
+
+  .p-navtitle { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  .p-sub { color: #6A6768; font-size: 11.5px; }
+  .p-card { background: #FFF; border: 1px solid #E8E5E6; border-radius: 14px; box-shadow: 0 1px 2px rgba(34,34,34,.05), 0 4px 14px rgba(34,34,34,.06); }
+  .p-btn { background: #FF385C; color: #FFF; font-weight: 600; text-align: center; border-radius: 12px; padding: 11px; font-size: 13px; }
+  .p-btn-ghost { border: 1px solid #C9C5C7; color: #222; font-weight: 600; text-align: center; border-radius: 12px; padding: 10px; font-size: 12.5px; background: #FFF; }
+  .p-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #E0DCDE; border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 500; background: #FFF; }
+  .p-label { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #9C989A; }
+
+  .p-tabbar { position: absolute; bottom: 14px; left: 0; right: 0; display: flex; justify-content: space-around; padding: 8px 30px 4px; border-top: 1px solid #EFECEC; background: #FFF; }
+  .p-tab { text-align: center; font-size: 9.5px; color: #9C989A; font-weight: 600; }
+  .p-tab.on { color: #FF385C; }
+  .p-tab .ic { display: block; width: 20px; height: 20px; margin: 0 auto 2px; border-radius: 6px; background: currentColor; opacity: .9;
+    -webkit-mask-size: cover; mask-size: cover; }
+
+  .avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFF; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+
+  /* skeleton */
+  .skel { background: linear-gradient(90deg, #EFECEC 25%, #F7F5F5 50%, #EFECEC 75%); background-size: 200% 100%; border-radius: 6px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .skel { animation: shimmer 1.6s infinite linear; }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  }
+
+  /* ---------- wireframes ---------- */
+  .wf { background: var(--ground-2); }
+  .wf-frame {
+    width: 100%; aspect-ratio: 320 / 620; border-radius: 22px;
+    border: 1.5px solid var(--wf-line); background: var(--ground);
+    padding: 14px; display: flex; flex-direction: column; gap: 8px; position: relative;
+    font-family: var(--mono); font-size: 9.5px; color: var(--ink-3); letter-spacing: .04em;
+  }
+  .wf-box { border: 1.5px dashed var(--wf-line); border-radius: 8px; background: var(--ground); display: flex; align-items: center; justify-content: center; text-align: center; padding: 6px; }
+  .wf-solid { background: var(--wf-fill); border: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 6px; color: var(--ink-2); }
+  .wf-bar { height: 8px; border-radius: 4px; background: var(--wf-fill); }
+  .wf-stage {
+    position: absolute; top: -11px; left: 14px; background: var(--accent); color: #FFF;
+    font-size: 9px; font-weight: 700; letter-spacing: .12em; padding: 2px 9px; border-radius: 999px;
+  }
+  .wf-note { font-size: 13px; color: var(--ink-2); }
+  .wf-note ul { margin: 6px 0 0; padding-left: 18px; }
+  .wf-note li { margin: 4px 0; }
+  .wf-note b { color: var(--ink); }
+
+  /* ---------- gauge ---------- */
+  .gauge-wrap { text-align: center; padding: 8px 0 0; }
+  .gauge-num { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+  .gauge-den { font-size: 12px; color: #9C989A; font-weight: 600; }
+
+  /* ---------- handoff ---------- */
+  .handoff { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+  .handoff .principle p { font-size: 13.5px; }
+  code.inline { font-family: var(--mono); font-size: 12.5px; background: var(--ground-3); padding: 1px 6px; border-radius: 5px; }
+
+  footer { padding: 40px 0 64px; border-top: 1px solid var(--hairline); color: var(--ink-3); font-size: 13px; }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 0 20px; }
+    section { padding: 40px 0; }
+  }
+</style>
+
+<div class="wrap">
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow">RESET AI · Design direction · v1</span>
+      <h1>Calm confidence, delivered like hospitality.</h1>
+      <p class="lede">The user arrives anxious about a text. Every surface borrows Airbnb's visual manners — warm white, one coral accent, soft-shadow cards, generous air — so the app feels like a trusted concierge, not a hype machine. The theater is saved for one moment: the debate reveal.</p>
+      <div class="hero-meta">
+        <div><b>Platform</b>iOS &amp; Android · Expo</div>
+        <div><b>Screens</b>5 core + export</div>
+        <div><b>Grounded in</b>docs/ux_hook_blueprint.md</div>
+        <div><b>Status</b>For review — pre-code</div>
+      </div>
+      <div class="hero-swatchline" aria-hidden="true">
+        <i style="background:#FF385C"></i><i style="background:#008489"></i><i style="background:#8C2F63"></i><i style="background:#FC642D"></i><i style="background:#222222"></i>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ PRINCIPLES ============ -->
+<section>
+  <div class="section-head">
+    <span class="eyebrow">Point of view</span>
+    <h2>Four principles that decide every screen</h2>
+  </div>
+  <div class="principles">
+    <div class="principle">
+      <span class="tag">From the Hook blueprint</span>
+      <h3>The dropzone is the app</h3>
+      <p>Home is one giant, inviting upload surface. No onboarding carousel, no category picker. One tap opens the photo library. Everything else on Home is skippable.</p>
+    </div>
+    <div class="principle">
+      <span class="tag">Airbnb DNA</span>
+      <h3>Quiet chrome, warm cards</h3>
+      <p>White ground, hairline dividers, 14–16px radii, soft diffuse shadows. Exactly one accent — Rausch coral — reserved for the primary action and the gauge. Never two coral elements competing on one screen.</p>
+    </div>
+    <div class="principle">
+      <span class="tag">Variable reward</span>
+      <h3>Theater in one place only</h3>
+      <p>The debate reveal is the show: staggered agent cards, skeleton-to-take resolution, a paced 1.2–1.8s dwell, haptic ticks, then the gauge locks with a success haptic. Every other screen stays still so this one feels alive.</p>
+    </div>
+    <div class="principle">
+      <span class="tag">Content boundary</span>
+      <h3>Warm, never smug</h3>
+      <p>Tone of every string: a wise friend, win-win framing. No contempt, no manipulation aesthetics — visually that means no "dark pattern" reds, no aggressive ALL-CAPS urgency, no fake scarcity.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOUNDATIONS ============ -->
+<section>
+  <div class="section-head">
+    <span class="eyebrow">Foundations</span>
+    <h2>Color, type, shape</h2>
+    <p>The palette is Airbnb's own lineage: Rausch as the single product accent, plus one hue per persona so the debate reads at a glance — Arthur is composed teal, Clara is empathic plum, Leo is playful orange.</p>
+  </div>
+
+  <div class="swatch-row">
+    <div class="swatch"><div class="chip" style="background:#FF385C"></div><div class="meta"><b>Rausch</b><span>#FF385C</span><em>Primary action · gauge · brand</em></div></div>
+    <div class="swatch"><div class="chip" style="background:#222222"></div><div class="meta"><b>Ink</b><span>#222222</span><em>Headlines &amp; body</em></div></div>
+    <div class="swatch"><div class="chip" style="background:#717171"></div><div class="meta"><b>Foggy</b><span>#717171</span><em>Secondary text</em></div></div>
+    <div class="swatch"><div class="chip" style="background:#F7F6F6; border-bottom:1px solid var(--hairline)"></div><div class="meta"><b>Milk</b><span>#F7F6F6</span><em>Recessed surfaces</em></div></div>
+    <div class="swatch"><div class="chip" style="background:#008489"></div><div class="meta"><b>Arthur · Babu</b><span>#008489</span><em>Frame &amp; boundaries</em></div></div>
+    <div class="swatch"><div class="chip" style="background:#8C2F63"></div><div class="meta"><b>Clara · Plum</b><span>#8C2F63</span><em>Psychology &amp; empathy</em></div></div>
+    <div class="swatch"><div class="chip" style="background:#FC642D"></div><div class="meta"><b>Leo · Arches</b><span>#FC642D</span><em>Play &amp; vocabulary</em></div></div>
+  </div>
+
+  <div class="foundation-cols">
+    <div>
+      <h3>Type scale</h3>
+      <p style="font-size:13.5px;color:var(--ink-2)">Face: Airbnb Cereal in production (licensed) with Avenir Next / system-ui as the dev stack — geometric-humanist, friendly at heavy weights. This page is set in the dev stack.</p>
+      <div class="type-spec">
+        <div><span class="sample t-display">Reading the room</span><span class="note">Display · 30/700 · −2%</span></div>
+        <div><span class="sample t-title">Sarah</span><span class="note">Title · 22/700</span></div>
+        <div><span class="sample t-head">What she's thinking</span><span class="note">Heading · 17/600</span></div>
+        <div><span class="sample t-body">She's enjoying this — match her energy.</span><span class="note">Body · 15/400</span></div>
+        <div><span class="sample t-caption">4 reads · last read 2d ago</span><span class="note">Caption · 13/400</span></div>
+        <div><span class="sample t-label">Best response</span><span class="note">Label · 11/600 · +8% caps</span></div>
+      </div>
+    </div>
+    <div>
+      <h3>Shape, elevation, motion</h3>
+      <ul class="shape-list">
+        <li><span class="k">radius/card</span>14px cards · 12px buttons · 999px chips &amp; avatars</li>
+        <li><span class="k">space</span>4pt grid · 20px screen gutters · 24px between card groups</li>
+        <li><span class="k">elevation</span>One shadow only: <span style="font-family:var(--mono);font-size:11px">0 1px 2px 6% + 0 6px 20px 7%</span> — never stacked</li>
+        <li><span class="k">hairline</span>1px #E8E5E6 for list dividers; borders on cards that sit on white</li>
+        <li><span class="k">motion</span>Spring (damping .8) for card entrances; 300ms ease-out for everything else; reduced-motion honored</li>
+        <li><span class="k">haptics</span>Light impact per agent card · Success notification at gauge lock (required, per blueprint)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FLOW ============ -->
+<section>
+  <div class="section-head">
+    <span class="eyebrow">Information architecture</span>
+    <h2>One straight line, one side room</h2>
+    <p>The core journey is linear and can be completed in under 30 seconds of user effort. Contacts ("Relationship Memory") is the only sibling destination — the investment surface the user returns to.</p>
+  </div>
+  <div class="flow">
+    <div class="flow-node"><span class="stage">Action</span><b>Home</b><span>Full-screen dropzone. One tap → photo library.</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">Action</span><b>Confirm sheet</b><span>Bottom sheet: optional contact link, then Analyze.</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">Variable reward</span><b>Debate reveal</b><span>SSE-driven: three agents stream in, paced.</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">Variable reward</span><b>Result</b><span>Gauge locks + haptic. Best response, alternates, lesson.</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">Investment / growth</span><b>Story card</b><span>Watermarked shareable export.</span></div>
+  </div>
+  <p class="flow-side">Tab bar has exactly two destinations: <b>Home</b> and <b>Contacts</b>. Result links back to the contact's memory ("This read was added to Sarah") — closing the investment loop without a third tab.</p>
+</section>
+
+<!-- ============ WIREFRAMES ============ -->
+<section class="wf" style="border-radius:20px; padding:48px 40px; margin:16px -40px; border:1px solid var(--hairline);">
+  <div class="section-head">
+    <span class="eyebrow">Wireframes · lo-fi</span>
+    <h2>Structure before polish</h2>
+    <p>Grey boxes = content, dashed = tap targets. The coral pill on each frame names the Hook-Model stage that screen exists to serve — if a zone doesn't serve the stage, it was cut.</p>
+  </div>
+
+  <div class="screens">
+    <!-- WF Home -->
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">ACTION</span>
+        <div style="display:flex;justify-content:space-between"><span>RESET</span><span>◦ profile</span></div>
+        <div class="wf-bar" style="width:70%"></div>
+        <div class="wf-box" style="flex:4; flex-direction:column; gap:6px">
+          <div class="wf-solid" style="width:44px;height:44px;border-radius:50%">ic</div>
+          UPLOAD SCREENSHOT<br>← entire zone is the tap target →
+        </div>
+        <div class="wf-solid" style="height:30px">optional: link contact (chips, skippable)</div>
+        <div class="wf-solid" style="flex:1.4">recent reads (2 rows max)</div>
+        <div class="wf-solid" style="height:34px">tab bar · Home | Contacts</div>
+      </div>
+      <div class="wf-note"><b>Home</b>
+        <ul>
+          <li>Dropzone owns ~55% of viewport height; nothing above the fold competes.</li>
+          <li>Contact chips never block upload — pure secondary affordance.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- WF Debate -->
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">VARIABLE REWARD</span>
+        <div>‹ cancel</div>
+        <div class="wf-bar" style="width:55%"></div>
+        <div class="wf-solid" style="height:22px;width:60%">stage ticker: "3 coaches reading…"</div>
+        <div class="wf-box" style="flex:1.3">agent card · ARTHUR<br>(resolved take)</div>
+        <div class="wf-box" style="flex:1.3">agent card · CLARA<br>(resolved take)</div>
+        <div class="wf-solid" style="flex:1.3">agent card · LEO<br>skeleton — resolving</div>
+        <div class="wf-solid" style="height:30px">synthesis progress → auto-advance</div>
+      </div>
+      <div class="wf-note"><b>Debate reveal</b>
+        <ul>
+          <li>Cards append in arrival order; 1.2–1.8s dwell floor even if SSE is faster.</li>
+          <li>Light haptic per card resolve. No skip button — the pacing <i>is</i> the reward.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- WF Result -->
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">REWARD → INVEST</span>
+        <div>‹ home</div>
+        <div class="wf-solid" style="flex:1.6;flex-direction:column">ATTRACTION GAUGE<br>arc + number, locks w/ haptic</div>
+        <div class="wf-solid" style="height:26px">dynamic_analysis (1–2 lines)</div>
+        <div class="wf-solid" style="height:24px">what_she_is_thinking → chips</div>
+        <div class="wf-box" style="flex:1.6;flex-direction:column">BEST RESPONSE<br>copy button (primary coral)</div>
+        <div class="wf-solid" style="height:24px">alternates: playful | direct (tabs)</div>
+        <div class="wf-solid" style="height:26px">coaching lesson</div>
+        <div class="wf-solid" style="height:30px">share story card · saved to contact</div>
+      </div>
+      <div class="wf-note"><b>Result</b>
+        <ul>
+          <li>Mirrors <code style="font-family:var(--mono);font-size:11px">SynthesisResult</code> field-for-field — nothing invented.</li>
+          <li>Copy is the hero action; share is secondary; both above the lesson.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- WF Contacts -->
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">INVESTMENT</span>
+        <div>Relationship Memory</div>
+        <div class="wf-solid" style="height:26px">search</div>
+        <div class="wf-box" style="flex:1">contact row · avatar · name<br>"N reads — next one's sharper"</div>
+        <div class="wf-box" style="flex:1">contact row</div>
+        <div class="wf-box" style="flex:1">contact row</div>
+        <div class="wf-solid" style="flex:1">empty-state / add contact</div>
+        <div class="wf-solid" style="height:34px">tab bar</div>
+      </div>
+      <div class="wf-note"><b>Contacts</b>
+        <ul>
+          <li>Loss-aversion copy pattern verbatim from the blueprint.</li>
+          <li>Row shows last gauge score + trend arrow — memory made visible.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- WF Story -->
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">GROWTH</span>
+        <div>‹ result</div>
+        <div class="wf-box" style="flex:4;flex-direction:column">9:16 STORY CARD PREVIEW<br>gauge + one-line read<br>watermark bottom</div>
+        <div class="wf-solid" style="height:30px">share (coral) · save image</div>
+        <div class="wf-solid" style="height:22px">"never shows the raw conversation"</div>
+      </div>
+      <div class="wf-note"><b>Story card export</b>
+        <ul>
+          <li>Card shows the <i>read</i>, never the private chat — privacy is the design.</li>
+          <li>Watermark = acquisition surface; small but non-removable.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HI-FI ============ -->
+<section>
+  <div class="section-head">
+    <span class="eyebrow">High fidelity</span>
+    <h2>The five screens</h2>
+    <p>Rendered in real HTML/CSS at spec tokens — what you see is the intended pixel behavior, not a painting of it. The app ships light-first (like Airbnb); a dark theme is a fast-follow since all colors are already tokenized.</p>
+  </div>
+
+  <div class="screens">
+
+    <!-- ============ HOME ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>􀙇 􀛨</span></div>
+        <div class="p-pad">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px">
+            <div class="p-navtitle" style="color:#FF385C; letter-spacing:.02em">RESET</div>
+            <div style="width:28px;height:28px;border-radius:50%;background:#F1EFEF;border:1px solid #E8E5E6"></div>
+          </div>
+          <div style="font-size:17px; font-weight:700; margin-top:14px; letter-spacing:-0.01em">Got a text you're overthinking?</div>
+          <div class="p-sub" style="margin-top:2px">Drop the screenshot. Three coaches read it in seconds.</div>
+
+          <div class="p-card" style="margin-top:14px; padding:26px 18px; text-align:center; border:1.5px dashed #FFB3C2; background:#FFFDFD">
+            <div style="width:52px;height:52px;border-radius:50%;background:#FFF0F3;margin:0 auto;display:flex;align-items:center;justify-content:center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF385C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M3 16l5-4 4 3 4-3 5 4"/></svg>
+            </div>
+            <div style="font-size:14.5px;font-weight:700;margin-top:10px">Upload the conversation</div>
+            <div class="p-sub" style="margin-top:3px">Tap anywhere — opens your photos</div>
+            <div style="font-size:9.5px;color:#9C989A;margin-top:10px">🔒 Screenshot is read in memory, never stored</div>
+          </div>
+
+          <div class="p-label" style="margin-top:14px">Add to a memory · optional</div>
+          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+            <span class="p-chip" style="border-color:#FF385C;color:#D70043;background:#FFF0F3">Sarah</span>
+            <span class="p-chip">Maya</span>
+            <span class="p-chip">Jess</span>
+            <span class="p-chip" style="color:#6A6768">+ New</span>
+          </div>
+
+          <div class="p-label" style="margin-top:14px">Recent reads</div>
+          <div class="p-card" style="margin-top:6px;padding:9px 12px;display:flex;align-items:center;gap:9px">
+            <div class="avatar" style="background:#8C2F63">S</div>
+            <div style="flex:1"><b style="font-size:12px">Sarah</b><div class="p-sub" style="font-size:10.5px">"Playful test — lead with a plan" · 2d</div></div>
+            <div style="font-weight:700;color:#FF385C;font-size:13px">7</div>
+          </div>
+        </div>
+        <div class="p-tabbar">
+          <div class="p-tab on"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-bottom:1px"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg>Home</div>
+          <div class="p-tab"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-bottom:1px"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 20c.8-3.4 3.3-5 6.2-5s5.4 1.6 6.2 5"/><path d="M16 4.5c1.7.4 2.9 1.8 2.9 3.7 0 1.9-1.2 3.3-2.9 3.7M17.5 15.2c2 .6 3.2 2 3.7 4.3"/></svg>Contacts</div>
+        </div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="caption">
+        <b>Home — the dropzone is the screen</b>
+        <p>Coral appears twice only: wordmark and dropzone (same object, brand = action). The dashed border is the one playful gesture; everything else is Airbnb-quiet. Privacy line does trust work right at the anxious moment.</p>
+        <span class="file">app/index.tsx · ImagePickerDropzone.tsx</span>
+      </div>
+    </div>
+
+    <!-- ============ DEBATE REVEAL ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>􀙇 􀛨</span></div>
+        <div class="p-pad">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+            <span style="font-size:12px;color:#6A6768">✕</span>
+            <span class="p-label" style="color:#D70043">Reading the room</span>
+            <span style="width:12px"></span>
+          </div>
+          <div style="display:flex;gap:4px;margin-top:10px">
+            <div style="flex:1;height:3px;border-radius:2px;background:#FF385C"></div>
+            <div style="flex:1;height:3px;border-radius:2px;background:#FF385C"></div>
+            <div style="flex:1;height:3px;border-radius:2px;background:#F1EFEF"></div>
+            <div style="flex:1;height:3px;border-radius:2px;background:#F1EFEF"></div>
+          </div>
+          <div class="p-sub" style="margin-top:8px">Screenshot read · 12 messages · <b style="color:#222">Sarah</b></div>
+
+          <div class="p-card" style="margin-top:12px;padding:11px 12px;border-left:3px solid #008489">
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="avatar" style="background:#008489">A</div>
+              <div><b style="font-size:12px">Arthur</b><div style="font-size:9.5px;color:#008489;font-weight:600">FRAME &amp; BOUNDARIES</div></div>
+              <span style="margin-left:auto;font-size:10px;color:#9C989A">✓</span>
+            </div>
+            <div style="font-size:11px;margin-top:7px;color:#484445">"A playful compliance test, not a rejection. Hold steady — don't over-explain or repeat the invite. Relaxed beats eager here."</div>
+          </div>
+
+          <div class="p-card" style="margin-top:9px;padding:11px 12px;border-left:3px solid #8C2F63">
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="avatar" style="background:#8C2F63">C</div>
+              <div><b style="font-size:12px">Clara</b><div style="font-size:9.5px;color:#8C2F63;font-weight:600">HER PERSPECTIVE</div></div>
+              <span style="margin-left:auto;font-size:10px;color:#9C989A">✓</span>
+            </div>
+            <div style="font-size:11px;margin-top:7px;color:#484445">"She's enjoying this — the 😏 is an invitation to keep playing. She wants to see you match her energy without getting flustered."</div>
+          </div>
+
+          <div class="p-card" style="margin-top:9px;padding:11px 12px;border-left:3px solid #FC642D">
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="avatar" style="background:#FC642D">L</div>
+              <div><b style="font-size:12px">Leo</b><div style="font-size:9.5px;color:#E4571F;font-weight:600">THE WORDS</div></div>
+              <span style="margin-left:auto;font-size:10px;color:#9C989A">…</span>
+            </div>
+            <div style="margin-top:8px" class="skel"><div style="height:9px"></div></div>
+            <div style="margin-top:5px;width:78%" class="skel"><div style="height:9px"></div></div>
+            <div style="margin-top:5px;width:55%" class="skel"><div style="height:9px"></div></div>
+          </div>
+
+          <div style="text-align:center;margin-top:12px" class="p-sub">Synthesizing the final read…</div>
+        </div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="caption">
+        <b>Debate reveal — the slot machine, staged politely</b>
+        <p>Each SSE <span class="file">agent_done</span> resolves a skeleton into a take (light haptic tick), with the 1.2–1.8s dwell floor between cards. Persona color arrives as a 3px edge, not a loud fill — theater with Airbnb manners. Progress segments map to the four pipeline stages.</p>
+        <span class="file">app/debate-reveal.tsx · DebateAvatarStack.tsx · SkeletonLoader.tsx</span>
+      </div>
+    </div>
+
+    <!-- ============ RESULT ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>􀙇 􀛨</span></div>
+        <div class="p-pad">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+            <span style="font-size:12px;color:#6A6768">‹ Home</span>
+            <span class="p-label">The read · Sarah</span>
+            <span style="font-size:12px;color:#6A6768">↗</span>
+          </div>
+
+          <div class="gauge-wrap">
+            <svg width="128" height="78" viewBox="0 0 128 78">
+              <path d="M14 70 A 50 50 0 1 1 114 70" fill="none" stroke="#F1EFEF" stroke-width="9" stroke-linecap="round"/>
+              <path d="M14 70 A 50 50 0 1 1 114 70" fill="none" stroke="#FF385C" stroke-width="9" stroke-linecap="round" stroke-dasharray="164 235" />
+              <circle cx="105" cy="34" r="6" fill="#FF385C" stroke="#FFF" stroke-width="2.5"/>
+            </svg>
+            <div style="margin-top:-46px">
+              <span class="gauge-num">7</span><span class="gauge-den">/10</span>
+              <div style="font-size:10.5px;font-weight:700;color:#D70043;letter-spacing:.06em">STRONG INTEREST</div>
+            </div>
+          </div>
+
+          <div style="font-size:11.5px;color:#484445;text-align:center;margin-top:10px;padding:0 6px">She's testing your confidence, playfully. Don't validate instantly — lead with warmth and a plan.</div>
+
+          <div style="display:flex;gap:5px;margin-top:10px;flex-wrap:wrap;justify-content:center">
+            <span class="p-chip" style="font-size:10px;background:#F7F6F6;border-color:#EFECEC">Testing his confidence</span>
+            <span class="p-chip" style="font-size:10px;background:#F7F6F6;border-color:#EFECEC">Enjoying the banter</span>
+            <span class="p-chip" style="font-size:10px;background:#F7F6F6;border-color:#EFECEC">Waiting for a plan</span>
+          </div>
+
+          <div class="p-card" style="margin-top:12px;padding:12px;background:#FFF0F3;border-color:#FFD9E1">
+            <div class="p-label" style="color:#D70043">Best response</div>
+            <div style="font-size:12.5px;font-weight:600;margin-top:5px;line-height:1.5">"Can you blame me? 😌 Thursday, 8 — first round's on you if you keep teasing."</div>
+            <div class="p-btn" style="margin-top:10px;padding:9px">Copy response</div>
+          </div>
+
+          <div style="display:flex;gap:6px;margin-top:9px">
+            <div class="p-btn-ghost" style="flex:1;padding:7px;font-size:11px">Playful</div>
+            <div class="p-btn-ghost" style="flex:1;padding:7px;font-size:11px;color:#9C989A">Direct</div>
+          </div>
+
+          <div class="p-card" style="margin-top:9px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start">
+            <span style="font-size:13px">🎓</span>
+            <div style="font-size:10.5px;color:#484445">Playful resistance is an invitation to lead, not a door closing. Answer teasing with warmth and a concrete plan.</div>
+          </div>
+          <div class="p-sub" style="text-align:center;margin-top:8px;font-size:10px">Saved to <b style="color:#222">Sarah</b> · 5 reads now</div>
+        </div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="caption">
+        <b>Result — the gauge locks, then earns the copy</b>
+        <p>Gauge needle springs to 7 and settles with the success haptic — the heaviest moment in the app. Layout is <span class="file">SynthesisResult</span> verbatim: analysis → thinking chips → best_response (only filled-coral card on screen) → alternates → coaching_lesson. Footer line is the investment bridge.</p>
+        <span class="file">app/result.tsx · AttractionGauge.tsx</span>
+      </div>
+    </div>
+
+    <!-- ============ CONTACTS ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>􀙇 􀛨</span></div>
+        <div class="p-pad">
+          <div class="p-navtitle" style="margin-top:6px">Relationship Memory</div>
+          <div class="p-sub">The more reads, the sharper the coaching gets.</div>
+
+          <div class="p-card" style="margin-top:12px;padding:8px 12px;display:flex;align-items:center;gap:8px;box-shadow:none;background:#F7F6F6;border-color:#F1EFEF">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9C989A" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg>
+            <span style="color:#9C989A;font-size:11.5px">Search contacts</span>
+          </div>
+
+          <div class="p-card" style="margin-top:12px;padding:12px">
+            <div style="display:flex;gap:10px;align-items:center">
+              <div class="avatar" style="background:#8C2F63;width:36px;height:36px">S</div>
+              <div style="flex:1"><b style="font-size:13.5px">Sarah</b><div class="p-sub" style="font-size:10.5px">Last read 2d ago · trending up ↗</div></div>
+              <div style="text-align:center"><div style="font-weight:700;color:#FF385C;font-size:15px">7</div><div style="font-size:8.5px;color:#9C989A">GAUGE</div></div>
+            </div>
+            <div style="margin-top:9px;background:#FFF0F3;border-radius:8px;padding:7px 10px;font-size:10.5px;color:#D70043;font-weight:600">You have 4 reads on Sarah — the next one gets sharper.</div>
+          </div>
+
+          <div class="p-card" style="margin-top:9px;padding:12px;display:flex;gap:10px;align-items:center">
+            <div class="avatar" style="background:#008489;width:36px;height:36px">M</div>
+            <div style="flex:1"><b style="font-size:13.5px">Maya</b><div class="p-sub" style="font-size:10.5px">2 reads · last read 1w ago</div></div>
+            <div style="text-align:center"><div style="font-weight:700;color:#222;font-size:15px">5</div><div style="font-size:8.5px;color:#9C989A">GAUGE</div></div>
+          </div>
+
+          <div class="p-card" style="margin-top:9px;padding:12px;display:flex;gap:10px;align-items:center">
+            <div class="avatar" style="background:#FC642D;width:36px;height:36px">J</div>
+            <div style="flex:1"><b style="font-size:13.5px">Jess</b><div class="p-sub" style="font-size:10.5px">1 read · start building her memory</div></div>
+            <div style="text-align:center"><div style="font-weight:700;color:#222;font-size:15px">6</div><div style="font-size:8.5px;color:#9C989A">GAUGE</div></div>
+          </div>
+
+          <div style="text-align:center;margin-top:12px"><span class="p-chip" style="padding:7px 14px;font-weight:600">+ New contact</span></div>
+        </div>
+        <div class="p-tabbar">
+          <div class="p-tab"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-bottom:1px"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg>Home</div>
+          <div class="p-tab on"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-bottom:1px"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 20c.8-3.4 3.3-5 6.2-5s5.4 1.6 6.2 5"/><path d="M16 4.5c1.7.4 2.9 1.8 2.9 3.7 0 1.9-1.2 3.3-2.9 3.7M17.5 15.2c2 .6 3.2 2 3.7 4.3"/></svg>Contacts</div>
+        </div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="caption">
+        <b>Contacts — memory you'd hate to abandon</b>
+        <p>Airbnb listing-card grammar applied to people: avatar, title, meta line, one number that matters. The loss-aversion banner (blueprint copy, verbatim) only appears on the richest contact — used sparingly so it stays persuasive, not naggy.</p>
+        <span class="file">app/contacts.tsx</span>
+      </div>
+    </div>
+
+    <!-- ============ STORY CARD ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>􀙇 􀛨</span></div>
+        <div class="p-pad">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+            <span style="font-size:12px;color:#6A6768">‹ Result</span>
+            <span class="p-label">Share the read</span>
+            <span style="width:12px"></span>
+          </div>
+
+          <div style="margin:14px 26px 0;border-radius:18px;overflow:hidden;aspect-ratio:9/15.5;background:linear-gradient(165deg,#2A1017 0%,#5C1226 45%,#FF385C 130%);color:#FFF;padding:18px 16px;display:flex;flex-direction:column;box-shadow:0 10px 26px rgba(215,0,67,.28)">
+            <div style="font-size:8.5px;letter-spacing:.18em;font-weight:700;opacity:.75">THE READ</div>
+            <div style="margin-top:auto">
+              <div style="font-size:30px;font-weight:800;line-height:1">7<span style="font-size:13px;opacity:.65">/10</span></div>
+              <div style="font-size:9px;font-weight:700;letter-spacing:.1em;opacity:.85;margin-top:2px">STRONG INTEREST</div>
+              <div style="font-size:11.5px;font-weight:600;margin-top:10px;line-height:1.45">"Playful resistance is an invitation to lead, not a door closing."</div>
+              <div style="display:flex;gap:4px;margin-top:12px">
+                <div class="avatar" style="width:18px;height:18px;font-size:8px;background:#008489">A</div>
+                <div class="avatar" style="width:18px;height:18px;font-size:8px;background:#B84A87">C</div>
+                <div class="avatar" style="width:18px;height:18px;font-size:8px;background:#FC642D">L</div>
+                <span style="font-size:8.5px;opacity:.7;align-self:center">3 coaches agreed</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:9px;border-top:1px solid rgba(255,255,255,.22)">
+              <span style="font-size:9px;font-weight:800;letter-spacing:.08em">RESET<span style="opacity:.6">.AI</span></span>
+              <span style="font-size:8px;opacity:.55">get your own read</span>
+            </div>
+          </div>
+
+          <div class="p-btn" style="margin-top:14px">Share to story</div>
+          <div class="p-btn-ghost" style="margin-top:7px">Save image</div>
+          <div style="text-align:center;font-size:9.5px;color:#9C989A;margin-top:9px">🔒 Shows the read only — never your conversation</div>
+        </div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="caption">
+        <b>Story card — the one deliberately loud surface</b>
+        <p>The single place the design leaves Airbnb-white: a deep-wine-to-Rausch gradient built for a dark IG story feed. It exports the score, the lesson, and the watermark — the growth loop — and structurally cannot leak the private chat.</p>
+        <span class="file">app/story-card.tsx · StoryCardExport.tsx</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ INTERACTION SPEC ============ -->
+<section>
+  <div class="section-head">
+    <span class="eyebrow">Interaction spec</span>
+    <h2>Motion &amp; haptic choreography</h2>
+    <p>Straight from the blueprint's mechanics table — these are contract, not garnish. Build order for engineering is included.</p>
+  </div>
+  <div class="table-scroll">
+  <table class="spec">
+    <thead><tr><th>Moment</th><th>Motion</th><th>Haptic</th><th>Implementation note</th></tr></thead>
+    <tbody>
+      <tr><td>Dropzone tap</td><td>Card scale .97 on press-in, spring back</td><td>—</td><td><code>expo-image-picker</code> opens directly, no confirm screen</td></tr>
+      <tr><td>Agent card resolve</td><td>Skeleton cross-fades to take; card translates up 8px w/ spring</td><td>Light impact</td><td><code>impactAsync(Light)</code>; enforce 1.2–1.8s dwell floor per card regardless of SSE speed</td></tr>
+      <tr><td>Gauge lock</td><td>Needle springs past target ~4%, settles back; number counts up</td><td><b>Success notification</b></td><td><code>notificationAsync(Success)</code> exactly when the number settles — must feel heavier than card ticks</td></tr>
+      <tr><td>Copy response</td><td>Button label swaps to "Copied ✓" for 1.5s</td><td>Light impact</td><td>Clipboard + transient state, no toast needed</td></tr>
+      <tr><td>Reduced motion</td><td>All springs become 200ms fades; dwell floor kept</td><td>Haptics kept</td><td>Pacing is behavioral, not decorative — it survives the accessibility setting</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ============ HANDOFF ============ -->
+<section>
+  <div class="section-head">
+    <span class="eyebrow">Handoff</span>
+    <h2>What gets built, where</h2>
+    <p>Every screen above maps 1:1 onto files already scaffolded in <code class="inline">mobile/</code> — this is a re-skin + choreography pass, not a restructure. Proposed order:</p>
+  </div>
+  <div class="handoff">
+    <div class="principle"><span class="tag">Step 1</span><h3>Design tokens</h3><p>New <code class="inline">src/theme/tokens.ts</code>: the palette, type scale, radii, and shadow above as typed constants. Every component below consumes only tokens.</p></div>
+    <div class="principle"><span class="tag">Step 2</span><h3>Home + tab bar</h3><p><code class="inline">app/index.tsx</code> + <code class="inline">ImagePickerDropzone</code> restyled; zero-friction path verified against a device.</p></div>
+    <div class="principle"><span class="tag">Step 3</span><h3>Debate reveal</h3><p>Persona colors, edge-accent cards, dwell-floor pacing + haptic ticks in <code class="inline">debate-reveal.tsx</code>, driven by mock SSE events first (mock-first rule).</p></div>
+    <div class="principle"><span class="tag">Step 4</span><h3>Result + gauge</h3><p><code class="inline">AttractionGauge</code> spring/overshoot + success haptic; result layout mirroring <code class="inline">SynthesisResult</code>.</p></div>
+    <div class="principle"><span class="tag">Step 5</span><h3>Contacts + story card</h3><p>Memory list with loss-aversion banner; gradient export card via <code class="inline">StoryCardExport</code>.</p></div>
+    <div class="principle"><span class="tag">Later</span><h3>Dark theme</h3><p>Tokens make it a palette swap. Not in v1 scope — Airbnb itself shipped light-only for a decade.</p></div>
+  </div>
+</section>
+
+<footer>
+  RESET AI · UI/UX design direction v1 · All copy above is real product copy, reviewed against the content boundary in CLAUDE.md (warm, win-win, no contempt).
+</footer>
+
+</div>
