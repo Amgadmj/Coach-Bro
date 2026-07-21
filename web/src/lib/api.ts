@@ -15,12 +15,16 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8
  * never collapse this into a single awaited JSON response (CLAUDE.md principle #5).
  */
 export async function* analyzeScreenshot(
-  image: File | Blob,
+  images: (File | Blob)[],
   contactId?: string | null,
   language: SupportedLanguage = "auto",
 ): AsyncGenerator<DebateEvent> {
+  if (images.length === 0) throw new Error("Attach at least one screenshot.");
+
   const form = new FormData();
-  form.append("image", image, image instanceof File ? image.name : "screenshot.png");
+  images.forEach((image, i) => {
+    form.append("images", image, image instanceof File ? image.name : `screenshot-${i}.png`);
+  });
   if (contactId) form.append("contact_id", contactId);
   form.append("language", language);
 

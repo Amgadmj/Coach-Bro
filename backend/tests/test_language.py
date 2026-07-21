@@ -16,6 +16,7 @@ from swarm_orchestrator import SwarmOrchestrator
 
 IMAGE_BYTES = b"<fake-screenshot-bytes>"
 MIME_TYPE = "image/png"
+IMAGES = [(IMAGE_BYTES, MIME_TYPE)]
 
 
 def test_resolve_response_language_prefers_explicit_preference() -> None:
@@ -62,7 +63,7 @@ def test_pipeline_resolves_and_threads_a_language_override(monkeypatch) -> None:
             memory_store=NoOpMemoryStore(),
         )
         async for _ in orchestrator.run_pipeline(
-            IMAGE_BYTES, MIME_TYPE, contact_id=None, language="es"
+            IMAGES, contact_id=None, language="es"
         ):
             pass
 

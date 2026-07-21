@@ -29,8 +29,7 @@ async def main() -> None:
 
     final_result: SynthesisResult | None = None
     async for event in orchestrator.run_pipeline(
-        image_bytes=b"<fake-screenshot-bytes>",
-        mime_type="image/png",
+        images=[(b"<fake-screenshot-bytes>", "image/png")],
         contact_id="demo-contact",
     ):
         agent_suffix = f" ({event.agent})" if event.agent else ""

@@ -11,6 +11,7 @@ from swarm_orchestrator import SwarmOrchestrator
 
 IMAGE_BYTES = b"<fake-screenshot-bytes>"
 MIME_TYPE = "image/png"
+IMAGES = [(IMAGE_BYTES, MIME_TYPE)]
 
 
 def test_user_style_is_global_and_compounds_without_needing_a_contact(tmp_path: Path) -> None:
@@ -24,7 +25,7 @@ def test_user_style_is_global_and_compounds_without_needing_a_contact(tmp_path: 
         )
         return [
             e.type
-            async for e in orchestrator.run_pipeline(IMAGE_BYTES, MIME_TYPE, contact_id=None)
+            async for e in orchestrator.run_pipeline(IMAGES, contact_id=None)
         ]
 
     events = asyncio.run(run_once())
@@ -86,7 +87,7 @@ def test_user_style_is_threaded_into_debate_and_synthesis_prompts(tmp_path: Path
             debate_client=RecordingDebateClient(),
             memory_store=store,
         )
-        async for _ in orchestrator.run_pipeline(IMAGE_BYTES, MIME_TYPE, contact_id=None):
+        async for _ in orchestrator.run_pipeline(IMAGES, contact_id=None):
             pass
 
     asyncio.run(run())

@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Any, Literal
 
@@ -91,8 +92,13 @@ class SynthesisResult(BaseModel):
     def _coerce_single_string_to_list(cls, v: object) -> object:
         # Forced tool-use models occasionally collapse a short list field into a
         # single string despite the array schema (seen live with claude-sonnet-5).
-        # Wrap rather than reject - a one-item read is still a valid read.
+        # Sometimes that collapsed string still tries to represent multiple items
+        # by wrapping each in "<value>...</value>" tags (also seen live) - pull
+        # those out if present, otherwise fall back to a one-item read.
         if isinstance(v, str):
+            tagged = re.findall(r"<value>(.*?)</value>", v, flags=re.DOTALL)
+            if tagged:
+                return [t.strip() for t in tagged if t.strip()]
             return [v]
         return v
 

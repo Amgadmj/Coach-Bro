@@ -67,6 +67,9 @@ export interface Dict {
     scenarioLabel: string;
     scenarioPlaceholder: string;
     addScreenshot: string;
+    addMoreScreenshots: string;
+    screenshotsCount: string;
+    removeScreenshot: string;
     screenshotHint: string;
     orMission: string;
     read: string;
@@ -78,6 +81,7 @@ export interface Dict {
     readingTitle: string;
     spokenTitle: string;
     yourScreenshot: string;
+    yourScreenshots: string;
     statusDebating: string;
     statusDone: string;
     statusRunning: string;
@@ -156,6 +160,9 @@ const en: Dict = {
     scenarioLabel: "Scenario",
     scenarioPlaceholder: 'Describe the situation… e.g. "At a coffee shop, she\'s reading my favorite book."',
     addScreenshot: "Add screenshot",
+    addMoreScreenshots: "Add more",
+    screenshotsCount: "{count} attached",
+    removeScreenshot: "Remove",
     screenshotHint: "Screenshots get the full Arthur · Clara · Leo debate.",
     orMission: "Or start from a mission",
     read: "read",
@@ -167,6 +174,7 @@ const en: Dict = {
     readingTitle: "Reading the room…",
     spokenTitle: "The room has spoken",
     yourScreenshot: "Your screenshot",
+    yourScreenshots: "Your screenshots",
     statusDebating: "Takes are in — now they hash it out.",
     statusDone: "Debate settled. Your read is ready.",
     statusRunning: "Three reads happening in parallel right now.",
@@ -262,6 +270,9 @@ const es: Dict = {
     scenarioLabel: "Escenario",
     scenarioPlaceholder: 'Describe la situación… ej. "En una cafetería, ella está leyendo mi libro favorito."',
     addScreenshot: "Añadir captura",
+    addMoreScreenshots: "Añadir más",
+    screenshotsCount: "{count} adjuntas",
+    removeScreenshot: "Quitar",
     screenshotHint: "Las capturas activan el debate completo de Arthur · Clara · Leo.",
     orMission: "O empieza con una misión",
     read: "lectura",
@@ -273,6 +284,7 @@ const es: Dict = {
     readingTitle: "Leyendo la sala…",
     spokenTitle: "La sala ya habló",
     yourScreenshot: "Tu captura",
+    yourScreenshots: "Tus capturas",
     statusDebating: "Ya tienen sus lecturas — ahora lo discuten entre ellos.",
     statusDone: "Debate resuelto. Tu lectura está lista.",
     statusRunning: "Tres lecturas en paralelo, ahora mismo.",
@@ -368,6 +380,9 @@ const fr: Dict = {
     scenarioLabel: "Scénario",
     scenarioPlaceholder: 'Décris la situation… ex. "Dans un café, elle lit mon livre préféré."',
     addScreenshot: "Ajouter une capture",
+    addMoreScreenshots: "Ajouter plus",
+    screenshotsCount: "{count} jointes",
+    removeScreenshot: "Retirer",
     screenshotHint: "Les captures déclenchent le débat complet d'Arthur, Clara et Leo.",
     orMission: "Ou commence par une mission",
     read: "lecture",
@@ -379,6 +394,7 @@ const fr: Dict = {
     readingTitle: "Lecture de la salle…",
     spokenTitle: "La salle a parlé",
     yourScreenshot: "Ta capture",
+    yourScreenshots: "Tes captures",
     statusDebating: "Les avis sont là — place au débat.",
     statusDone: "Débat terminé. Ta lecture est prête.",
     statusRunning: "Trois lectures en parallèle, en ce moment même.",
@@ -474,6 +490,9 @@ const pt: Dict = {
     scenarioLabel: "Cenário",
     scenarioPlaceholder: 'Descreva a situação… ex. "Numa cafeteria, ela está lendo meu livro favorito."',
     addScreenshot: "Adicionar print",
+    addMoreScreenshots: "Adicionar mais",
+    screenshotsCount: "{count} anexados",
+    removeScreenshot: "Remover",
     screenshotHint: "Prints ativam o debate completo de Arthur · Clara · Leo.",
     orMission: "Ou comece por uma missão",
     read: "leitura",
@@ -485,6 +504,7 @@ const pt: Dict = {
     readingTitle: "Lendo o ambiente…",
     spokenTitle: "O veredito saiu",
     yourScreenshot: "Seu print",
+    yourScreenshots: "Seus prints",
     statusDebating: "As leituras chegaram — agora é debate.",
     statusDone: "Debate encerrado. Sua leitura está pronta.",
     statusRunning: "Três leituras acontecendo em paralelo agora.",
@@ -580,6 +600,9 @@ const hi: Dict = {
     scenarioLabel: "सिचुएशन",
     scenarioPlaceholder: 'स्थिति बताएं… जैसे "कॉफ़ी शॉप में, वो मेरी पसंदीदा किताब पढ़ रही है।"',
     addScreenshot: "स्क्रीनशॉट जोड़ें",
+    addMoreScreenshots: "और जोड़ें",
+    screenshotsCount: "{count} जुड़े",
+    removeScreenshot: "हटाएं",
     screenshotHint: "स्क्रीनशॉट से आर्थर · क्लारा · लियो की पूरी बहस मिलती है।",
     orMission: "या किसी मिशन से शुरू करें",
     read: "रीड",
@@ -591,6 +614,7 @@ const hi: Dict = {
     readingTitle: "माहौल पढ़ा जा रहा है…",
     spokenTitle: "फ़ैसला आ गया",
     yourScreenshot: "आपका स्क्रीनशॉट",
+    yourScreenshots: "आपके स्क्रीनशॉट्स",
     statusDebating: "तीनों की राय आ गई — अब बहस शुरू।",
     statusDone: "बहस खत्म। आपकी रीड तैयार है।",
     statusRunning: "अभी तीन रीड्स एक साथ चल रही हैं।",
@@ -686,6 +710,9 @@ const ar: Dict = {
     scenarioLabel: "الموقف",
     scenarioPlaceholder: "صف الموقف… مثلاً: \"في مقهى، وهي تقرأ كتابي المفضل.\"",
     addScreenshot: "إضافة لقطة شاشة",
+    addMoreScreenshots: "إضافة المزيد",
+    screenshotsCount: "تم إرفاق {count}",
+    removeScreenshot: "إزالة",
     screenshotHint: "لقطات الشاشة تُفعّل نقاش آرثر وكلارا وليو كاملاً.",
     orMission: "أو ابدأ بمهمة",
     read: "قراءة",
@@ -697,6 +724,7 @@ const ar: Dict = {
     readingTitle: "يقرأون الموقف…",
     spokenTitle: "صدر الحكم",
     yourScreenshot: "لقطة شاشتك",
+    yourScreenshots: "لقطات شاشتك",
     statusDebating: "وصلت آراؤهم — الآن يتناقشون.",
     statusDone: "انتهى النقاش. قراءتك جاهزة.",
     statusRunning: "ثلاث قراءات تجري بالتوازي الآن.",

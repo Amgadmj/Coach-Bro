@@ -32,9 +32,16 @@ interface AnalysisState {
   result: SynthesisResult | null;
   /** Set when the backend confirms the contact's memory/persona was updated. */
   memoryUpdate: MemoryUpdate | null;
+  /** How many screenshots were attached to this read - drives singular/plural
+   * copy on the debate screen ("Your screenshot" vs "Your screenshots"). */
+  imageCount: number;
   scenario: string | null;
   error: string | null;
-  run: (image: File | Blob, contactId?: string | null, scenario?: string | null) => Promise<void>;
+  run: (
+    images: (File | Blob)[],
+    contactId?: string | null,
+    scenario?: string | null,
+  ) => Promise<void>;
   reset: () => void;
 }
 
@@ -47,6 +54,7 @@ const INITIAL = {
   messages: [] as DebateMessage[],
   result: null,
   memoryUpdate: null,
+  imageCount: 0,
   scenario: null,
   error: null,
 };
@@ -58,12 +66,13 @@ export const useAnalysis = create<AnalysisState>((set, get) => ({
 
   reset: () => set({ ...INITIAL, agentStatus: { ...INITIAL.agentStatus }, messages: [] }),
 
-  run: async (image, contactId, scenario) => {
+  run: async (images, contactId, scenario) => {
     set({
       ...INITIAL,
       agentStatus: { ...INITIAL.agentStatus },
       messages: [],
       status: "running",
+      imageCount: images.length,
       scenario: scenario ?? null,
     });
 
@@ -117,7 +126,7 @@ export const useAnalysis = create<AnalysisState>((set, get) => ({
 
     try {
       const language = useSession.getState().language;
-      for await (const event of analyzeScreenshot(image, contactId, language)) {
+      for await (const event of analyzeScreenshot(images, contactId, language)) {
         await applyEvent(event);
       }
       // stream ended without a synthesis_done (backend crash mid-run, dropped

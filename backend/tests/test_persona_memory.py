@@ -9,6 +9,7 @@ from swarm_orchestrator import SwarmOrchestrator
 
 IMAGE_BYTES = b"<fake-screenshot-bytes>"
 MIME_TYPE = "image/png"
+IMAGES = [(IMAGE_BYTES, MIME_TYPE)]
 
 
 def test_persona_builds_and_compounds_across_reads(tmp_path: Path) -> None:
@@ -24,7 +25,7 @@ def test_persona_builds_and_compounds_across_reads(tmp_path: Path) -> None:
         )
         return [
             e.type
-            async for e in orchestrator.run_pipeline(IMAGE_BYTES, MIME_TYPE, contact_id="sarah")
+            async for e in orchestrator.run_pipeline(IMAGES, contact_id="sarah")
         ]
 
     events_first = asyncio.run(run_once())
@@ -63,7 +64,7 @@ def test_no_memory_events_without_contact(tmp_path: Path) -> None:
         )
         return [
             e.type
-            async for e in orchestrator.run_pipeline(IMAGE_BYTES, MIME_TYPE, contact_id=None)
+            async for e in orchestrator.run_pipeline(IMAGES, contact_id=None)
         ]
 
     events = asyncio.run(run())

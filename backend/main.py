@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv()  # backend/.env - keys and mode; must run before any os.environ reads
 
-from fastapi import Depends, FastAPI, Form, UploadFile
+from fastapi import Depends, FastAPI, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
@@ -51,6 +51,11 @@ analyze_limiter = RateLimiter(
 suggest_limiter = RateLimiter(
     max_requests=int(os.environ.get("SUGGEST_RATE_LIMIT_PER_HOUR", "60")), window_seconds=3600
 )
+
+# Not literally "unlimited": each image adds real tokens/cost to the vision call,
+# and this is a user-controlled upload boundary, so a generous but finite safety
+# cap belongs here regardless of what the UI allows. Raise via env if needed.
+MAX_IMAGES_PER_ANALYZE = int(os.environ.get("MAX_IMAGES_PER_ANALYZE", "20"))
 
 
 def _build_llm_clients() -> tuple[LLMClient, LLMClient]:
@@ -91,16 +96,23 @@ def get_orchestrator() -> SwarmOrchestrator:
 
 @app.post("/analyze", dependencies=[Depends(analyze_limiter)])
 async def analyze(
-    image: UploadFile,
+    images: list[UploadFile],
     contact_id: str | None = Form(default=None),
     language: SupportedLanguage = Form(default="auto"),
 ) -> StreamingResponse:
+    if not images:
+        raise HTTPException(status_code=400, detail="Attach at least one screenshot.")
+    if len(images) > MAX_IMAGES_PER_ANALYZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Too many screenshots in one go - max {MAX_IMAGES_PER_ANALYZE} per read.",
+        )
+
     orchestrator = get_orchestrator()
-    image_bytes = await image.read()
-    mime_type = image.content_type or "image/jpeg"
+    image_data = [(await img.read(), img.content_type or "image/jpeg") for img in images]
 
     async def event_stream():
-        async for event in orchestrator.run_pipeline(image_bytes, mime_type, contact_id, language):
+        async for event in orchestrator.run_pipeline(image_data, contact_id, language):
             yield f"data: {event.model_dump_json()}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")

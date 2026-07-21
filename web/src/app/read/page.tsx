@@ -35,7 +35,7 @@ function TypingRow({ agent, side }: { agent: AgentName; side: "left" | "right" }
 
 export default function DebateRoom() {
   const router = useRouter();
-  const { status, agentStatus, messages, error } = useAnalysis();
+  const { status, agentStatus, messages, error, imageCount } = useAnalysis();
   const endRef = useRef<HTMLDivElement>(null);
   const t = useT();
 
@@ -65,7 +65,9 @@ export default function DebateRoom() {
           shot
         </div>
         <div className="min-w-0 flex-1">
-          <div className="font-display text-[13px] font-extrabold">{t("read.yourScreenshot")}</div>
+          <div className="font-display text-[13px] font-extrabold">
+            {imageCount === 1 ? t("read.yourScreenshot") : t("read.yourScreenshots")}
+          </div>
           <div className="text-[10.5px] text-ink2">
             {debating ? t("read.statusDebating") : status === "done" ? t("read.statusDone") : t("read.statusRunning")}
           </div>

@@ -23,7 +23,7 @@ class LLMClient(Protocol):
     `complete_text`.
     """
 
-    async def vision_extract(self, image_bytes: bytes, mime_type: str) -> ConversationContext: ...
+    async def vision_extract(self, images: list[tuple[bytes, str]]) -> ConversationContext: ...
 
     async def complete_json(self, system: str, user: str, json_schema: dict[str, Any]) -> dict[str, Any]: ...
 
@@ -40,7 +40,7 @@ class MockLLMClient:
     def __init__(self, latency_seconds: float = 0.05) -> None:
         self._latency_seconds = latency_seconds
 
-    async def vision_extract(self, image_bytes: bytes, mime_type: str) -> ConversationContext:
+    async def vision_extract(self, images: list[tuple[bytes, str]]) -> ConversationContext:
         await asyncio.sleep(self._latency_seconds)
         return ConversationContext(
             contact_id=None,

@@ -84,12 +84,15 @@ class SwarmOrchestrator:
 
     async def run_pipeline(
         self,
-        image_bytes: bytes,
-        mime_type: str,
+        images: list[tuple[bytes, str]],
         contact_id: str | None,
         language: SupportedLanguage = "auto",
     ) -> AsyncIterator[DebateEvent]:
-        """Yields DebateEvents for each stage; any failure anywhere in the pipeline
+        """`images` is one or more (image_bytes, mime_type) pairs - multiple
+        screenshots of the same conversation (e.g. from scrolling) are merged
+        into one ConversationContext during extraction, not analyzed separately.
+
+        Yields DebateEvents for each stage; any failure anywhere in the pipeline
         (provider timeout, rate limit, bad key) is caught and turned into one final
         `error` event instead of an unhandled exception, which would otherwise kill
         the SSE stream as a raw dropped connection - the client has no way to
@@ -97,7 +100,7 @@ class SwarmOrchestrator:
         rate-limit error used to abort the HTTP response with no signal at all."""
         try:
             yield DebateEvent(type="extraction_started")
-            context = await self._extract_context(image_bytes, mime_type, contact_id)
+            context = await self._extract_context(images, contact_id)
             yield DebateEvent(type="extraction_done", payload=context.model_dump(mode="json"))
 
             # Resolved once, after extraction sees the screenshot: an explicit user
@@ -160,9 +163,9 @@ class SwarmOrchestrator:
             )
 
     async def _extract_context(
-        self, image_bytes: bytes, mime_type: str, contact_id: str | None
+        self, images: list[tuple[bytes, str]], contact_id: str | None
     ) -> ConversationContext:
-        context = await self._vision_client.vision_extract(image_bytes, mime_type)
+        context = await self._vision_client.vision_extract(images)
         if contact_id and context.contact_id != contact_id:
             context = context.model_copy(update={"contact_id": contact_id})
         return context

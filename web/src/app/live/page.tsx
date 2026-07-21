@@ -17,6 +17,12 @@ const MISSION_KEYS = [
   { key: "exitStrategy", bg: "var(--direct-soft)", color: "var(--direct)" },
 ] as const;
 
+/** Dedupe key for a File so re-picking the same file twice (e.g. reopening the
+ * picker and selecting it again by mistake) doesn't attach it twice. */
+function fileKey(f: File): string {
+  return `${f.name}:${f.size}:${f.lastModified}`;
+}
+
 export default function LiveScenarioInput() {
   const router = useRouter();
   const runAnalysis = useAnalysis((s) => s.run);
@@ -24,17 +30,30 @@ export default function LiveScenarioInput() {
   const [scenario, setScenario] = useState("");
   const [contacts, setContacts] = useState<ContactSummary[]>([]);
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
-  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [screenshots, setScreenshots] = useState<File[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchContacts().then(setContacts).catch(() => setContacts([]));
   }, []);
 
+  function addFiles(files: FileList | null) {
+    if (!files) return;
+    setScreenshots((prev) => {
+      const seen = new Set(prev.map(fileKey));
+      const additions = Array.from(files).filter((f) => !seen.has(fileKey(f)));
+      return [...prev, ...additions];
+    });
+  }
+
+  function removeFile(index: number) {
+    setScreenshots((prev) => prev.filter((_, i) => i !== index));
+  }
+
   function submit() {
-    if (screenshot) {
+    if (screenshots.length > 0) {
       // Screenshots get the full Arthur - Clara - Leo debate.
-      void runAnalysis(screenshot, selectedContact, scenario || null);
+      void runAnalysis(screenshots, selectedContact, scenario || null);
       router.push("/read");
     } else if (scenario.trim()) {
       router.push(`/say?scenario=${encodeURIComponent(scenario.trim())}`);
@@ -113,29 +132,57 @@ export default function LiveScenarioInput() {
           rows={3}
           className="mt-1.5 w-full resize-none bg-transparent text-[13px] leading-relaxed text-ink outline-none placeholder:text-ink3"
         />
+
+        {screenshots.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {screenshots.map((file, i) => (
+              <span
+                key={fileKey(file)}
+                className="flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-1 pl-2.5 pr-1 text-[10px] font-bold text-accent-deep"
+              >
+                {file.name.length > 16 ? `${file.name.slice(0, 16)}…` : file.name}
+                <button
+                  type="button"
+                  aria-label={t("live.removeScreenshot")}
+                  onClick={() => removeFile(i)}
+                  className="flex h-4 w-4 items-center justify-center rounded-full text-[11px] leading-none text-accent-deep hover:bg-white/40"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className="mt-2 flex items-center justify-between">
           <input
             ref={fileRef}
             type="file"
             accept="image/*"
+            multiple
             className="hidden"
-            onChange={(e) => setScreenshot(e.target.files?.[0] ?? null)}
+            onChange={(e) => {
+              addFiles(e.target.files);
+              e.target.value = ""; // allow re-selecting the same file later
+            }}
           />
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
             className={clsx(
               "whitespace-nowrap rounded-full border px-3.5 py-2 font-display text-[10.5px] font-bold",
-              screenshot ? "border-accent text-accent-deep" : "border-hairline bg-glass text-ink2",
+              screenshots.length > 0 ? "border-accent text-accent-deep" : "border-hairline bg-glass text-ink2",
             )}
           >
-            {screenshot ? `✓ ${screenshot.name.slice(0, 18)}` : t("live.addScreenshot")}
+            {screenshots.length === 0
+              ? t("live.addScreenshot")
+              : `${t("live.screenshotsCount", { count: screenshots.length })} · ${t("live.addMoreScreenshots")}`}
           </button>
           <button
             type="button"
             aria-label={t("live.send")}
             onClick={submit}
-            disabled={!screenshot && !scenario.trim()}
+            disabled={screenshots.length === 0 && !scenario.trim()}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(160deg,var(--mode),var(--mode-deep))] shadow-clay transition-transform active:translate-y-0.5 disabled:opacity-40"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" className="rtl:-scale-x-100">

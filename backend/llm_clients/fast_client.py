@@ -26,7 +26,7 @@ class FastLLMClient:
         if self._provider not in ("groq", "gemini"):
             raise ValueError(f"Unsupported fast LLM provider: {self._provider!r}")
 
-    async def vision_extract(self, image_bytes: bytes, mime_type: str) -> ConversationContext:
+    async def vision_extract(self, images: list[tuple[bytes, str]]) -> ConversationContext:
         raise NotImplementedError("FastLLMClient is for debate agents only; use AnthropicClient for vision.")
 
     async def complete_json(self, system: str, user: str, json_schema: dict[str, Any]) -> dict[str, Any]:
