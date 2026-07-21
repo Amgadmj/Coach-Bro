@@ -15,6 +15,9 @@
     --chill: #1F8C7F;       --chill-soft: #E1F3EF;
     --romantic: #E24E71;    --romantic-soft: #FCE7EC;
     --direct: #5B4B9C;      --direct-soft: #EBE7F6;
+    --arthur: #3B6EA5;      --arthur-soft: #E3ECF5;
+    --clara: #9C4F8F;       --clara-soft: #F5E7F2;
+    --leo: #D6592F;         --leo-soft: #FBE3D6;
     --card-shadow: 0 1px 2px rgba(42,20,30,.08), 0 16px 36px rgba(196,90,110,.16);
     --glass-fill: rgba(255,255,255,.58);
     --glass-line: rgba(255,255,255,.65);
@@ -34,6 +37,9 @@
       --chill: #46C4B3;   --chill-soft: #163330;
       --romantic: #FF6E8E; --romantic-soft: #3A1F2A;
       --direct: #9284D9;  --direct-soft: #241E3A;
+      --arthur: #7CA8DE;  --arthur-soft: #1E2C3D;
+      --clara: #D98BCB;   --clara-soft: #332030;
+      --leo: #EB8355;     --leo-soft: #3A2519;
       --card-shadow: 0 1px 2px rgba(0,0,0,.5), 0 16px 36px rgba(0,0,0,.4);
       --glass-fill: rgba(40,30,38,.5); --glass-line: rgba(255,255,255,.12);
       --wf-fill: #2D2233; --wf-line: #4A3B4F;
@@ -47,6 +53,9 @@
     --chill: #1F8C7F; --chill-soft: #E1F3EF;
     --romantic: #E24E71; --romantic-soft: #FCE7EC;
     --direct: #5B4B9C; --direct-soft: #EBE7F6;
+    --arthur: #3B6EA5; --arthur-soft: #E3ECF5;
+    --clara: #9C4F8F; --clara-soft: #F5E7F2;
+    --leo: #D6592F; --leo-soft: #FBE3D6;
     --card-shadow: 0 1px 2px rgba(42,20,30,.08), 0 16px 36px rgba(196,90,110,.16);
     --glass-fill: rgba(255,255,255,.58); --glass-line: rgba(255,255,255,.65);
     --wf-fill: #EEDFD3; --wf-line: #D3B9A7;
@@ -59,6 +68,9 @@
     --chill: #46C4B3; --chill-soft: #163330;
     --romantic: #FF6E8E; --romantic-soft: #3A1F2A;
     --direct: #9284D9; --direct-soft: #241E3A;
+    --arthur: #7CA8DE; --arthur-soft: #1E2C3D;
+    --clara: #D98BCB; --clara-soft: #332030;
+    --leo: #EB8355; --leo-soft: #3A2519;
     --card-shadow: 0 1px 2px rgba(0,0,0,.5), 0 16px 36px rgba(0,0,0,.4);
     --glass-fill: rgba(40,30,38,.5); --glass-line: rgba(255,255,255,.12);
     --wf-fill: #2D2233; --wf-line: #4A3B4F;
@@ -244,6 +256,39 @@
   .podium .name { font-size: 10.5px; font-weight: 700; margin-top: 6px; }
   .podium .score { font-size: 9.5px; color: #6E5C68; }
 
+  /* ---------- agent debate ---------- */
+  .agent-row { display: flex; gap: 10px; padding: 11px 0; }
+  .agent-row:not(:last-child) { border-bottom: 1px solid rgba(42,30,38,.08); }
+  .agent-row .agent-body { flex: 1; min-width: 0; }
+  .agent-row .agent-name { font-family: var(--display); font-weight: 800; font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
+  .agent-row.pending { opacity: .45; }
+  .agent-row .agent-text { font-size: 11px; color: #4A3B44; margin-top: 3px; line-height: 1.5; }
+  .skel { background: linear-gradient(90deg, rgba(42,30,38,.09) 25%, rgba(42,30,38,.15) 50%, rgba(42,30,38,.09) 75%); background-size: 200% 100%; border-radius: 6px; height: 8px; margin-top: 6px; }
+  .skel + .skel { width: 70%; }
+  @media (prefers-reduced-motion: no-preference) {
+    .skel { animation: shimmer 1.6s infinite linear; }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  }
+  .agent-status { margin-left: auto; font-family: var(--mono); font-size: 8.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; flex-shrink: 0; }
+
+  /* ---------- saved contacts ---------- */
+  .contact-row { display: flex; align-items: center; gap: 10px; padding: 10px; }
+  .contact-row .contact-body { flex: 1; min-width: 0; }
+  .contact-row .contact-name { font-family: var(--display); font-weight: 800; font-size: 12.5px; }
+  .contact-row .contact-note { font-size: 10.5px; color: #6E5C68; margin-top: 1px; }
+  .contact-row .chev { color: #C7B7C1; font-size: 13px; flex-shrink: 0; }
+
+  /* ---------- share card ---------- */
+  .share-preview {
+    border-radius: 26px; padding: 20px; aspect-ratio: 9 / 13; display: flex; flex-direction: column; justify-content: space-between;
+    background: linear-gradient(155deg, #4A2C55 0%, #7B3455 55%, #C9536B 100%);
+    color: #FFF; box-shadow: 0 14px 30px rgba(74,44,85,.4);
+  }
+  .share-preview .tag { align-self: flex-start; background: rgba(255,255,255,.18); border-radius: 999px; padding: 4px 10px; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .share-preview .num { font-family: var(--display); font-size: 44px; font-weight: 800; }
+  .share-preview .lesson { font-size: 12px; font-weight: 600; line-height: 1.4; }
+  .share-preview .wm { align-self: flex-end; font-family: var(--display); font-weight: 800; font-size: 11px; opacity: .75; }
+
   /* ---------- wireframes ---------- */
   .wf { background: var(--ground-2); }
   .wf-frame {
@@ -288,13 +333,13 @@
 <header class="hero">
   <div class="hero-grid">
     <div class="hero-copy">
-      <span class="eyebrow">Design spec · v2 · Dusk direction</span>
+      <span class="eyebrow">Design spec · v2.1 · Dusk direction · complete pass</span>
       <h1>Confidence has a golden hour.</h1>
-      <p class="lede">A warmer, glass-and-gradient reinterpretation of RESET AI — built around the five minutes before you walk in, not just the debate over what to text. Kept alongside <code class="inline">ui-spec-v1.html</code> (the Airbnb-inspired direction) for side-by-side comparison, not as its replacement.</p>
+      <p class="lede">A warmer, glass-and-gradient reinterpretation of RESET AI — built around the five minutes before you walk in, not just the debate over what to text. This pass carries every screen from v1 forward into the dusk system: the live Arthur/Clara/Leo debate, the result screen, saved contacts, and story sharing, alongside the new Dashboard, Vibe Check-in, Live Scenario, Recap, and Ranking. Kept alongside <code class="inline">ui-spec-v1.html</code> (the Airbnb-inspired direction) for side-by-side comparison, not as its replacement.</p>
       <div class="hero-meta">
         <div><b>4</b>social modes</div>
-        <div><b>5</b>core screens</div>
-        <div><b>1</b>confidence meter</div>
+        <div><b>3</b>debate agents</div>
+        <div><b>9</b>core screens</div>
         <div><b>Next.js</b>target stack</div>
       </div>
       <div class="hero-modes">
@@ -353,7 +398,11 @@
     <div class="swatch"><div class="chip" style="background:var(--hype);"></div><div class="meta"><b>Hype</b><span>#DE8A1E</span><em>social mode</em></div></div>
     <div class="swatch"><div class="chip" style="background:var(--chill);"></div><div class="meta"><b>Chill</b><span>#1F8C7F</span><em>social mode</em></div></div>
     <div class="swatch"><div class="chip" style="background:var(--direct);"></div><div class="meta"><b>Direct</b><span>#5B4B9C</span><em>social mode</em></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--arthur);"></div><div class="meta"><b>Arthur</b><span>#3B6EA5</span><em>agent identity</em></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--clara);"></div><div class="meta"><b>Clara</b><span>#9C4F8F</span><em>agent identity</em></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--leo);"></div><div class="meta"><b>Leo</b><span>#D6592F</span><em>agent identity</em></div></div>
   </div>
+  <p class="t-caption" style="margin-top:14px; max-width:64ch;">Agent identity (Arthur/Clara/Leo) and Social Mode color are two separate systems, kept deliberately apart: Social Mode tints whichever screen you're on for the whole session; Agent identity is scoped to the debate and result screens only, so a card is never ambiguous about whether it's "your mode" or "who's talking."</p>
 
   <div class="foundation-cols">
     <div>
@@ -395,7 +444,7 @@
   <div class="section-head">
     <span class="eyebrow">Flow</span>
     <h2>Dashboard in, recap out</h2>
-    <p>One straight line for a night out, with the mode check-in as a quick side room the first time you open the app that evening.</p>
+    <p>One straight line for a night out, with the mode check-in as a quick side room the first time you open the app that evening, and a second, screenshot-driven line that can start from any text message.</p>
   </div>
   <div class="flow">
     <div class="flow-node"><span class="stage">Open</span><b>Dashboard</b><span>Greeting + Playbook feed</span></div>
@@ -408,6 +457,16 @@
     <div class="flow-arrow">→</div>
     <div class="flow-node"><span class="stage">Anytime</span><b>Ranking</b><span>This week, with friends</span></div>
   </div>
+  <p class="flow-side" style="margin-top:6px;">Side room, from any screen: upload a screenshot →</p>
+  <div class="flow" style="margin-top:4px;">
+    <div class="flow-node"><span class="stage">Upload</span><b>Debate reveal</b><span>Arthur, Clara &amp; Leo, live</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">Synthesize</span><b>Result</b><span>Attraction read + best reply</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">Save</span><b>Saved Contacts</b><span>Relationship memory, per person</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">Optional</span><b>Story share</b><span>Watermarked card</span></div>
+  </div>
 </section>
 
 <!-- ============ WIREFRAMES ============ -->
@@ -415,7 +474,7 @@
   <div class="section-head">
     <span class="eyebrow">Wireframes</span>
     <h2>Structure before polish</h2>
-    <p>Four low-fidelity passes establishing hierarchy before the gradient-and-glass treatment lands.</p>
+    <p>Eight low-fidelity passes establishing hierarchy before the gradient-and-glass treatment lands — the four new screens plus the four carried over from v1.</p>
   </div>
   <div class="screens">
     <div class="screen-block">
@@ -444,6 +503,48 @@
         </div>
       </div>
       <div class="caption"><b>Live scenario</b><p>Hero, meter, checkable step timeline.</p></div>
+    </div>
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">DEBATE</span>
+        <div class="wf-bar" style="width:45%;"></div>
+        <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+          <div class="wf-solid" style="flex:1;">ARTHUR — DONE</div>
+          <div class="wf-box" style="flex:1;">CLARA — ANALYZING</div>
+          <div class="wf-box" style="flex:1; opacity:.5;">LEO — WAITING</div>
+        </div>
+      </div>
+      <div class="caption"><b>Debate reveal</b><p>Three agent cards, staggered by completion.</p></div>
+    </div>
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">RESULT</span>
+        <div class="wf-solid" style="height:60px;">ATTRACTION METER</div>
+        <div class="wf-box" style="height:30px;">WHAT SHE'S THINKING</div>
+        <div class="wf-solid" style="flex:1;">BEST RESPONSE</div>
+        <div class="wf-box" style="height:22px;">ALT · ALT</div>
+      </div>
+      <div class="caption"><b>Result</b><p>Meter, subtext read, best response, alternatives.</p></div>
+    </div>
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">LEADS</span>
+        <div class="wf-bar" style="width:38%;"></div>
+        <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+          <div class="wf-box" style="height:34px;">CONTACT ROW</div>
+          <div class="wf-box" style="height:34px;">CONTACT ROW</div>
+          <div class="wf-box" style="height:34px;">CONTACT ROW</div>
+        </div>
+      </div>
+      <div class="caption"><b>Saved contacts</b><p>Relationship memory, one row per person.</p></div>
+    </div>
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">SHARE</span>
+        <div class="wf-solid" style="flex:1;">WATERMARKED CARD</div>
+        <div class="wf-box" style="height:26px;">SHARE BUTTON</div>
+      </div>
+      <div class="caption"><b>Story share</b><p>Card preview, then a single share action.</p></div>
     </div>
     <div class="screen-block">
       <div class="wf-frame">
@@ -478,16 +579,17 @@
 <section>
   <div class="section-head">
     <span class="eyebrow">Hi-fi</span>
-    <h2>Five screens</h2>
-    <p>Mockups are pinned to the light dusk palette on purpose — this is how the app ships regardless of what theme this spec page is currently in.</p>
+    <h2>Nine screens</h2>
+    <p>Mockups are pinned to the light dusk palette on purpose — this is how the app ships regardless of what theme this spec page is currently in. The night-out loop (Dashboard → Vibe Check-in → Live Scenario → Recap → Ranking) sits alongside the screenshot-analysis loop carried over from v1 (Debate reveal → Result → Saved Contacts → Story share), both now in the dusk system.</p>
   </div>
   <div class="screens">
 
     <!-- ============ DASHBOARD ============ -->
     <div class="screen-block">
       <div class="phone">
-        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
-        <div class="p-pad">
+        <div class="blob blob-romantic" style="position:absolute; top:-24px; right:-26px; width:100px; height:100px; opacity:.16; z-index:0;"></div>
+        <div class="status" style="position:relative;"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div class="p-pad" style="position:relative;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div><div class="p-sub">Hi Maya 👋</div><div class="p-navtitle">Ready for<br>tonight?</div></div>
             <div class="avatar" style="background:linear-gradient(135deg,var(--romantic),var(--direct));">M</div>
@@ -541,6 +643,7 @@
           <div class="p-navtitle">Ready for<br>tonight?</div>
           <div class="p-glass" style="margin-top:12px; height:50px;"></div>
         </div>
+        <div style="position:absolute; inset:0; background:rgba(30,18,26,.28);"></div>
         <div style="position:absolute; left:14px; right:14px; bottom:70px; top:auto;">
           <div class="p-glass" style="padding:18px; background:rgba(255,255,255,.86);">
             <div class="p-label">FIRST THING TONIGHT</div>
@@ -578,7 +681,10 @@
             </div>
           </div>
           <div class="p-glass" style="padding:14px; margin-top:10px;">
-            <div class="p-label" style="margin-bottom:6px;">TONIGHT'S STEPS</div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
+              <div class="p-label">TONIGHT'S STEPS</div>
+              <div class="p-label" style="color:var(--romantic);">STEP 2 OF 3</div>
+            </div>
             <div class="steps">
               <div class="step done"><div class="dot">✓</div><div class="rail"></div><div><b>The approach</b><span>Said hi near the bar</span></div></div>
               <div class="step now"><div class="dot">●</div><div class="rail"></div><div><b>Build rapport</b><span>Ask about the tattoo</span></div></div>
@@ -590,12 +696,126 @@
       <div class="caption"><b>Live scenario</b><p>Venue hero, gradient Confidence Meter, checkable step timeline for live advice.</p><span class="file">ScenarioView.tsx</span></div>
     </div>
 
+    <!-- ============ DEBATE REVEAL ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div class="p-pad">
+          <div class="p-sub">Screenshot uploaded</div>
+          <div class="p-navtitle">Reading the<br>room…</div>
+          <div class="p-glass" style="margin-top:14px; padding:6px 14px;">
+            <div class="agent-row">
+              <div class="avatar" style="background:var(--arthur);">A</div>
+              <div class="agent-body">
+                <div class="agent-name">Arthur <span class="agent-status" style="color:var(--chill);">DONE</span></div>
+                <div class="agent-text">Double-texted after a 42s gap — hold frame, don't over-explain.</div>
+              </div>
+            </div>
+            <div class="agent-row">
+              <div class="avatar" style="background:var(--clara);">C</div>
+              <div class="agent-body">
+                <div class="agent-name">Clara <span class="agent-status" style="color:var(--romantic);">ANALYZING</span></div>
+                <div class="skel" style="width:88%;"></div>
+                <div class="skel"></div>
+              </div>
+            </div>
+            <div class="agent-row pending">
+              <div class="avatar" style="background:var(--leo);">L</div>
+              <div class="agent-body">
+                <div class="agent-name">Leo <span class="agent-status" style="color:#A0909A;">WAITING</span></div>
+                <div class="agent-text">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="caption"><b>Debate reveal</b><p>Arthur, Clara &amp; Leo analyze the screenshot in parallel — each card animates in as its take lands, carried over from v1's swarm debate.</p><span class="file">DebateAgentCard.tsx</span></div>
+    </div>
+
+    <!-- ============ RESULT ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div class="p-pad">
+          <div class="p-navtitle">Your read</div>
+          <div class="p-glass" style="padding:14px; margin-top:10px;">
+            <div class="p-label">ATTRACTION</div>
+            <div class="meter-wrap">
+              <div class="meter-num">7<span class="meter-den">/10</span></div>
+              <div class="meter-track"><div class="meter-fill" style="width:70%;"></div></div>
+            </div>
+          </div>
+          <div class="p-glass" style="padding:12px 14px; margin-top:8px;">
+            <div class="p-label" style="margin-bottom:4px;">WHAT SHE'S THINKING</div>
+            <div style="font-size:11px; line-height:1.55;">Testing if he'll chase · Wants banter, not a pitch</div>
+          </div>
+          <div style="background:linear-gradient(135deg,var(--accent),var(--accent-deep)); border-radius:16px; padding:12px 14px; margin-top:8px; color:#FFF;">
+            <div class="p-label" style="color:rgba(255,255,255,.8);">BEST RESPONSE</div>
+            <div style="font-family:var(--display); font-weight:700; font-size:12.5px; margin-top:3px;">"Just my undivided attention — I'm picky who gets it."</div>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <span class="p-chip" style="background:rgba(255,255,255,.5); flex:1; justify-content:center;">Playful</span>
+            <span class="p-chip" style="background:rgba(255,255,255,.5); flex:1; justify-content:center;">Direct</span>
+          </div>
+          <div class="p-btn-ghost" style="margin-top:10px;">Save to contacts</div>
+        </div>
+      </div>
+      <div class="caption"><b>Result</b><p>Attraction Gauge, subtext read, best response — reuses the same GradientMeter as the Confidence Meter on purpose.</p><span class="file">ResultCard.tsx</span></div>
+    </div>
+
+    <!-- ============ SAVED CONTACTS ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div class="p-pad">
+          <div class="p-navtitle">Saved<br>contacts</div>
+          <div class="p-sub">Your relationship memory</div>
+          <div class="p-glass" style="margin-top:12px; padding:4px 10px;">
+            <div class="contact-row" style="border-bottom:1px solid rgba(42,30,38,.08);">
+              <div class="avatar" style="background:linear-gradient(135deg,var(--romantic),var(--direct));">S</div>
+              <div class="contact-body"><div class="contact-name">Sarah</div><div class="contact-note">4 reads · next one gets sharper</div></div>
+              <div class="chev">›</div>
+            </div>
+            <div class="contact-row" style="border-bottom:1px solid rgba(42,30,38,.08);">
+              <div class="avatar" style="background:linear-gradient(135deg,var(--hype),var(--leo));">J</div>
+              <div class="contact-body"><div class="contact-name">Jess</div><div class="contact-note">1 read</div></div>
+              <div class="chev">›</div>
+            </div>
+            <div class="contact-row">
+              <div class="avatar" style="background:linear-gradient(135deg,var(--chill),var(--direct));">R</div>
+              <div class="contact-body"><div class="contact-name">Rae</div><div class="contact-note">7 reads · next one gets sharper</div></div>
+              <div class="chev">›</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="caption"><b>Saved Contacts</b><p>Relationship memory, carried over from v1's Contacts screen — loss-aversion copy on anyone with 2+ reads.</p><span class="file">ContactRow.tsx</span></div>
+    </div>
+
+    <!-- ============ STORY SHARE ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div class="p-pad">
+          <div class="p-navtitle">Share this<br>read</div>
+          <div class="share-preview" style="margin-top:12px;">
+            <span class="tag">Reset AI</span>
+            <div><div class="num">7/10</div><div class="lesson">Never trade tension for a safe friend-zone pass.</div></div>
+            <span class="wm">reset ai</span>
+          </div>
+          <div class="p-btn" style="margin-top:12px;">Share to story</div>
+        </div>
+      </div>
+      <div class="caption"><b>Story share</b><p>Watermarked card export, carried over from v1 — the growth-loop surface, never the raw conversation.</p><span class="file">ShareCard.tsx</span></div>
+    </div>
+
     <!-- ============ RECAP ============ -->
     <div class="screen-block">
       <div class="phone">
         <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
         <div class="p-pad">
           <div class="p-navtitle">Night out<br>recap</div>
+          <div class="p-sub">Downtown Lounge · Fri 11:58 PM</div>
           <div class="p-glass" style="margin-top:14px; padding:16px; text-align:center;">
             <div class="blob blob-romantic" style="margin:0 auto 8px;"><b class="eye1"></b><b class="eye2"></b></div>
             <div style="font-family:var(--display); font-weight:800; font-size:15px;">Mostly Romantic energy</div>
@@ -619,10 +839,14 @@
         <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
         <div class="p-pad">
           <div class="p-navtitle">Wingman<br>ranking</div>
-          <div class="p-sub">This week · your crew</div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <span class="p-chip" style="background:var(--romantic); color:#FFF;">Week</span>
+            <span class="p-chip" style="background:rgba(42,30,38,.07);">Month</span>
+            <span class="p-chip" style="background:rgba(42,30,38,.07);">All-time</span>
+          </div>
           <div class="podium" style="margin-top:22px;">
             <div class="col p2"><div class="bar">2</div><div class="name">Alex</div><div class="score">640</div></div>
-            <div class="col p1"><div class="bar">1</div><div class="name">You</div><div class="score">810</div></div>
+            <div class="col p1"><div class="bar">🏆</div><div class="name">You</div><div class="score">810</div></div>
             <div class="col p3"><div class="bar">3</div><div class="name">Cait</div><div class="score">510</div></div>
           </div>
           <div class="p-glass" style="margin-top:16px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
@@ -674,12 +898,16 @@
     <div class="principle"><span class="tag">Component</span><h3>StepTimeline</h3><p>Done / now / next step list for live, in-scenario advice, each step a single checkable action.</p></div>
     <div class="principle"><span class="tag">Component</span><h3>RecapStat</h3><p>Glass stat tile with a count-up numeral, used in a 2×2 grid on the Recap screen.</p></div>
     <div class="principle"><span class="tag">Component</span><h3>RankingPodium</h3><p>Top-three podium with gradient bars, followed by a plain list for the rest of the field.</p></div>
+    <div class="principle"><span class="tag">Component · from v1</span><h3>DebateAgentCard</h3><p>One row per agent in the live debate: avatar, name, status, and either a shimmer skeleton or the landed analysis text.</p></div>
+    <div class="principle"><span class="tag">Component · from v1</span><h3>ResultCard</h3><p>Attraction Gauge (a GradientMeter instance) plus subtext read, best response, and two alternative-response chips.</p></div>
+    <div class="principle"><span class="tag">Component · from v1</span><h3>ContactRow</h3><p>Saved-contact list item: avatar, name, and a read-count caption that turns loss-averse at 2+ reads.</p></div>
+    <div class="principle"><span class="tag">Component · from v1</span><h3>ShareCard</h3><p>Watermarked, story-shaped export card plus a single share action — summary only, never the raw conversation.</p></div>
   </div>
-  <p class="t-caption" style="margin-top:28px;">Target stack per brief: <b style="color:var(--ink);">Next.js + Tailwind CSS + Framer Motion</b>, replacing the Expo/React Native app going forward. Playbook, Confidence Meter, Recap, and Ranking have no backend yet — implementation will start against a typed mock <code class="inline">api.ts</code>; only the existing screenshot-analysis flow (Arthur/Clara/Leo) has a real API to call. This is a pure design pass — feature-to-backend mapping is a separate decision.</p>
+  <p class="t-caption" style="margin-top:28px;">Target stack per brief: <b style="color:var(--ink);">Next.js + Tailwind CSS + Framer Motion</b>, replacing the Expo/React Native app going forward. Playbook, Confidence Meter, Recap, and Ranking have no backend yet — implementation will start against a typed mock <code class="inline">api.ts</code>. Debate reveal, Result, Saved Contacts, and Story share <em>do</em> have a real API already (the existing FastAPI swarm backend, unchanged) — those four should wire to it directly rather than mock it. This is a pure design pass — final feature-to-nav mapping (e.g. where the screenshot-upload entry point lives relative to the Live tab) is still a separate decision.</p>
 </section>
 
 <footer>
-  RESET AI · UI Design Spec v2 · Dusk direction · docs/design/ui-spec-v2.html
+  RESET AI · UI Design Spec v2.1 · Dusk direction, complete pass · docs/design/ui-spec-v2.html
 </footer>
 
 </div>
