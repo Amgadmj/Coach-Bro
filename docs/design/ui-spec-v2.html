@@ -1,0 +1,913 @@
+<title>RESET AI — Wingman Dashboard Design Spec (v2, Dusk direction)</title>
+<style>
+  :root {
+    --ground: #FBF3EC;
+    --ground-2: #F6E8DF;
+    --ground-3: #EFDACB;
+    --ink: #2A1E26;
+    --ink-2: #6E5C68;
+    --ink-3: #A0909A;
+    --hairline: rgba(42,30,38,.14);
+    --accent: #E24E71;
+    --accent-soft: #FCE7EC;
+    --accent-deep: #B93359;
+    --hype: #DE8A1E;        --hype-soft: #FBEED8;
+    --chill: #1F8C7F;       --chill-soft: #E1F3EF;
+    --romantic: #E24E71;    --romantic-soft: #FCE7EC;
+    --direct: #5B4B9C;      --direct-soft: #EBE7F6;
+    --arthur: #3B6EA5;      --arthur-soft: #E3ECF5;
+    --clara: #9C4F8F;       --clara-soft: #F5E7F2;
+    --leo: #D6592F;         --leo-soft: #FBE3D6;
+    --card-shadow: 0 1px 2px rgba(42,20,30,.08), 0 16px 36px rgba(196,90,110,.16);
+    --glass-fill: rgba(255,255,255,.58);
+    --glass-line: rgba(255,255,255,.65);
+    --wf-fill: #EEDFD3;
+    --wf-line: #D3B9A7;
+    --display: ui-rounded, "SF Pro Rounded", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    --sans: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono: "SF Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #1C1420; --ground-2: #241B29; --ground-3: #2D2233;
+      --ink: #F5ECE8; --ink-2: #C4B3BE; --ink-3: #8E7C8A;
+      --hairline: rgba(255,240,245,.12);
+      --accent: #FF6E8E; --accent-soft: #3A1F2A; --accent-deep: #FF9AB0;
+      --hype: #E8A544;    --hype-soft: #35291A;
+      --chill: #46C4B3;   --chill-soft: #163330;
+      --romantic: #FF6E8E; --romantic-soft: #3A1F2A;
+      --direct: #9284D9;  --direct-soft: #241E3A;
+      --arthur: #7CA8DE;  --arthur-soft: #1E2C3D;
+      --clara: #D98BCB;   --clara-soft: #332030;
+      --leo: #EB8355;     --leo-soft: #3A2519;
+      --card-shadow: 0 1px 2px rgba(0,0,0,.5), 0 16px 36px rgba(0,0,0,.4);
+      --glass-fill: rgba(40,30,38,.5); --glass-line: rgba(255,255,255,.12);
+      --wf-fill: #2D2233; --wf-line: #4A3B4F;
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #FBF3EC; --ground-2: #F6E8DF; --ground-3: #EFDACB;
+    --ink: #2A1E26; --ink-2: #6E5C68; --ink-3: #A0909A; --hairline: rgba(42,30,38,.14);
+    --accent: #E24E71; --accent-soft: #FCE7EC; --accent-deep: #B93359;
+    --hype: #DE8A1E; --hype-soft: #FBEED8;
+    --chill: #1F8C7F; --chill-soft: #E1F3EF;
+    --romantic: #E24E71; --romantic-soft: #FCE7EC;
+    --direct: #5B4B9C; --direct-soft: #EBE7F6;
+    --arthur: #3B6EA5; --arthur-soft: #E3ECF5;
+    --clara: #9C4F8F; --clara-soft: #F5E7F2;
+    --leo: #D6592F; --leo-soft: #FBE3D6;
+    --card-shadow: 0 1px 2px rgba(42,20,30,.08), 0 16px 36px rgba(196,90,110,.16);
+    --glass-fill: rgba(255,255,255,.58); --glass-line: rgba(255,255,255,.65);
+    --wf-fill: #EEDFD3; --wf-line: #D3B9A7;
+  }
+  :root[data-theme="dark"] {
+    --ground: #1C1420; --ground-2: #241B29; --ground-3: #2D2233;
+    --ink: #F5ECE8; --ink-2: #C4B3BE; --ink-3: #8E7C8A; --hairline: rgba(255,240,245,.12);
+    --accent: #FF6E8E; --accent-soft: #3A1F2A; --accent-deep: #FF9AB0;
+    --hype: #E8A544; --hype-soft: #35291A;
+    --chill: #46C4B3; --chill-soft: #163330;
+    --romantic: #FF6E8E; --romantic-soft: #3A1F2A;
+    --direct: #9284D9; --direct-soft: #241E3A;
+    --arthur: #7CA8DE; --arthur-soft: #1E2C3D;
+    --clara: #D98BCB; --clara-soft: #332030;
+    --leo: #EB8355; --leo-soft: #3A2519;
+    --card-shadow: 0 1px 2px rgba(0,0,0,.5), 0 16px 36px rgba(0,0,0,.4);
+    --glass-fill: rgba(40,30,38,.5); --glass-line: rgba(255,255,255,.12);
+    --wf-fill: #2D2233; --wf-line: #4A3B4F;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 32px; }
+  a { color: var(--accent-deep); }
+
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; }
+  h1 { font-family: var(--display); font-size: clamp(34px, 5vw, 54px); line-height: 1.06; letter-spacing: -0.01em; font-weight: 800; margin: 14px 0 18px; text-wrap: balance; }
+  h2 { font-family: var(--display); font-size: 27px; letter-spacing: -0.01em; font-weight: 800; margin: 0 0 6px; text-wrap: balance; }
+  h3 { font-family: var(--display); font-size: 18px; font-weight: 700; margin: 0 0 4px; }
+  .lede { font-size: 19px; color: var(--ink-2); max-width: 58ch; margin: 0; }
+  p { max-width: 68ch; }
+  section { padding: 56px 0; border-top: 1px solid var(--hairline); }
+  .section-head { margin-bottom: 34px; }
+  .section-head p { color: var(--ink-2); margin: 8px 0 0; }
+
+  /* ---------- hero ---------- */
+  header.hero {
+    padding: 72px 0 56px; position: relative; overflow: hidden;
+  }
+  header.hero::before {
+    content: ""; position: absolute; inset: -20% -10% auto -10%; height: 480px; z-index: -1;
+    background:
+      radial-gradient(480px 280px at 12% 20%, color-mix(in srgb, var(--hype) 30%, transparent), transparent 70%),
+      radial-gradient(520px 320px at 88% 10%, color-mix(in srgb, var(--romantic) 26%, transparent), transparent 70%),
+      radial-gradient(600px 360px at 60% 60%, color-mix(in srgb, var(--direct) 18%, transparent), transparent 70%);
+    filter: blur(10px);
+  }
+  .hero-grid { display: flex; gap: 48px; align-items: center; flex-wrap: wrap; }
+  .hero-copy { flex: 1 1 420px; min-width: 300px; }
+  .hero-meta { display: flex; gap: 24px; margin-top: 28px; flex-wrap: wrap; }
+  .hero-meta div { font-size: 13px; color: var(--ink-2); }
+  .hero-meta b { display: block; color: var(--ink); font-size: 14px; font-family: var(--display); }
+  .hero-modes { display: flex; gap: 10px; margin-top: 30px; flex-wrap: wrap; }
+
+  /* ---------- principles ---------- */
+  .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px; }
+  .principle { background: var(--ground-2); border: 1px solid var(--hairline); border-radius: 20px; padding: 22px 22px 20px; }
+  .principle .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; color: var(--ink-3); text-transform: uppercase; }
+  .principle h3 { margin-top: 8px; }
+  .principle p { font-size: 14px; color: var(--ink-2); margin: 6px 0 0; }
+
+  /* ---------- foundations ---------- */
+  .swatch-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+  .swatch { border: 1px solid var(--hairline); border-radius: 18px; overflow: hidden; background: var(--ground-2); }
+  .swatch .chip { height: 74px; }
+  .swatch .meta { padding: 10px 14px 12px; }
+  .swatch .meta b { display: block; font-size: 14px; font-family: var(--display); }
+  .swatch .meta span { font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
+  .swatch .meta em { display: block; font-style: normal; font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+  .foundation-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; margin-top: 44px; }
+  .type-spec div { border-bottom: 1px solid var(--hairline); padding: 12px 0; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  .type-spec .sample { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--display); }
+  .type-spec .note { font-family: var(--mono); font-size: 11px; color: var(--ink-3); flex-shrink: 0; }
+  .t-display { font-size: 30px; font-weight: 800; letter-spacing: -0.01em; }
+  .t-title { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .t-head { font-size: 17px; font-weight: 700; }
+  .t-body { font-size: 15px; font-family: var(--sans); font-weight: 400; }
+  .t-caption { font-size: 13px; color: var(--ink-2); font-family: var(--sans); }
+  .t-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); font-family: var(--sans); }
+
+  .shape-list { list-style: none; margin: 0; padding: 0; }
+  .shape-list li { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--hairline); font-size: 14px; align-items: center; }
+  .shape-list .k { font-family: var(--mono); font-size: 11px; color: var(--ink-3); width: 128px; flex-shrink: 0; }
+
+  /* ---------- blobs (social-mode mascots) ---------- */
+  .blob-row { display: flex; gap: 22px; flex-wrap: wrap; }
+  .blob-card { text-align: center; width: 108px; }
+  .blob {
+    width: 76px; height: 76px; margin: 0 auto 10px; position: relative;
+    border-radius: 58% 42% 51% 49% / 55% 45% 58% 42%;
+    box-shadow: inset 0 -8px 14px rgba(0,0,0,.08), 0 10px 20px -6px rgba(0,0,0,.22);
+  }
+  .blob::before, .blob::after {
+    content: ""; position: absolute; top: 34%; width: 15px; height: 15px; border-radius: 50%; background: #FFF;
+  }
+  .blob::before { left: 26%; } .blob::after { left: 52%; }
+  .blob i { position: absolute; top: 40%; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .blob b.eye1 { left: 30%; } .blob b.eye2 { left: 56%; }
+  .blob-hype { background: linear-gradient(160deg, #F3C56A, var(--hype)); color: var(--hype); }
+  .blob-chill { background: linear-gradient(160deg, #7FD9CB, var(--chill)); color: var(--chill); }
+  .blob-romantic { background: linear-gradient(160deg, #F49CB4, var(--romantic)); color: var(--romantic); }
+  .blob-direct { background: linear-gradient(160deg, #A79AE0, var(--direct)); color: var(--direct); }
+  .blob-card .name { font-family: var(--display); font-weight: 700; font-size: 13.5px; }
+  .blob-card .desc { font-size: 11.5px; color: var(--ink-2); margin-top: 2px; line-height: 1.4; }
+
+  /* ---------- flow ---------- */
+  .flow { display: flex; gap: 0; align-items: stretch; overflow-x: auto; padding: 8px 0 16px; }
+  .flow-node { background: var(--ground-2); border: 1px solid var(--hairline); border-radius: 18px; padding: 16px 18px; min-width: 168px; flex-shrink: 0; }
+  .flow-node b { display: block; font-size: 15px; font-family: var(--display); }
+  .flow-node span { font-size: 12.5px; color: var(--ink-2); display: block; margin-top: 3px; line-height: 1.45; }
+  .flow-node .stage { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-deep); }
+  .flow-arrow { align-self: center; padding: 0 10px; color: var(--ink-3); flex-shrink: 0; font-size: 18px; }
+  .flow-side { font-size: 13.5px; color: var(--ink-2); max-width: 62ch; }
+
+  /* ---------- phones (pinned light — the app ships dusk-light-first; mockups intentionally ignore the page theme toggle) ---------- */
+  .screens { display: flex; gap: 34px; flex-wrap: wrap; align-items: flex-start; }
+  .screen-block { flex: 1 1 300px; max-width: 330px; min-width: 280px; }
+  .screen-block .caption { margin-top: 16px; }
+  .screen-block .caption b { font-size: 15px; display: block; font-family: var(--display); }
+  .screen-block .caption p { font-size: 13.5px; color: var(--ink-2); margin: 5px 0 0; }
+  .screen-block .caption .file { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+
+  .phone {
+    width: 100%; aspect-ratio: 320 / 660; border-radius: 40px;
+    border: 1px solid #E7D3C4; box-shadow: var(--card-shadow);
+    overflow: hidden; position: relative;
+    background:
+      radial-gradient(120% 70% at 20% 0%, #FCE2C7 0%, transparent 55%),
+      radial-gradient(120% 70% at 100% 10%, #F6C9D6 0%, transparent 55%),
+      linear-gradient(180deg, #FDF6EF 0%, #F8EAE0 100%);
+    color: #2A1E26;
+    font-size: 12px; line-height: 1.45;
+  }
+  .phone .status { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px 4px; font-size: 10.5px; font-weight: 600; color: #2A1E26; }
+  .phone .status .pill-notch { width: 64px; height: 16px; background: #221822; border-radius: 9px; }
+  .phone .home-ind { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); width: 96px; height: 4px; border-radius: 2px; background: rgba(42,30,38,.22); }
+  .p-pad { padding: 10px 18px 0; }
+
+  .p-navtitle { font-family: var(--display); font-size: 21px; font-weight: 800; letter-spacing: -0.01em; }
+  .p-sub { color: #6E5C68; font-size: 11.5px; }
+  .p-glass {
+    background: rgba(255,255,255,.62); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,.75); border-radius: 22px;
+    box-shadow: 0 1px 2px rgba(42,20,30,.06), 0 10px 24px rgba(196,90,110,.14);
+  }
+  .p-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color: #FFF; font-weight: 700; text-align: center; border-radius: 999px; padding: 12px; font-size: 13px;
+    font-family: var(--display);
+  }
+  .p-btn-ghost { border: 1px solid rgba(42,30,38,.18); color: #2A1E26; font-weight: 700; text-align: center; border-radius: 999px; padding: 10px; font-size: 12.5px; background: rgba(255,255,255,.5); font-family: var(--display); }
+  .p-chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 5px 11px; font-size: 11px; font-weight: 700; font-family: var(--display); }
+  .p-label { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #A0909A; }
+
+  .p-tabbar { position: absolute; bottom: 14px; left: 10px; right: 10px; display: flex; justify-content: space-around; padding: 10px 14px; border-radius: 999px; background: rgba(255,255,255,.72); backdrop-filter: blur(14px); box-shadow: 0 8px 22px rgba(196,90,110,.18); }
+  .p-tab { text-align: center; font-size: 9.5px; color: #A0909A; font-weight: 700; font-family: var(--display); }
+  .p-tab.on { color: var(--accent-deep); }
+  .p-tab .ic { display: block; width: 18px; height: 18px; margin: 0 auto 3px; border-radius: 6px; background: currentColor; opacity: .85; }
+
+  .avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFF; font-weight: 700; font-size: 12px; flex-shrink: 0; font-family: var(--display); }
+
+  /* ---------- gradient meter ---------- */
+  .meter-wrap { text-align: center; padding: 6px 0 0; }
+  .meter-num { font-family: var(--display); font-size: 30px; font-weight: 800; letter-spacing: -0.01em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .meter-den { font-size: 11px; color: #A0909A; font-weight: 700; }
+  .meter-track { height: 12px; border-radius: 999px; background: rgba(42,30,38,.08); overflow: hidden; margin-top: 10px; }
+  .meter-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--hype), var(--romantic), var(--direct)); }
+
+  /* ---------- step timeline ---------- */
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step { display: flex; gap: 10px; padding: 9px 0; position: relative; }
+  .step .dot { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; margin-top: 1px; }
+  .step .rail { position: absolute; left: 9px; top: 26px; bottom: -9px; width: 2px; background: rgba(42,30,38,.12); }
+  .step:last-child .rail { display: none; }
+  .step.done .dot { background: var(--chill); color: #FFF; }
+  .step.now .dot { background: var(--romantic); color: #FFF; box-shadow: 0 0 0 4px rgba(226,78,113,.18); }
+  .step.next .dot { background: rgba(42,30,38,.10); color: #A0909A; }
+  .step b { font-family: var(--display); font-size: 12.5px; display: block; }
+  .step span { font-size: 10.5px; color: #6E5C68; }
+
+  /* ---------- recap + podium ---------- */
+  .recap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .recap-stat { border-radius: 16px; padding: 12px; background: rgba(255,255,255,.5); }
+  .recap-stat .n { font-family: var(--display); font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .recap-stat .l { font-size: 9.5px; color: #6E5C68; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+
+  .podium { display: flex; align-items: flex-end; gap: 8px; justify-content: center; margin-top: 8px; }
+  .podium .col { flex: 1; text-align: center; }
+  .podium .bar { border-radius: 14px 14px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 8px; font-family: var(--display); font-weight: 800; color: #FFF; font-size: 13px; }
+  .podium .p1 .bar { height: 92px; background: linear-gradient(180deg, var(--romantic), var(--accent-deep)); }
+  .podium .p2 .bar { height: 68px; background: linear-gradient(180deg, var(--direct), #443875); }
+  .podium .p3 .bar { height: 50px; background: linear-gradient(180deg, var(--hype), #B96E12); }
+  .podium .name { font-size: 10.5px; font-weight: 700; margin-top: 6px; }
+  .podium .score { font-size: 9.5px; color: #6E5C68; }
+
+  /* ---------- agent debate ---------- */
+  .agent-row { display: flex; gap: 10px; padding: 11px 0; }
+  .agent-row:not(:last-child) { border-bottom: 1px solid rgba(42,30,38,.08); }
+  .agent-row .agent-body { flex: 1; min-width: 0; }
+  .agent-row .agent-name { font-family: var(--display); font-weight: 800; font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
+  .agent-row.pending { opacity: .45; }
+  .agent-row .agent-text { font-size: 11px; color: #4A3B44; margin-top: 3px; line-height: 1.5; }
+  .skel { background: linear-gradient(90deg, rgba(42,30,38,.09) 25%, rgba(42,30,38,.15) 50%, rgba(42,30,38,.09) 75%); background-size: 200% 100%; border-radius: 6px; height: 8px; margin-top: 6px; }
+  .skel + .skel { width: 70%; }
+  @media (prefers-reduced-motion: no-preference) {
+    .skel { animation: shimmer 1.6s infinite linear; }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  }
+  .agent-status { margin-left: auto; font-family: var(--mono); font-size: 8.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; flex-shrink: 0; }
+
+  /* ---------- saved contacts ---------- */
+  .contact-row { display: flex; align-items: center; gap: 10px; padding: 10px; }
+  .contact-row .contact-body { flex: 1; min-width: 0; }
+  .contact-row .contact-name { font-family: var(--display); font-weight: 800; font-size: 12.5px; }
+  .contact-row .contact-note { font-size: 10.5px; color: #6E5C68; margin-top: 1px; }
+  .contact-row .chev { color: #C7B7C1; font-size: 13px; flex-shrink: 0; }
+
+  /* ---------- share card ---------- */
+  .share-preview {
+    border-radius: 26px; padding: 20px; aspect-ratio: 9 / 13; display: flex; flex-direction: column; justify-content: space-between;
+    background: linear-gradient(155deg, #4A2C55 0%, #7B3455 55%, #C9536B 100%);
+    color: #FFF; box-shadow: 0 14px 30px rgba(74,44,85,.4);
+  }
+  .share-preview .tag { align-self: flex-start; background: rgba(255,255,255,.18); border-radius: 999px; padding: 4px 10px; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .share-preview .num { font-family: var(--display); font-size: 44px; font-weight: 800; }
+  .share-preview .lesson { font-size: 12px; font-weight: 600; line-height: 1.4; }
+  .share-preview .wm { align-self: flex-end; font-family: var(--display); font-weight: 800; font-size: 11px; opacity: .75; }
+
+  /* ---------- wireframes ---------- */
+  .wf { background: var(--ground-2); }
+  .wf-frame {
+    width: 100%; aspect-ratio: 320 / 620; border-radius: 26px;
+    border: 1.5px solid var(--wf-line); background: var(--ground);
+    padding: 14px; display: flex; flex-direction: column; gap: 8px; position: relative;
+    font-family: var(--mono); font-size: 9.5px; color: var(--ink-3); letter-spacing: .04em;
+  }
+  .wf-box { border: 1.5px dashed var(--wf-line); border-radius: 10px; background: var(--ground); display: flex; align-items: center; justify-content: center; text-align: center; padding: 6px; }
+  .wf-solid { background: var(--wf-fill); border: none; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 6px; color: var(--ink-2); }
+  .wf-bar { height: 8px; border-radius: 4px; background: var(--wf-fill); }
+  .wf-stage { position: absolute; top: -11px; left: 14px; background: var(--accent); color: #FFF; font-size: 9px; font-weight: 700; letter-spacing: .12em; padding: 2px 9px; border-radius: 999px; }
+  .wf-note { font-size: 13px; color: var(--ink-2); }
+  .wf-note ul { margin: 6px 0 0; padding-left: 18px; }
+  .wf-note li { margin: 4px 0; }
+  .wf-note b { color: var(--ink); }
+
+  table.spec { border-collapse: collapse; width: 100%; font-size: 14px; }
+  table.spec th { text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; padding: 8px 14px 8px 0; border-bottom: 1px solid var(--hairline); }
+  table.spec td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  table.spec td:first-child { font-weight: 700; white-space: nowrap; font-family: var(--display); }
+  table.spec code { font-family: var(--mono); font-size: 12px; background: var(--ground-3); padding: 1px 6px; border-radius: 5px; }
+  .table-scroll { overflow-x: auto; }
+
+  /* ---------- handoff ---------- */
+  .handoff { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+  .handoff .principle p { font-size: 13.5px; }
+  code.inline { font-family: var(--mono); font-size: 12.5px; background: var(--ground-3); padding: 1px 6px; border-radius: 5px; }
+
+  footer { padding: 40px 0 64px; border-top: 1px solid var(--hairline); color: var(--ink-3); font-size: 13px; }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 0 20px; }
+    section { padding: 40px 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow">Design spec · v2.1 · Dusk direction · complete pass</span>
+      <h1>Confidence has a golden hour.</h1>
+      <p class="lede">A warmer, glass-and-gradient reinterpretation of RESET AI — built around the five minutes before you walk in, not just the debate over what to text. This pass carries every screen from v1 forward into the dusk system: the live Arthur/Clara/Leo debate, the result screen, saved contacts, and story sharing, alongside the new Dashboard, Vibe Check-in, Live Scenario, Recap, and Ranking. Kept alongside <code class="inline">ui-spec-v1.html</code> (the Airbnb-inspired direction) for side-by-side comparison, not as its replacement.</p>
+      <div class="hero-meta">
+        <div><b>4</b>social modes</div>
+        <div><b>3</b>debate agents</div>
+        <div><b>9</b>core screens</div>
+        <div><b>Next.js</b>target stack</div>
+      </div>
+      <div class="hero-modes">
+        <span class="p-chip" style="background:var(--hype-soft); color:var(--hype);">● Hype</span>
+        <span class="p-chip" style="background:var(--chill-soft); color:var(--chill);">● Chill</span>
+        <span class="p-chip" style="background:var(--romantic-soft); color:var(--romantic);">● Romantic</span>
+        <span class="p-chip" style="background:var(--direct-soft); color:var(--direct);">● Direct</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ PRINCIPLES ============ -->
+<section>
+  <div class="section-head">
+    <span class="eyebrow">Principles</span>
+    <h2>Four calls that decide every screen</h2>
+    <p>Where v1 borrowed hospitality-brand calm, v2 borrows the warmth of a friend hyping you up in the bathroom mirror before you walk back out.</p>
+  </div>
+  <div class="principles">
+    <div class="principle">
+      <span class="tag">01 · Tone</span>
+      <h3>Warm before smart</h3>
+      <p>Frosted glass, gradient light, and a rounded display face read as encouragement first. The analysis is still rigorous underneath — it just doesn't lead.</p>
+    </div>
+    <div class="principle">
+      <span class="tag">02 · Color</span>
+      <h3>One mode, everywhere</h3>
+      <p>Whichever Social Mode you're in — Hype, Chill, Romantic, Direct — tints the meter, the buttons, and the active cards for that whole session. The app visibly matches your energy.</p>
+    </div>
+    <div class="principle">
+      <span class="tag">03 · Advice</span>
+      <h3>Momentum you can check off</h3>
+      <p>Live coaching reads as a short list of physical next actions — Approach, Open, Build Rapport, Exit warm — not paragraphs to read mid-conversation.</p>
+    </div>
+    <div class="principle">
+      <span class="tag">04 · Memory</span>
+      <h3>The night remembers you</h3>
+      <p>Recap and Ranking turn one night out into a running story with friends, not a one-off score you forget by morning.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOUNDATIONS ============ -->
+<section>
+  <div class="section-head">
+    <span class="eyebrow">Foundations</span>
+    <h2>Color, type, glass</h2>
+    <p>A dusk palette — golden-hour warmth cooling into night — instead of v1's daylight neutrals. Backgrounds are warm cream, never pastel blue; every interactive surface is frosted glass over a soft gradient, never flat.</p>
+  </div>
+
+  <div class="swatch-row">
+    <div class="swatch"><div class="chip" style="background:var(--ground);"></div><div class="meta"><b>Ground</b><span>#FBF3EC</span><em>warm cream, not white</em></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--ink);"></div><div class="meta"><b>Ink</b><span>#2A1E26</span><em>plum-biased near-black</em></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--accent);"></div><div class="meta"><b>Accent</b><span>#E24E71</span><em>brand · confidence</em></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--hype);"></div><div class="meta"><b>Hype</b><span>#DE8A1E</span><em>social mode</em></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--chill);"></div><div class="meta"><b>Chill</b><span>#1F8C7F</span><em>social mode</em></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--direct);"></div><div class="meta"><b>Direct</b><span>#5B4B9C</span><em>social mode</em></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--arthur);"></div><div class="meta"><b>Arthur</b><span>#3B6EA5</span><em>agent identity</em></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--clara);"></div><div class="meta"><b>Clara</b><span>#9C4F8F</span><em>agent identity</em></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--leo);"></div><div class="meta"><b>Leo</b><span>#D6592F</span><em>agent identity</em></div></div>
+  </div>
+  <p class="t-caption" style="margin-top:14px; max-width:64ch;">Agent identity (Arthur/Clara/Leo) and Social Mode color are two separate systems, kept deliberately apart: Social Mode tints whichever screen you're on for the whole session; Agent identity is scoped to the debate and result screens only, so a card is never ambiguous about whether it's "your mode" or "who's talking."</p>
+
+  <div class="foundation-cols">
+    <div>
+      <h3 style="margin-bottom:14px;">Type scale</h3>
+      <div class="type-spec">
+        <div><span class="sample t-display">Ready for tonight?</span><span class="note">Display / 30 / 800</span></div>
+        <div><span class="sample t-title">Downtown Lounge</span><span class="note">Title / 22 / 800</span></div>
+        <div><span class="sample t-head">Confidence Meter</span><span class="note">Head / 17 / 700</span></div>
+        <div><span class="sample t-body">Three good openers for this room.</span><span class="note">Body / 15 / 400</span></div>
+        <div><span class="sample t-caption">11:42 PM · Downtown Lounge</span><span class="note">Caption / 13</span></div>
+        <div><span class="sample t-label">SOCIAL MODE</span><span class="note">Label / 11 / 700</span></div>
+      </div>
+      <p class="t-caption" style="margin-top:10px;">Display face is the <code class="inline">ui-rounded</code> CSS generic (SF Pro Rounded on Apple platforms) — production ships <b style="color:var(--ink);">Aeonik</b>, licensed and self-hosted at build time. Body copy stays on the plain system stack for maximum legibility at small sizes.</p>
+    </div>
+    <div>
+      <h3 style="margin-bottom:14px;">Shape &amp; glass</h3>
+      <ul class="shape-list">
+        <li><span class="k">Card radius</span> 20–28px, never sharp</li>
+        <li><span class="k">Pill radius</span> 999px — buttons, tabs, chips, tab bar</li>
+        <li><span class="k">Glass recipe</span> <code class="inline">rgba(255,255,255,.6) + blur(14–18px) + 1px rgba(255,255,255,.7) border</code></li>
+        <li><span class="k">Shadow</span> warm-tinted, never pure grey — shadow color borrows the accent</li>
+        <li><span class="k">Elevation</span> floating cards overlap the hero banner by 24–40px</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="margin-top:44px; margin-bottom:6px;">Social Mode mascots</h3>
+  <p class="t-caption" style="margin-bottom:16px;">Reinterprets the reference's mood-blob device: instead of an emotional state, each blob is a broadcast of the tone you want the app's suggestions pitched at.</p>
+  <div class="blob-row">
+    <div class="blob-card"><div class="blob blob-hype"><b class="eye1"></b><b class="eye2"></b></div><div class="name">Hype</div><div class="desc">Big energy, loud room</div></div>
+    <div class="blob-card"><div class="blob blob-chill"><b class="eye1"></b><b class="eye2"></b></div><div class="name">Chill</div><div class="desc">Low-key, coffee shop</div></div>
+    <div class="blob-card"><div class="blob blob-romantic"><b class="eye1"></b><b class="eye2"></b></div><div class="name">Romantic</div><div class="desc">Slow down, one-on-one</div></div>
+    <div class="blob-card"><div class="blob blob-direct"><b class="eye1"></b><b class="eye2"></b></div><div class="name">Direct</div><div class="desc">No games, say the thing</div></div>
+  </div>
+</section>
+
+<!-- ============ FLOW ============ -->
+<section>
+  <div class="section-head">
+    <span class="eyebrow">Flow</span>
+    <h2>Dashboard in, recap out</h2>
+    <p>One straight line for a night out, with the mode check-in as a quick side room the first time you open the app that evening, and a second, screenshot-driven line that can start from any text message.</p>
+  </div>
+  <div class="flow">
+    <div class="flow-node"><span class="stage">Open</span><b>Dashboard</b><span>Greeting + Playbook feed</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">Once / night</span><b>Vibe Check-in</b><span>Pick a Social Mode</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">Live</span><b>Scenario view</b><span>Meter + step timeline</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">End</span><b>Recap</b><span>What actually happened</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">Anytime</span><b>Ranking</b><span>This week, with friends</span></div>
+  </div>
+  <p class="flow-side" style="margin-top:6px;">Side room, from any screen: upload a screenshot →</p>
+  <div class="flow" style="margin-top:4px;">
+    <div class="flow-node"><span class="stage">Upload</span><b>Debate reveal</b><span>Arthur, Clara &amp; Leo, live</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">Synthesize</span><b>Result</b><span>Attraction read + best reply</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">Save</span><b>Saved Contacts</b><span>Relationship memory, per person</span></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node"><span class="stage">Optional</span><b>Story share</b><span>Watermarked card</span></div>
+  </div>
+</section>
+
+<!-- ============ WIREFRAMES ============ -->
+<section class="wf" style="border-radius:24px; padding:48px 40px; margin:16px -40px; border:1px solid var(--hairline);">
+  <div class="section-head">
+    <span class="eyebrow">Wireframes</span>
+    <h2>Structure before polish</h2>
+    <p>Eight low-fidelity passes establishing hierarchy before the gradient-and-glass treatment lands — the four new screens plus the four carried over from v1.</p>
+  </div>
+  <div class="screens">
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">DASH</span>
+        <div class="wf-bar" style="width:50%;"></div>
+        <div class="wf-solid" style="height:70px;">MODE CHECK-IN CARD</div>
+        <div class="wf-box" style="height:20px;">PILL FILTERS</div>
+        <div style="display:flex; gap:6px; flex:1;">
+          <div class="wf-box" style="flex:1;">CARD</div>
+          <div class="wf-box" style="flex:1;">CARD</div>
+        </div>
+        <div class="wf-solid" style="height:26px;">TAB BAR</div>
+      </div>
+      <div class="caption"><b>Dashboard</b><p>Greeting, mode card, playbook feed, tab bar.</p></div>
+    </div>
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">LIVE</span>
+        <div class="wf-solid" style="height:80px;">VENUE HERO</div>
+        <div class="wf-box" style="height:56px;">CONFIDENCE METER</div>
+        <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
+          <div class="wf-box" style="height:22px;">STEP 1</div>
+          <div class="wf-box" style="height:22px;">STEP 2</div>
+          <div class="wf-box" style="height:22px;">STEP 3</div>
+        </div>
+      </div>
+      <div class="caption"><b>Live scenario</b><p>Hero, meter, checkable step timeline.</p></div>
+    </div>
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">DEBATE</span>
+        <div class="wf-bar" style="width:45%;"></div>
+        <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+          <div class="wf-solid" style="flex:1;">ARTHUR — DONE</div>
+          <div class="wf-box" style="flex:1;">CLARA — ANALYZING</div>
+          <div class="wf-box" style="flex:1; opacity:.5;">LEO — WAITING</div>
+        </div>
+      </div>
+      <div class="caption"><b>Debate reveal</b><p>Three agent cards, staggered by completion.</p></div>
+    </div>
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">RESULT</span>
+        <div class="wf-solid" style="height:60px;">ATTRACTION METER</div>
+        <div class="wf-box" style="height:30px;">WHAT SHE'S THINKING</div>
+        <div class="wf-solid" style="flex:1;">BEST RESPONSE</div>
+        <div class="wf-box" style="height:22px;">ALT · ALT</div>
+      </div>
+      <div class="caption"><b>Result</b><p>Meter, subtext read, best response, alternatives.</p></div>
+    </div>
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">LEADS</span>
+        <div class="wf-bar" style="width:38%;"></div>
+        <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+          <div class="wf-box" style="height:34px;">CONTACT ROW</div>
+          <div class="wf-box" style="height:34px;">CONTACT ROW</div>
+          <div class="wf-box" style="height:34px;">CONTACT ROW</div>
+        </div>
+      </div>
+      <div class="caption"><b>Saved contacts</b><p>Relationship memory, one row per person.</p></div>
+    </div>
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">SHARE</span>
+        <div class="wf-solid" style="flex:1;">WATERMARKED CARD</div>
+        <div class="wf-box" style="height:26px;">SHARE BUTTON</div>
+      </div>
+      <div class="caption"><b>Story share</b><p>Card preview, then a single share action.</p></div>
+    </div>
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">RECAP</span>
+        <div class="wf-bar" style="width:40%;"></div>
+        <div class="wf-solid" style="height:60px;">BIG STAT</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <div class="wf-box" style="height:44px;">STAT</div>
+          <div class="wf-box" style="height:44px;">STAT</div>
+        </div>
+        <div class="wf-box" style="flex:1;">DOMINANT VIBE %</div>
+      </div>
+      <div class="caption"><b>Recap</b><p>Interactions, connections, dominant vibe.</p></div>
+    </div>
+    <div class="screen-block">
+      <div class="wf-frame">
+        <span class="wf-stage">RANK</span>
+        <div class="wf-bar" style="width:35%;"></div>
+        <div style="display:flex; align-items:flex-end; gap:6px; height:80px;">
+          <div class="wf-solid" style="flex:1; height:56px;">2</div>
+          <div class="wf-solid" style="flex:1; height:80px;">1</div>
+          <div class="wf-solid" style="flex:1; height:38px;">3</div>
+        </div>
+        <div class="wf-box" style="flex:1;">LIST</div>
+      </div>
+      <div class="caption"><b>Ranking</b><p>Podium, then a scroll list.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HI-FI ============ -->
+<section>
+  <div class="section-head">
+    <span class="eyebrow">Hi-fi</span>
+    <h2>Nine screens</h2>
+    <p>Mockups are pinned to the light dusk palette on purpose — this is how the app ships regardless of what theme this spec page is currently in. The night-out loop (Dashboard → Vibe Check-in → Live Scenario → Recap → Ranking) sits alongside the screenshot-analysis loop carried over from v1 (Debate reveal → Result → Saved Contacts → Story share), both now in the dusk system.</p>
+  </div>
+  <div class="screens">
+
+    <!-- ============ DASHBOARD ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="blob blob-romantic" style="position:absolute; top:-24px; right:-26px; width:100px; height:100px; opacity:.16; z-index:0;"></div>
+        <div class="status" style="position:relative;"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div class="p-pad" style="position:relative;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div><div class="p-sub">Hi Maya 👋</div><div class="p-navtitle">Ready for<br>tonight?</div></div>
+            <div class="avatar" style="background:linear-gradient(135deg,var(--romantic),var(--direct));">M</div>
+          </div>
+
+          <div class="p-glass" style="margin-top:12px; padding:14px;">
+            <div class="p-label">TONIGHT'S MODE</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+              <div style="font-family:var(--display); font-weight:800; font-size:15px;">Romantic ✨</div>
+              <div class="p-btn-ghost" style="padding:6px 12px; font-size:11px;">Change</div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:16px;">
+            <div style="font-family:var(--display); font-weight:800; font-size:14px;">Wingman Playbook</div>
+            <div class="p-label" style="color:var(--accent-deep);">See all</div>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <span class="p-chip" style="background:rgba(42,30,38,.08); color:#2A1E26;">All</span>
+            <span class="p-chip" style="background:var(--romantic-soft); color:var(--romantic-deep, var(--accent-deep));">Bar</span>
+            <span class="p-chip" style="background:rgba(255,255,255,.5);">Coffee shop</span>
+            <span class="p-chip" style="background:rgba(255,255,255,.5);">Gym</span>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <div class="p-glass" style="flex:1; padding:10px; height:76px;">
+              <div style="width:100%; height:32px; border-radius:10px; background:linear-gradient(135deg,var(--hype-soft),var(--romantic-soft));"></div>
+              <div style="font-size:10.5px; font-weight:700; margin-top:6px; font-family:var(--display);">The bar-cart opener</div>
+            </div>
+            <div class="p-glass" style="flex:1; padding:10px; height:76px;">
+              <div style="width:100%; height:32px; border-radius:10px; background:linear-gradient(135deg,var(--chill-soft),var(--direct-soft));"></div>
+              <div style="font-size:10.5px; font-weight:700; margin-top:6px; font-family:var(--display);">Eye contact, twice</div>
+            </div>
+          </div>
+        </div>
+        <div class="p-tabbar">
+          <div class="p-tab on"><span class="ic"></span>Home</div>
+          <div class="p-tab"><span class="ic"></span>Playbook</div>
+          <div class="p-tab"><span class="ic"></span>Live</div>
+          <div class="p-tab"><span class="ic"></span>Profile</div>
+        </div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="caption"><b>Wingman Dashboard</b><p>Greeting, current-mode card, horizontally-filterable Playbook feed, glass tab bar.</p><span class="file">Home.tsx</span></div>
+    </div>
+
+    <!-- ============ VIBE CHECK-IN ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div class="p-pad" style="opacity:.35; filter:blur(1px);">
+          <div class="p-navtitle">Ready for<br>tonight?</div>
+          <div class="p-glass" style="margin-top:12px; height:50px;"></div>
+        </div>
+        <div style="position:absolute; inset:0; background:rgba(30,18,26,.28);"></div>
+        <div style="position:absolute; left:14px; right:14px; bottom:70px; top:auto;">
+          <div class="p-glass" style="padding:18px; background:rgba(255,255,255,.86);">
+            <div class="p-label">FIRST THING TONIGHT</div>
+            <div style="font-family:var(--display); font-weight:800; font-size:17px; margin-top:4px;">What's your mode?</div>
+            <div class="p-sub" style="margin-top:2px;">Pick one — you can change it anytime.</div>
+            <div style="display:flex; gap:10px; margin-top:14px; justify-content:space-between;">
+              <div style="text-align:center;"><div class="blob blob-hype" style="width:46px; height:46px;"><b class="eye1" style="top:34%;"></b><b class="eye2" style="top:34%;"></b></div><div style="font-size:10px; font-weight:700; margin-top:4px;">Hype</div></div>
+              <div style="text-align:center;"><div class="blob blob-chill" style="width:46px; height:46px;"><b class="eye1" style="top:34%;"></b><b class="eye2" style="top:34%;"></b></div><div style="font-size:10px; font-weight:700; margin-top:4px;">Chill</div></div>
+              <div style="text-align:center;"><div class="blob blob-romantic" style="width:46px; height:46px; box-shadow:0 0 0 3px var(--romantic), inset 0 -8px 14px rgba(0,0,0,.08);"><b class="eye1" style="top:34%;"></b><b class="eye2" style="top:34%;"></b></div><div style="font-size:10px; font-weight:800; margin-top:4px; color:var(--romantic);">Romantic</div></div>
+              <div style="text-align:center;"><div class="blob blob-direct" style="width:46px; height:46px;"><b class="eye1" style="top:34%;"></b><b class="eye2" style="top:34%;"></b></div><div style="font-size:10px; font-weight:700; margin-top:4px;">Direct</div></div>
+            </div>
+            <div class="p-btn" style="margin-top:16px;">Confirm</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption"><b>Vibe Check-in</b><p>Once-per-outing modal. Selecting a mode tints the rest of the session's UI.</p><span class="file">VibeSelector.tsx</span></div>
+    </div>
+
+    <!-- ============ LIVE SCENARIO ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div style="height:150px; margin:0 0 -34px; background:linear-gradient(160deg, var(--romantic), #7B3E64); display:flex; align-items:flex-end; padding:14px 18px;">
+          <div>
+            <div class="p-label" style="color:rgba(255,255,255,.8);">LIVE SCENARIO</div>
+            <div style="font-family:var(--display); color:#FFF; font-weight:800; font-size:19px;">Downtown Lounge</div>
+          </div>
+        </div>
+        <div class="p-pad" style="position:relative;">
+          <div class="p-glass" style="padding:14px;">
+            <div class="p-label">CONFIDENCE METER</div>
+            <div class="meter-wrap">
+              <div class="meter-num">72<span class="meter-den">/100</span></div>
+              <div class="meter-track"><div class="meter-fill" style="width:72%;"></div></div>
+            </div>
+          </div>
+          <div class="p-glass" style="padding:14px; margin-top:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
+              <div class="p-label">TONIGHT'S STEPS</div>
+              <div class="p-label" style="color:var(--romantic);">STEP 2 OF 3</div>
+            </div>
+            <div class="steps">
+              <div class="step done"><div class="dot">✓</div><div class="rail"></div><div><b>The approach</b><span>Said hi near the bar</span></div></div>
+              <div class="step now"><div class="dot">●</div><div class="rail"></div><div><b>Build rapport</b><span>Ask about the tattoo</span></div></div>
+              <div class="step next"><div class="dot">3</div><div><b>Exit warm</b><span>Leave before it fades</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="caption"><b>Live scenario</b><p>Venue hero, gradient Confidence Meter, checkable step timeline for live advice.</p><span class="file">ScenarioView.tsx</span></div>
+    </div>
+
+    <!-- ============ DEBATE REVEAL ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div class="p-pad">
+          <div class="p-sub">Screenshot uploaded</div>
+          <div class="p-navtitle">Reading the<br>room…</div>
+          <div class="p-glass" style="margin-top:14px; padding:6px 14px;">
+            <div class="agent-row">
+              <div class="avatar" style="background:var(--arthur);">A</div>
+              <div class="agent-body">
+                <div class="agent-name">Arthur <span class="agent-status" style="color:var(--chill);">DONE</span></div>
+                <div class="agent-text">Double-texted after a 42s gap — hold frame, don't over-explain.</div>
+              </div>
+            </div>
+            <div class="agent-row">
+              <div class="avatar" style="background:var(--clara);">C</div>
+              <div class="agent-body">
+                <div class="agent-name">Clara <span class="agent-status" style="color:var(--romantic);">ANALYZING</span></div>
+                <div class="skel" style="width:88%;"></div>
+                <div class="skel"></div>
+              </div>
+            </div>
+            <div class="agent-row pending">
+              <div class="avatar" style="background:var(--leo);">L</div>
+              <div class="agent-body">
+                <div class="agent-name">Leo <span class="agent-status" style="color:#A0909A;">WAITING</span></div>
+                <div class="agent-text">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="caption"><b>Debate reveal</b><p>Arthur, Clara &amp; Leo analyze the screenshot in parallel — each card animates in as its take lands, carried over from v1's swarm debate.</p><span class="file">DebateAgentCard.tsx</span></div>
+    </div>
+
+    <!-- ============ RESULT ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div class="p-pad">
+          <div class="p-navtitle">Your read</div>
+          <div class="p-glass" style="padding:14px; margin-top:10px;">
+            <div class="p-label">ATTRACTION</div>
+            <div class="meter-wrap">
+              <div class="meter-num">7<span class="meter-den">/10</span></div>
+              <div class="meter-track"><div class="meter-fill" style="width:70%;"></div></div>
+            </div>
+          </div>
+          <div class="p-glass" style="padding:12px 14px; margin-top:8px;">
+            <div class="p-label" style="margin-bottom:4px;">WHAT SHE'S THINKING</div>
+            <div style="font-size:11px; line-height:1.55;">Testing if he'll chase · Wants banter, not a pitch</div>
+          </div>
+          <div style="background:linear-gradient(135deg,var(--accent),var(--accent-deep)); border-radius:16px; padding:12px 14px; margin-top:8px; color:#FFF;">
+            <div class="p-label" style="color:rgba(255,255,255,.8);">BEST RESPONSE</div>
+            <div style="font-family:var(--display); font-weight:700; font-size:12.5px; margin-top:3px;">"Just my undivided attention — I'm picky who gets it."</div>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <span class="p-chip" style="background:rgba(255,255,255,.5); flex:1; justify-content:center;">Playful</span>
+            <span class="p-chip" style="background:rgba(255,255,255,.5); flex:1; justify-content:center;">Direct</span>
+          </div>
+          <div class="p-btn-ghost" style="margin-top:10px;">Save to contacts</div>
+        </div>
+      </div>
+      <div class="caption"><b>Result</b><p>Attraction Gauge, subtext read, best response — reuses the same GradientMeter as the Confidence Meter on purpose.</p><span class="file">ResultCard.tsx</span></div>
+    </div>
+
+    <!-- ============ SAVED CONTACTS ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div class="p-pad">
+          <div class="p-navtitle">Saved<br>contacts</div>
+          <div class="p-sub">Your relationship memory</div>
+          <div class="p-glass" style="margin-top:12px; padding:4px 10px;">
+            <div class="contact-row" style="border-bottom:1px solid rgba(42,30,38,.08);">
+              <div class="avatar" style="background:linear-gradient(135deg,var(--romantic),var(--direct));">S</div>
+              <div class="contact-body"><div class="contact-name">Sarah</div><div class="contact-note">4 reads · next one gets sharper</div></div>
+              <div class="chev">›</div>
+            </div>
+            <div class="contact-row" style="border-bottom:1px solid rgba(42,30,38,.08);">
+              <div class="avatar" style="background:linear-gradient(135deg,var(--hype),var(--leo));">J</div>
+              <div class="contact-body"><div class="contact-name">Jess</div><div class="contact-note">1 read</div></div>
+              <div class="chev">›</div>
+            </div>
+            <div class="contact-row">
+              <div class="avatar" style="background:linear-gradient(135deg,var(--chill),var(--direct));">R</div>
+              <div class="contact-body"><div class="contact-name">Rae</div><div class="contact-note">7 reads · next one gets sharper</div></div>
+              <div class="chev">›</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="caption"><b>Saved Contacts</b><p>Relationship memory, carried over from v1's Contacts screen — loss-aversion copy on anyone with 2+ reads.</p><span class="file">ContactRow.tsx</span></div>
+    </div>
+
+    <!-- ============ STORY SHARE ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div class="p-pad">
+          <div class="p-navtitle">Share this<br>read</div>
+          <div class="share-preview" style="margin-top:12px;">
+            <span class="tag">Reset AI</span>
+            <div><div class="num">7/10</div><div class="lesson">Never trade tension for a safe friend-zone pass.</div></div>
+            <span class="wm">reset ai</span>
+          </div>
+          <div class="p-btn" style="margin-top:12px;">Share to story</div>
+        </div>
+      </div>
+      <div class="caption"><b>Story share</b><p>Watermarked card export, carried over from v1 — the growth-loop surface, never the raw conversation.</p><span class="file">ShareCard.tsx</span></div>
+    </div>
+
+    <!-- ============ RECAP ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div class="p-pad">
+          <div class="p-navtitle">Night out<br>recap</div>
+          <div class="p-sub">Downtown Lounge · Fri 11:58 PM</div>
+          <div class="p-glass" style="margin-top:14px; padding:16px; text-align:center;">
+            <div class="blob blob-romantic" style="margin:0 auto 8px;"><b class="eye1"></b><b class="eye2"></b></div>
+            <div style="font-family:var(--display); font-weight:800; font-size:15px;">Mostly Romantic energy</div>
+            <div class="p-sub">62% of tonight's interactions</div>
+          </div>
+          <div class="recap-grid">
+            <div class="recap-stat p-glass"><div class="n">5</div><div class="l">Approaches</div></div>
+            <div class="recap-stat p-glass"><div class="n">2</div><div class="l">Numbers</div></div>
+            <div class="recap-stat p-glass"><div class="n">38<span style="font-size:12px;">m</span></div><div class="l">Best convo</div></div>
+            <div class="recap-stat p-glass"><div class="n">72</div><div class="l">Peak confidence</div></div>
+          </div>
+          <div class="p-btn" style="margin-top:12px;">Share recap card</div>
+        </div>
+      </div>
+      <div class="caption"><b>Night Out Recap</b><p>Interactions, connections, and the night's dominant Social Mode.</p><span class="file">RecapStat.tsx</span></div>
+    </div>
+
+    <!-- ============ RANKING ============ -->
+    <div class="screen-block">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span class="pill-notch"></span><span>••••</span></div>
+        <div class="p-pad">
+          <div class="p-navtitle">Wingman<br>ranking</div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <span class="p-chip" style="background:var(--romantic); color:#FFF;">Week</span>
+            <span class="p-chip" style="background:rgba(42,30,38,.07);">Month</span>
+            <span class="p-chip" style="background:rgba(42,30,38,.07);">All-time</span>
+          </div>
+          <div class="podium" style="margin-top:22px;">
+            <div class="col p2"><div class="bar">2</div><div class="name">Alex</div><div class="score">640</div></div>
+            <div class="col p1"><div class="bar">🏆</div><div class="name">You</div><div class="score">810</div></div>
+            <div class="col p3"><div class="bar">3</div><div class="name">Cait</div><div class="score">510</div></div>
+          </div>
+          <div class="p-glass" style="margin-top:16px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;"><div class="avatar" style="background:var(--hype); font-size:10px;">B</div><span style="font-weight:700; font-size:12px;">Bill</span></div>
+            <span style="font-size:12px; font-weight:700; color:var(--ink-2);">470</span>
+          </div>
+        </div>
+      </div>
+      <div class="caption"><b>Wingman Ranking</b><p>Podium for the top three, scrollable list below.</p><span class="file">RankingPodium.tsx</span></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ INTERACTION SPEC ============ -->
+<section>
+  <div class="section-head">
+    <span class="eyebrow">Interaction</span>
+    <h2>Motion &amp; haptic choreography</h2>
+    <p>Motion is warmer and bouncier than v1's restrained hospitality easing — springs, not linear fades — but every rule below still respects <code class="inline">prefers-reduced-motion</code>.</p>
+  </div>
+  <div class="table-scroll">
+  <table class="spec">
+    <thead><tr><th>Moment</th><th>Motion</th><th>Haptic</th></tr></thead>
+    <tbody>
+      <tr><td>Dashboard load</td><td>Mode card and Playbook cards stagger in, 60ms apart, spring (damping 18)</td><td>—</td></tr>
+      <tr><td>Blob mode select</td><td>Tapped blob scales 1 → 1.12 → 1 with a squash-stretch wobble</td><td>Light impact</td></tr>
+      <tr><td>Confidence Meter fill</td><td>Track fills with a spring, 900ms; number counts up in step</td><td>Light impact per +10, success on full</td></tr>
+      <tr><td>Step check-off</td><td>Dot morphs circle → check with a 200ms scale pop; next step's ring pulses once</td><td>Medium impact</td></tr>
+      <tr><td>Playbook horizontal scroll</td><td>Snap-to-card, momentum-based, no forced animation</td><td>—</td></tr>
+      <tr><td>Recap open</td><td>Stat numbers count up from 0 over 700ms, staggered 80ms per tile</td><td>—</td></tr>
+      <tr><td>Podium reveal</td><td>Bars rise from 0 height, 3rd → 2nd → 1st, 120ms stagger</td><td>Success on 1st place landing</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ============ HANDOFF ============ -->
+<section>
+  <div class="section-head">
+    <span class="eyebrow">Handoff</span>
+    <h2>What gets built, where</h2>
+    <p>Component vocabulary only — no implementation yet. Confirm this direction (or request changes) before any Next.js/Tailwind/Framer Motion code is written, per the brief.</p>
+  </div>
+  <div class="handoff">
+    <div class="principle"><span class="tag">Component</span><h3>VibeSelector</h3><p>The four-blob mode picker. Used in the Vibe Check-in modal and again as a compact chip in the Dashboard header.</p></div>
+    <div class="principle"><span class="tag">Component</span><h3>PlaybookCard</h3><p>Gradient-thumbnail scenario card in the horizontal Playbook feed, filterable by venue-type pill.</p></div>
+    <div class="principle"><span class="tag">Component</span><h3>GradientMeter</h3><p>The Confidence Meter — animated gradient progress track plus a large tabular-numeral readout.</p></div>
+    <div class="principle"><span class="tag">Component</span><h3>StepTimeline</h3><p>Done / now / next step list for live, in-scenario advice, each step a single checkable action.</p></div>
+    <div class="principle"><span class="tag">Component</span><h3>RecapStat</h3><p>Glass stat tile with a count-up numeral, used in a 2×2 grid on the Recap screen.</p></div>
+    <div class="principle"><span class="tag">Component</span><h3>RankingPodium</h3><p>Top-three podium with gradient bars, followed by a plain list for the rest of the field.</p></div>
+    <div class="principle"><span class="tag">Component · from v1</span><h3>DebateAgentCard</h3><p>One row per agent in the live debate: avatar, name, status, and either a shimmer skeleton or the landed analysis text.</p></div>
+    <div class="principle"><span class="tag">Component · from v1</span><h3>ResultCard</h3><p>Attraction Gauge (a GradientMeter instance) plus subtext read, best response, and two alternative-response chips.</p></div>
+    <div class="principle"><span class="tag">Component · from v1</span><h3>ContactRow</h3><p>Saved-contact list item: avatar, name, and a read-count caption that turns loss-averse at 2+ reads.</p></div>
+    <div class="principle"><span class="tag">Component · from v1</span><h3>ShareCard</h3><p>Watermarked, story-shaped export card plus a single share action — summary only, never the raw conversation.</p></div>
+  </div>
+  <p class="t-caption" style="margin-top:28px;">Target stack per brief: <b style="color:var(--ink);">Next.js + Tailwind CSS + Framer Motion</b>, replacing the Expo/React Native app going forward. Playbook, Confidence Meter, Recap, and Ranking have no backend yet — implementation will start against a typed mock <code class="inline">api.ts</code>. Debate reveal, Result, Saved Contacts, and Story share <em>do</em> have a real API already (the existing FastAPI swarm backend, unchanged) — those four should wire to it directly rather than mock it. This is a pure design pass — final feature-to-nav mapping (e.g. where the screenshot-upload entry point lives relative to the Live tab) is still a separate decision.</p>
+</section>
+
+<footer>
+  RESET AI · UI Design Spec v2.1 · Dusk direction, complete pass · docs/design/ui-spec-v2.html
+</footer>
+
+</div>
