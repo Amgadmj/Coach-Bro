@@ -25,8 +25,11 @@ services:
         sync: false # prompted in the dashboard, never committed
       - key: ANTHROPIC_VISION_MODEL
         value: claude-sonnet-5
+      # "anthropic" reuses the Claude key above for the debate agents too - no
+      # extra key needed. Switch to "groq" or "gemini" (and fill in the matching
+      # key below) for a cheaper per-call cost once those are set up.
       - key: FAST_LLM_PROVIDER
-        value: gemini
+        value: anthropic
       - key: GEMINI_API_KEY
         sync: false
       - key: GROQ_API_KEY

@@ -59,9 +59,24 @@ def _build_llm_clients() -> tuple[LLMClient, LLMClient]:
         return MockLLMClient(), MockLLMClient()
     if mode == "real":
         from llm_clients.anthropic_client import AnthropicClient
-        from llm_clients.fast_client import FastLLMClient
 
-        return AnthropicClient(), FastLLMClient()
+        vision_client = AnthropicClient()
+
+        # FAST_LLM_PROVIDER also accepts "anthropic": routes the debate agents
+        # through the same Claude client as vision/synthesis instead of Groq/Gemini.
+        # Pricier per call (CLAUDE.md's cost-routing principle still prefers a cheap
+        # provider by default), but it's a real, fully-supported option - useful
+        # when Groq/Gemini aren't configured or are rate-limited, and it's a single
+        # already-proven-working client with no extra setup.
+        debate_provider = os.environ.get("FAST_LLM_PROVIDER", "groq")
+        if debate_provider == "anthropic":
+            debate_client: LLMClient = vision_client
+        else:
+            from llm_clients.fast_client import FastLLMClient
+
+            debate_client = FastLLMClient()
+
+        return vision_client, debate_client
     raise ValueError(f"Unknown LLM_MODE={mode!r}, expected 'mock' or 'real'")
 
 
