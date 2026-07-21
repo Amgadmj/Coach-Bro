@@ -12,8 +12,35 @@ from models.schemas import (
     AgentOpinion,
     ConversationContext,
     MemoryRecord,
+    Message,
     SupportedLanguage,
 )
+
+_NON_TEXT_LABELS = {
+    "image": "[image]",
+    "sticker": "[sticker]",
+    "gif": "[gif]",
+    "video": "[video]",
+    "other": "[attachment]",
+}
+
+
+def _format_message(m: Message) -> str:
+    """Renders one transcript line, folding in non-text bubbles and reactions
+    so the debate/synthesis prompts see the whole message, not just typed text -
+    a voice note or a heart-reacted bubble is real signal, not noise to drop."""
+    if m.message_type == "voice_note":
+        duration = f", {int(m.duration_seconds)}s" if m.duration_seconds else ""
+        content = f"[voice message{duration}]"
+    elif m.message_type != "text":
+        content = _NON_TEXT_LABELS.get(m.message_type, "[attachment]")
+    else:
+        content = m.text
+    if m.text and m.message_type != "text":
+        content += f" ({m.text})"
+    if m.reactions:
+        content += f" [reacted: {' '.join(m.reactions)}]"
+    return f"{m.sender}: {content}"
 
 
 def resolve_response_language(preference: SupportedLanguage, detected: str | None = None) -> str:
@@ -228,7 +255,7 @@ conversation partner, not a dossier. Return ONLY the updated persona text.
 def build_persona_user_prompt(
     old_persona: str | None, context: ConversationContext, result_summary: str
 ) -> str:
-    lines = [f"{m.sender}: {m.text}" for m in context.messages]
+    lines = [_format_message(m) for m in context.messages]
     transcript = "\n".join(lines)
     previous = old_persona or "(first read - no persona yet)"
     return (
@@ -247,7 +274,7 @@ def build_debate_user_prompt(
     user_style: str | None = None,
     language: str = "English",
 ) -> str:
-    lines = [f"{m.sender}: {m.text}" for m in context.messages]
+    lines = [_format_message(m) for m in context.messages]
     transcript = "\n".join(lines)
 
     persona_block = persona or "(no persona yet - this is the first read of this contact)"
@@ -283,7 +310,7 @@ def build_rebuttal_user_prompt(
 
     Kept deliberately short - these render as chat bubbles in the live debate feed.
     """
-    lines = [f"{m.sender}: {m.text}" for m in context.messages]
+    lines = [_format_message(m) for m in context.messages]
     transcript = "\n".join(lines)
 
     others = "\n\n".join(
@@ -312,7 +339,7 @@ def build_synthesis_user_prompt(
     user_style: str | None = None,
     language: str = "English",
 ) -> str:
-    lines = [f"{m.sender}: {m.text}" for m in context.messages]
+    lines = [_format_message(m) for m in context.messages]
     transcript = "\n".join(lines)
 
     opinion_blocks = "\n\n".join(

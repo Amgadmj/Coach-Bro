@@ -41,11 +41,24 @@ appear exactly once in the output, no matter how many screenshots it appears in.
 / blue/dark bubble), "match" if it's the other person's incoming message (usually left-aligned \
 / grey/light bubble). Sender alignment/color is consistent across all screenshots of the same chat.
 - text: the exact message text, transcribed verbatim in its ORIGINAL language and script - \
-never translate it here, this is a literal transcription step.
+never translate it here, this is a literal transcription step. For a non-text bubble (voice \
+note, image, sticker, gif, video) that has no caption, use an empty string.
 - timestamp: if visible, else omit.
 - bubble_color: the visible bubble color/style if distinguishable, else omit.
 - response_lag_seconds: estimated seconds since the prior message if a time gap is visible \
 (e.g. "2 hours ago" between bubbles), else omit.
+- message_type: "text" for an ordinary typed bubble. "voice_note" for a voice memo bubble - \
+these show a waveform/soundwave shape with a play button and a duration, you cannot hear the \
+audio but you can and must still record that one was sent. "image"/"gif"/"video" for inline \
+media bubbles. "sticker" for a sticker/GIF-keyboard send. "other" for anything else \
+non-textual. Default "text" if unsure.
+- duration_seconds: for message_type "voice_note" only, the duration shown on the bubble \
+(e.g. "0:14" -> 14), else omit.
+- reactions: any emoji reactions/tapbacks attached to that specific message - iMessage shows \
+these as a small emoji badge overlapping the corner of the bubble (heart, thumbs up/down, ha-ha, \
+!!, ?); WhatsApp/Instagram/etc show a small emoji chip below or beside the bubble. List every \
+reacted emoji exactly as shown, e.g. ["❤️"] or ["😂", "👍"]. Empty list if none. Do not confuse \
+these with emoji typed as part of the message text itself.
 - detected_language: the specific language (and dialect/region if identifiable, e.g. "Mexican \
 Spanish", "Egyptian Arabic") the conversation is actually written in. Judge this from the message \
 text itself, not the phone's UI chrome. If the conversation mixes languages, name the dominant one.

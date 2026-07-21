@@ -41,6 +41,15 @@ class Message(BaseModel):
     timestamp: str | None = None
     bubble_color: str | None = None
     response_lag_seconds: float | None = None
+    # "text" for an ordinary typed bubble; anything else means `text` holds a
+    # caption (often empty) and the bubble itself is non-text content that a
+    # vision model can only describe, not transcribe.
+    message_type: Literal["text", "voice_note", "image", "sticker", "gif", "video", "other"] = "text"
+    # Only meaningful for voice_note - the duration shown on the waveform bubble.
+    duration_seconds: float | None = None
+    # Emoji tapbacks/reactions attached to this message (iMessage heart/thumbs-up
+    # badges, WhatsApp/Instagram emoji reactions), e.g. ["❤️"] or ["😂", "👍"].
+    reactions: list[str] = Field(default_factory=list)
 
 
 class ConversationContext(BaseModel):

@@ -48,7 +48,19 @@ class MockLLMClient:
             detected_language="English",
             messages=[
                 Message(sender="match", text="hey stranger 👀", response_lag_seconds=None),
-                Message(sender="user", text="just thinking about you, wyd", response_lag_seconds=42.0),
+                Message(
+                    sender="user",
+                    text="just thinking about you, wyd",
+                    response_lag_seconds=42.0,
+                    reactions=["❤️"],
+                ),
+                Message(
+                    sender="match",
+                    text="",
+                    message_type="voice_note",
+                    duration_seconds=14.0,
+                    response_lag_seconds=180.0,
+                ),
                 Message(sender="match", text="hmm maybe. depends what you're offering", response_lag_seconds=910.0),
             ],
         )

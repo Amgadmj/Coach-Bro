@@ -293,7 +293,7 @@ class SwarmOrchestrator:
         shows up as his next "user" message the next time a screenshot of that
         conversation is uploaded, and folds into the profile like any other read.
         """
-        user_lines = [m.text for m in context.messages if m.sender == "user"]
+        user_lines = [m.text for m in context.messages if m.sender == "user" and m.text.strip()]
         if not user_lines:
             return  # nothing new to learn from this screenshot
 
