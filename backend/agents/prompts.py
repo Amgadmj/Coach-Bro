@@ -117,6 +117,37 @@ def build_debate_user_prompt(context: ConversationContext, memory: list[MemoryRe
     )
 
 
+def build_rebuttal_user_prompt(
+    context: ConversationContext,
+    opinions: list[AgentOpinion],
+    prior_replies: list[tuple[str, str]],
+    agent_name: str,
+) -> str:
+    """Round 2: the agent reacts to the other two takes (and any replies already made).
+
+    Kept deliberately short - these render as chat bubbles in the live debate feed.
+    """
+    lines = [f"{m.sender}: {m.text}" for m in context.messages]
+    transcript = "\n".join(lines)
+
+    others = "\n\n".join(
+        f"{op.agent.title()}'s take:\n{op.analysis}" for op in opinions if op.agent != agent_name
+    )
+    replies_block = ""
+    if prior_replies:
+        replies_block = "\n\nReplies so far:\n" + "\n".join(
+            f"{name.title()}: {text}" for name, text in prior_replies
+        )
+
+    return (
+        f"Conversation:\n{transcript}\n\n"
+        f"The other coaches' takes:\n{others}{replies_block}\n\n"
+        "Debate round: in 1-2 sentences, speaking directly to the other coaches by name, "
+        "say where you agree or push back and what matters most for the final answer. "
+        "Conversational, in your own voice - no lists, no headers."
+    )
+
+
 def build_synthesis_user_prompt(context: ConversationContext, opinions: list[AgentOpinion]) -> str:
     lines = [f"{m.sender}: {m.text}" for m in context.messages]
     transcript = "\n".join(lines)

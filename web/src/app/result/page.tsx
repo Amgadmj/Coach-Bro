@@ -20,6 +20,7 @@ export default function ResultScreen() {
   const router = useRouter();
   const { result, reset } = useAnalysis();
   const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
 
   useEffect(() => {
     if (!result) router.replace("/live");
@@ -34,9 +35,36 @@ export default function ResultScreen() {
     setTimeout(() => setCopied(false), 1500);
   }
 
+  // Shares the summary only - never the raw conversation (privacy boundary
+  // from docs/ux_hook_blueprint.md). Web Share API where available (mobile),
+  // clipboard fallback on desktop.
+  async function shareRead() {
+    if (!result) return;
+    const text =
+      `Attraction Gauge: ${result.attraction_level * 10}/100\n` +
+      `Lesson: ${result.coaching_lesson}\n` +
+      `— read by Bro Coach`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "My read — Bro Coach", text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        setShared(true);
+        setTimeout(() => setShared(false), 1800);
+      }
+    } catch {
+      // user dismissed the share sheet - nothing to do
+    }
+  }
+
   return (
     <main>
-      <TopBar title="Your read" action="↗" />
+      <TopBar title="Your read" action={shared ? "✓" : "↗"} onAction={shareRead} />
+      {shared && (
+        <p className="mt-1.5 text-center text-[10.5px] text-ink3" role="status">
+          Copied a shareable summary — paste it anywhere.
+        </p>
+      )}
 
       <GlassCard className="mt-3 rounded-[20px] p-3.5">
         <div className="font-display text-[13px] font-extrabold">

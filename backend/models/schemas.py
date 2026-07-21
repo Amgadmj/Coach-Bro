@@ -54,6 +54,7 @@ class DebateEvent(BaseModel):
         "extraction_done",
         "agent_started",
         "agent_done",
+        "agent_reply",
         "synthesis_started",
         "synthesis_done",
         "error",

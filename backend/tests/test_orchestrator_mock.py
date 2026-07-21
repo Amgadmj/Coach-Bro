@@ -33,6 +33,11 @@ def test_pipeline_produces_valid_result() -> None:
     assert event_types[1] == "extraction_done"
     assert event_types.count("agent_started") == 3
     assert event_types.count("agent_done") == 3
+    assert event_types.count("agent_reply") == 3
+    # rebuttals happen after all round-1 takes and before synthesis
+    assert event_types.index("agent_reply") > max(
+        i for i, t in enumerate(event_types) if t == "agent_done"
+    )
     assert "synthesis_started" in event_types
     assert event_types[-1] == "synthesis_done"
 
@@ -41,10 +46,12 @@ def test_pipeline_produces_valid_result() -> None:
 
 
 def test_debate_agents_run_concurrently() -> None:
-    """Elapsed time for the 3-agent debate stage should track max(latency), not sum(latency).
+    """Round 1 (the three takes) must track max(latency), not sum(latency).
 
     Proves asyncio.gather is actually fanning the agents out in parallel rather than
-    accidentally running them sequentially.
+    accidentally running them sequentially. The rebuttal round after it is sequential
+    by design (later speakers reference earlier replies), so timing stops at the
+    third agent_done, before any agent_reply.
     """
     per_call_latency = 0.15
 
@@ -55,16 +62,18 @@ def test_debate_agents_run_concurrently() -> None:
             memory_store=NoOpMemoryStore(),
         )
         start = time.monotonic()
+        done_count = 0
         async for event in orchestrator.run_pipeline(IMAGE_BYTES, MIME_TYPE, contact_id=None):
-            if event.type == "synthesis_started":
-                # debate stage is fully drained by the time synthesis starts
-                return time.monotonic() - start
-        raise AssertionError("pipeline never reached synthesis_started")
+            if event.type == "agent_done":
+                done_count += 1
+                if done_count == 3:
+                    return time.monotonic() - start
+        raise AssertionError("pipeline never produced three agent_done events")
 
     elapsed = asyncio.run(run())
 
     sequential_estimate = per_call_latency * 3
     assert elapsed < sequential_estimate * 0.8, (
-        f"debate stage took {elapsed:.3f}s, expected close to {per_call_latency:.3f}s "
+        f"round 1 took {elapsed:.3f}s, expected close to {per_call_latency:.3f}s "
         f"(parallel) rather than {sequential_estimate:.3f}s (sequential)"
     )

@@ -87,19 +87,36 @@ class MockLLMClient:
     async def complete_text(self, system: str, user: str) -> str:
         await asyncio.sleep(self._latency_seconds)
         persona = _detect_persona(system)
+        if "Debate round:" in user:
+            return _MOCK_REBUTTALS.get(persona, "No further objections.")
         return _MOCK_OPINIONS.get(persona, "Analysis unavailable for this persona.")
 
 
 def _detect_persona(system_prompt: str) -> str:
+    # Match the prompt's opening ("You are Leo, ...") - persona names also appear
+    # in the *bodies* of other agents' prompts (Leo's mentions Arthur and Clara),
+    # so a bare substring search misattributes them.
     lowered = system_prompt.lower()
-    if "arthur" in lowered:
-        return "arthur"
-    if "clara" in lowered:
-        return "clara"
-    if "leo" in lowered:
-        return "leo"
+    for persona in ("arthur", "clara", "leo"):
+        if f"you are {persona}" in lowered:
+            return persona
     return "unknown"
 
+
+_MOCK_REBUTTALS: dict[str, str] = {
+    "arthur": (
+        "Clara, agreed it's warm - but warmth is exactly when guys over-give. Leo, keep the "
+        "reply short; the frame does the flirting."
+    ),
+    "clara": (
+        "Arthur, don't read the 15-minute gap as a power move - she re-opened the conversation "
+        "herself. Leo, lean playful, she's inviting banter, not a negotiation."
+    ),
+    "leo": (
+        "You're both right - so we tease the test instead of answering it. Arthur gets his "
+        "scarcity, Clara gets her warmth, and she gets a reason to smile at her phone."
+    ),
+}
 
 _MOCK_OPINIONS: dict[str, str] = {
     "arthur": (

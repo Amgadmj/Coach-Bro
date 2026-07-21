@@ -20,6 +20,7 @@ from agents.prompts import (
     LEO_SYSTEM_PROMPT,
     SYNTHESIZER_SYSTEM_PROMPT,
     build_debate_user_prompt,
+    build_rebuttal_user_prompt,
     build_synthesis_user_prompt,
 )
 from llm_clients.base import LLMClient
@@ -74,6 +75,12 @@ class SwarmOrchestrator:
             yield event
             if opinion is not None:
                 opinions.append(opinion)
+
+        # Round 2: each agent reacts to the other takes, sequentially, so later
+        # speakers can reference earlier replies - this is the visible "debate"
+        # the client renders as a conversation feed.
+        async for event in self._run_rebuttal_round(context, opinions):
+            yield event
 
         yield DebateEvent(type="synthesis_started")
         result = await self._synthesize(context, opinions)
@@ -134,6 +141,16 @@ class SwarmOrchestrator:
             yield item, opinion
 
         await gather_task  # already complete; surfaces exceptions if any agent raised
+
+    async def _run_rebuttal_round(
+        self, context: ConversationContext, opinions: list[AgentOpinion]
+    ) -> AsyncIterator[DebateEvent]:
+        prior_replies: list[tuple[str, str]] = []
+        for agent_name, system_prompt in _DEBATE_AGENTS:
+            user_prompt = build_rebuttal_user_prompt(context, opinions, prior_replies, agent_name)
+            text = await self._debate_client.complete_text(system_prompt, user_prompt)
+            prior_replies.append((agent_name, text))
+            yield DebateEvent(type="agent_reply", agent=agent_name, payload={"text": text})
 
     async def _synthesize(
         self, context: ConversationContext, opinions: list[AgentOpinion]
