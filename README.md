@@ -1,38 +1,50 @@
 # RESET AI
 
-**Your digital wingman.** Upload a screenshot of a text conversation and get a calibrated, emotionally intelligent read on what's really going on — plus the actual words to text back.
+**Your digital wingman.** Drop in a screenshot of a text conversation. Three AI personas debate it in real time — then hand you one clear answer: how interested she actually is, what she's really thinking, and the exact words to text back.
 
-Three AI personas debate your conversation in real time, then hand you one clear answer: how interested she actually is, what she's really thinking, and the best reply to send.
-
-> **Status:** early-stage engineering scaffold. The product flow below is fully built and runnable end-to-end in a mocked mode with zero API keys — real LLM providers and a live database are the next step. See [Project status](#project-status).
+No spinner. You watch the debate happen.
 
 ---
 
-## What it does
+## The swarm
 
-You drop in a screenshot. Behind the scenes:
+Every screenshot gets read by three personas in parallel, then arbitrated into one answer:
 
-1. **It reads the conversation.** A vision model parses the screenshot — who said what, when, and how long it took them to reply.
-2. **Three personas debate it, live.**
-   | Persona | Role |
-   |---|---|
-   | **Arthur** | The high-value frame expert — calls out neediness, over-investing, and transactional traps. Tells you when to hold your ground. |
-   | **Clara** | The female psychology specialist — decodes the subtext, the push-pull, and whether she's testing you or genuinely pulling back. |
-   | **Leo** | The charming one — turns all of that analysis into a warm, confident, funny reply. Never negging, never a pickup-artist line. |
-3. **A synthesizer settles the debate** and hands you one clean answer:
-   - An **Attraction Gauge** (1–10)
-   - A plain-English read on what she's actually thinking
-   - Your **best response**, plus a playful and a direct alternative
-   - A one-line **coaching lesson** so you actually get better over time
-4. **It remembers.** Every read gets tied to that contact, so the next screenshot of the same person comes with context — inside jokes, past dynamics, the whole history.
+| | Persona | Job |
+|---|---|---|
+| ♟️ | **Arthur** | High-value frame expert. Calls out neediness, over-investing, and transactional traps. Tells you when to hold your ground. |
+| 🔍 | **Clara** | Female psychology specialist. Decodes the subtext — the push-pull, the compliance test, whether she's testing you or genuinely pulling back. |
+| 😏 | **Leo** | The charming one. Turns the analysis into a warm, confident, funny reply. Never negging, never a pickup-artist line. |
 
-You can also export a watermarked, story-shaped summary card to share.
+A **synthesizer** settles the debate and hands you back:
+
+- An **Attraction Gauge** (1–10)
+- A plain-English read on what she's actually thinking
+- Your **best response**, plus a playful and a direct alternative
+- A one-line **coaching lesson**, so you actually get better over time
+
+Every read gets tied to that contact — the next screenshot of the same person comes with history, inside jokes, and past dynamics already loaded. You can export a watermarked, story-shaped card to share the read.
 
 ## Why it feels different
 
-The debate isn't hidden behind a spinner — you watch Arthur, Clara, and Leo weigh in one by one, with a deliberate build-up before the final number locks in with a haptic buzz. It's designed to feel less like waiting for an API response and more like waiting for a verdict. The full behavioral design behind that is written up in [`docs/ux_hook_blueprint.md`](docs/ux_hook_blueprint.md).
+The debate isn't hidden behind a loading state — Arthur, Clara, and Leo weigh in one by one, with a deliberate build-up before the final number locks in with a haptic buzz. It's built to feel like waiting for a verdict, not an API response. The behavioral design behind that is written up in [`docs/ux_hook_blueprint.md`](docs/ux_hook_blueprint.md).
+
+## Design, in progress
+
+Two full visual directions are being explored side by side before either becomes real code — open them straight in a browser, no build step:
+
+| | Direction | Vibe |
+|---|---|---|
+| [`ui-spec-v1.html`](docs/design/ui-spec-v1.html) | **Airbnb-inspired** | Calm, minimal, hospitality-brand confidence. Hairline borders, restrained red accent. |
+| [`ui-spec-v2.html`](docs/design/ui-spec-v2.html) | **Dusk** | Warm frosted-glass and gradient light, blob "Social Mode" mascots, a rounded display face. All 9 screens — dashboard, live debate, saved contacts, sharing, recap, ranking. |
+
+A git-diffable summary of the current direction (tokens, screens, component list, motion spec) lives in [`docs/design/design.md`](docs/design/design.md); the source screenshots that shaped v2 are in [`docs/design/reference-images/`](docs/design/reference-images/).
+
+Neither has been turned into real frontend code yet — that starts once one direction is confirmed.
 
 ## Tech stack
+
+What's actually built and running today:
 
 | Layer | Choice |
 |---|---|
@@ -43,14 +55,14 @@ The debate isn't hidden behind a spinner — you watch Arthur, Clara, and Leo we
 | Debate agents (Arthur/Clara/Leo) | Groq or Gemini Flash — fast and cheap, run in parallel |
 | Relationship memory | Supabase (Postgres) + `pgvector` |
 
-Full architecture, diagrams, and data model: [`docs/architecture.md`](docs/architecture.md).
+Full architecture, diagrams, and data model: [`docs/architecture.md`](docs/architecture.md). (The v2 design direction targets a future Next.js + Tailwind + Framer Motion rebuild — see its [handoff notes](docs/design/design.md#handoff) — but that's downstream of picking a direction, not built yet.)
 
 ## Project structure
 
 ```
 backend/    FastAPI service — vision extraction, the swarm orchestrator, the SSE API, pgvector memory
 mobile/     Expo app — upload, live debate reveal, results, contact history, story-card export
-docs/       Architecture and behavioral/UX design docs
+docs/       Architecture, behavioral/UX design docs, and the two UI design specs
 ```
 
 ## Getting started
@@ -89,12 +101,12 @@ More detail in [`backend/README.md`](backend/README.md) and [`mobile/README.md`]
 
 ## Project status
 
-This repo currently ships a **complete, verified scaffold**:
-
 - ✅ The full pipeline (extraction → parallel debate → synthesis → memory) runs end-to-end against mock AI responses, with tests proving the three personas genuinely run concurrently
 - ✅ The FastAPI backend streams live debate events over SSE
 - ✅ The mobile app is a working Expo project (typechecked, dependencies resolved) covering the whole user flow
+- ✅ Two complete UI design directions written up for review — see [Design, in progress](#design-in-progress)
 - ⏳ Real LLM provider calls (Anthropic/Groq/Gemini) and a live Supabase database are wired with working code but need real API keys to activate — see `.env.example` in `backend/`
+- ⏳ A design direction hasn't been picked yet — no Next.js/production frontend code exists
 - ⏳ Not yet deployed to an app store or a hosted backend
 
 For engineering ground rules and decisions behind this scaffold (why no LangChain, the content/safety boundary, model routing), see [`CLAUDE.md`](CLAUDE.md).
