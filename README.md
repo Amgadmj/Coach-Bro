@@ -1,6 +1,6 @@
 # RESET AI
 
-**Your digital wingman.** Drop in a screenshot of a text conversation. Three AI personas debate it in real time — then hand you one clear answer: how interested she actually is, what she's really thinking, and the exact words to text back.
+**Your digital wingman.** Drop in screenshots of a text conversation — one or a whole scrollback's worth. Three AI personas debate it in real time — then hand you one clear answer: how interested she actually is, what she's really thinking, and the exact words to text back.
 
 No spinner. You watch the debate happen.
 
@@ -8,7 +8,7 @@ No spinner. You watch the debate happen.
 
 ## The swarm
 
-Every screenshot gets read by three personas in parallel, then arbitrated into one answer:
+Every read gets extracted by vision, then debated by three personas in parallel and arbitrated into one answer:
 
 | | Persona | Job |
 |---|---|---|
@@ -24,6 +24,16 @@ A **synthesizer** settles the debate and hands you back:
 - A one-line **coaching lesson**, so you actually get better over time
 
 Every read gets tied to that contact — the next screenshot of the same person comes with history, inside jokes, and past dynamics already loaded. You can export a watermarked, story-shaped card to share the read.
+
+## What extraction actually sees
+
+Vision extraction isn't just OCR on typed text:
+
+- **Unlimited screenshots per read** — attach as many as the conversation spans; the model merges them into one chronologically ordered transcript and de-dupes overlap across images itself.
+- **Voice notes and reactions are captured, not skipped** — a voice-memo bubble becomes `[voice message, 14s]`, a tapback/reaction chip becomes `[reacted: ❤️]` in every transcript the agents see. Often that's the whole signal (an unanswered voice note, a heart-reacted message).
+- **Language is detected per read** — the dominant language/dialect of the conversation itself (e.g. "Brazilian Portuguese", "Egyptian Arabic"), independent of the phone UI's language, so coaching and the best-response suggestion come back in-language.
+
+The extraction and synthesis calls are also hardened against real, observed forced-tool-use glitches from the vision model — content that leaks into the wrong field or gets nested a level too deep is recovered rather than surfacing as a crash three frames away from the actual cause.
 
 ## Why it feels different
 
@@ -51,8 +61,9 @@ What's actually built and running today:
 | Backend | Python, FastAPI, streamed over Server-Sent Events |
 | Agent orchestration | Plain `asyncio` — no LangChain/LangGraph, deliberately lean |
 | Vision + final synthesis | Claude (Anthropic) |
-| Debate agents (Arthur/Clara/Leo) | Groq or Gemini Flash — fast and cheap, run in parallel |
+| Debate agents (Arthur/Clara/Leo) | Groq or Gemini Flash by default — fast and cheap, run in parallel. Anthropic is a supported fallback (`FAST_LLM_PROVIDER=anthropic`) when those are rate-limited or unconfigured |
 | Relationship memory | Supabase (Postgres) + `pgvector` |
+| Installability | PWA — installable, standalone app shell, offline-capable via service worker |
 
 Full architecture, diagrams, and data model: [`docs/architecture.md`](docs/architecture.md).
 
@@ -107,8 +118,10 @@ More detail in [`backend/README.md`](backend/README.md) and [`web/README.md`](we
 - ✅ The FastAPI backend streams live debate events over SSE
 - ✅ The mobile app is a working Expo project (typechecked, dependencies resolved) covering the whole user flow
 - ✅ Two complete UI design directions written up — see [Design](#design)
-- ✅ The Dusk direction is implemented as a Next.js web app (`web/`) wired to the backend — live SSE debate, scenario openers, contacts; see [`web/README.md`](web/README.md)
-- ⏳ Real LLM provider calls (Anthropic/Groq/Gemini) and a live Supabase database are wired with working code but need real API keys to activate — see `.env.example` in `backend/`
+- ✅ The Dusk direction is implemented as a Next.js web app (`web/`) wired to the backend — live SSE debate as real chat bubbles, scenario openers, contacts; see [`web/README.md`](web/README.md)
+- ✅ Real LLM provider calls are live (Anthropic vision/synthesis + a configured fast provider) and have been run against real screenshots, not just the mock client — see `.env.example` in `backend/`
+- ✅ Installable as a PWA — standalone app shell, offline-capable
+- ✅ Multi-language support — extraction detects the conversation's actual language and the app translates around it
 - ⏳ Recap/Playbook/Profile still run on demo data — no backend for them yet
 - ⏳ Not yet deployed to an app store or a hosted backend
 

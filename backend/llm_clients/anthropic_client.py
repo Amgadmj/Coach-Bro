@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import re
 from datetime import datetime, timezone
 from typing import Any
 
@@ -20,7 +21,16 @@ from anthropic import AsyncAnthropic
 from models.schemas import ConversationContext
 
 DEFAULT_VISION_MODEL = "claude-sonnet-5"
-MAX_TOKENS = 2048
+# Seen live: synthesis has 6 free-text/array fields (dynamic_analysis,
+# what_she_is_thinking, best_response, alternative_responses, coaching_lesson...)
+# and the model occasionally overwrites one of the earlier ones well past its
+# instructed length (the exact reason those fields already have defensive
+# post-hoc truncation - see models/schemas.py) - it still burns real output
+# tokens doing so, which at 2048 could truncate mid-object and drop later
+# required fields entirely (ValidationError: best_response/alternative_responses
+# missing). 4096 gives enough headroom that a verbose middle field doesn't
+# starve the rest; the truncation validators still apply after the fact.
+MAX_TOKENS = 4096
 # Extraction merges however many screenshots were uploaded into one message
 # list - needs more headroom than a single-call analysis/synthesis response.
 EXTRACTION_MAX_TOKENS = 4096
@@ -32,7 +42,8 @@ scrolled up to capture more of the conversation.
 First, fill detected_language: the specific language (and dialect/region if identifiable, e.g. \
 "Mexican Spanish", "Egyptian Arabic") the conversation is actually written in, judged from the \
 message text itself, not the phone's UI chrome. If the conversation mixes languages, name the \
-dominant one. Always fill this - never skip it, even if it feels obvious.
+dominant one. Always fill this field - never skip it, even if it feels obvious. If there is no \
+real conversation to read (e.g. the screenshot is empty, blank, or not a chat at all), leave it null.
 
 Then extract every message as ONE single, chronologically ordered list:
 
@@ -70,6 +81,76 @@ Call the record_conversation tool with the extracted data.
 """
 
 
+def _recover_self_nested_messages(raw: dict[str, Any]) -> dict[str, Any]:
+    """Rare forced-tool-use glitch seen live: the model returns `messages` as a
+    JSON string containing the ENTIRE intended object re-encoded, instead of the
+    actual array - e.g. {"messages": "{\\"messages\\": [...], \\"detected_language\\": ...}"}.
+    Not tied to one specific prompt wording (reproduced with two different prompt
+    phrasings), so a prompt tweak can't reliably prevent it - unwrap defensively
+    instead of crashing the whole read, same rationale as the what_she_is_thinking
+    single-string coercion in models/schemas.py."""
+    messages_value = raw.get("messages")
+    if isinstance(messages_value, str):
+        try:
+            unwrapped = json.loads(messages_value)
+        except (json.JSONDecodeError, TypeError):
+            return raw
+        if isinstance(unwrapped, dict) and isinstance(unwrapped.get("messages"), list):
+            return unwrapped
+    return raw
+
+
+# Stops each tag's content at the next tag (closing OR another opening
+# <parameter>) or end of string - needed because the model sometimes leaks a
+# whole run of tags with no closing </parameter> between them at all, and a
+# terminator of "</parameter> or end-of-string" alone would let the first
+# tag's lazy match swallow every tag after it.
+_PARAM_TAG_RE = re.compile(
+    r'<parameter name="(\w+)">(.*?)(?=</parameter>|<parameter name="|\Z)', re.DOTALL
+)
+_INVOKE_WRAPPER_RE = re.compile(r"</?(?:invoke|function_calls)[^>]*>", re.DOTALL)
+
+
+def _recover_leaked_parameter_tags(raw: dict[str, Any], valid_fields: set[str]) -> dict[str, Any]:
+    """Rare forced-tool-use glitch seen live: instead of setting top-level keys
+    directly, the model bleeds its OWN tool-call syntax - literal
+    `<invoke...><parameter name="best_response">...</parameter>...</invoke>`
+    fragments, the XML-style tool-call format Claude uses in other contexts -
+    into a different field's string VALUE, sometimes several fields' worth in
+    one run. The intended fields then go missing entirely (required-field
+    ValidationErrors several frames from the real cause), and the field that
+    held them ends up polluted with the stray markup. Recover every trapped
+    value into its real field and strip the leaked markup out of the field
+    that held it."""
+    patched = dict(raw)
+    for key, value in raw.items():
+        if not isinstance(value, str):
+            continue
+        matches = list(_PARAM_TAG_RE.finditer(value))
+        if not matches:
+            continue
+        for match in matches:
+            field_name = match.group(1)
+            # The LAST tag in a run with no closing </parameter> anywhere
+            # captures through to end-of-string, which can include a trailing
+            # </invoke> wrapper - strip that out of the extracted value too.
+            content = _INVOKE_WRAPPER_RE.sub("", match.group(2)).strip()
+            if field_name in valid_fields and field_name not in raw:
+                # A structured field (e.g. alternative_responses, an object)
+                # leaks as JSON text too - decode it back rather than handing
+                # Pydantic a string where it expects a dict/list. Plain prose
+                # fields (best_response, coaching_lesson) simply aren't valid
+                # JSON, so this falls back to the raw string for those.
+                try:
+                    patched[field_name] = json.loads(content)
+                except (json.JSONDecodeError, TypeError):
+                    patched[field_name] = content
+        cleaned = _PARAM_TAG_RE.sub("", value)
+        cleaned = _INVOKE_WRAPPER_RE.sub("", cleaned)
+        patched[key] = cleaned.strip()
+    return patched
+
+
 class AnthropicClient:
     def __init__(self, api_key: str | None = None, vision_model: str | None = None) -> None:
         self._client = AsyncAnthropic(api_key=api_key or os.environ["ANTHROPIC_API_KEY"])
@@ -101,17 +182,19 @@ class AnthropicClient:
             schema=schema,
             max_tokens=EXTRACTION_MAX_TOKENS,
         )
+        raw = _recover_self_nested_messages(raw)
         raw["extracted_at"] = datetime.now(timezone.utc).isoformat()
         return ConversationContext.model_validate(raw)
 
     async def complete_json(self, system: str, user: str, json_schema: dict[str, Any]) -> dict[str, Any]:
-        return await self._call_tool(
+        raw = await self._call_tool(
             system=system,
             content=[{"type": "text", "text": user}],
             tool_name="record_result",
             tool_description="Record the final structured result.",
             schema=json_schema,
         )
+        return _recover_leaked_parameter_tags(raw, set(json_schema.get("properties", {})))
 
     async def complete_text(self, system: str, user: str) -> str:
         response = await self._client.messages.create(
@@ -142,5 +225,14 @@ class AnthropicClient:
         )
         for block in response.content:
             if block.type == "tool_use" and block.name == tool_name:
+                if response.stop_reason == "max_tokens":
+                    # The tool call itself parsed, but got cut off mid-object -
+                    # trailing required fields are likely missing. Surface that
+                    # plainly rather than letting it fall through as a cryptic
+                    # Pydantic ValidationError several frames away from the cause.
+                    raise ValueError(
+                        f"{tool_name!r} call hit max_tokens ({max_tokens}) and was truncated - "
+                        "raise max_tokens or shorten the prompt/output."
+                    )
                 return block.input  # type: ignore[no-any-return]
         raise ValueError(f"Model did not call {tool_name!r}; response: {json.dumps(response.model_dump())}")

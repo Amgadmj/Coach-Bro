@@ -7,7 +7,7 @@
  * - Network-first for navigations (always fresh when online), falling back to
  *   the cached shell when offline; cache-first for hashed static assets.
  */
-const CACHE = "bro-coach-shell-v1";
+const CACHE = "bro-coach-shell-v2";
 const SHELL_URLS = ["/", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {

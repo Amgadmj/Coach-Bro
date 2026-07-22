@@ -160,7 +160,16 @@ export default function LiveScenarioInput() {
             type="file"
             accept="image/*"
             multiple
-            className="hidden"
+            // display:none can fail to fire a programmatic .click() reliably in
+            // some WebKit standalone-PWA contexts (installed home-screen apps) -
+            // sr-only keeps it clipped to a 0-area box (via `clip`) instead of
+            // display:none, which is what actually keeps it from ever painting
+            // over - or intercepting clicks meant for - the buttons next to it
+            // (a plain absolute+opacity-0 box has no clip, so it still occupies
+            // a hit-testable area and, being positioned, paints above its
+            // static-position siblings per stacking rules).
+            className="sr-only"
+            tabIndex={-1}
             onChange={(e) => {
               addFiles(e.target.files);
               e.target.value = ""; // allow re-selecting the same file later
