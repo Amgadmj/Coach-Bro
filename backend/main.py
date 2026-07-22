@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv()  # backend/.env - keys and mode; must run before any os.environ reads
 
-from fastapi import Depends, FastAPI, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
@@ -67,6 +67,37 @@ MAX_IMAGES_PER_ANALYZE = int(os.environ.get("MAX_IMAGES_PER_ANALYZE", "20"))
 # stream (and the LLM spend) even starts.
 ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 
+# Filename-extension fallback for uploads whose content-type is missing or
+# generic ("application/octet-stream") - seen live from browser clipboard
+# pastes and some multipart clients that never set a real image content-type
+# even though the bytes decode fine. A genuinely undecodable format (HEIC/HEIF,
+# BMP, TIFF) still gets rejected below regardless of extension, since Anthropic's
+# vision API can't decode those no matter what mime type we claim.
+_EXTENSION_TO_MIME = {
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+    "gif": "image/gif",
+    "webp": "image/webp",
+}
+_GENERIC_CONTENT_TYPES = {None, "", "application/octet-stream"}
+
+# Pasted/typed conversation text - a generous cap since a real chat paste can run
+# long, but still a finite user-controlled boundary before it reaches the LLM.
+MAX_TEXT_CONTENT_CHARS = int(os.environ.get("MAX_TEXT_CONTENT_CHARS", "4000"))
+
+
+def _resolve_image_content_type(filename: str | None, content_type: str | None) -> str | None:
+    """Returns the content type to trust for this upload, or None if it should
+    be rejected. Passes known-good types through as-is; for a missing/generic
+    content type, falls back to sniffing the filename extension."""
+    if content_type in ALLOWED_IMAGE_CONTENT_TYPES:
+        return content_type
+    if content_type in _GENERIC_CONTENT_TYPES and filename and "." in filename:
+        ext = filename.rsplit(".", 1)[-1].lower()
+        return _EXTENSION_TO_MIME.get(ext)
+    return None
+
 
 def _build_llm_clients() -> tuple[LLMClient, LLMClient]:
     mode = os.environ.get("LLM_MODE", "mock")
@@ -106,20 +137,31 @@ def get_orchestrator() -> SwarmOrchestrator:
 
 @app.post("/analyze", dependencies=[Depends(analyze_limiter)])
 async def analyze(
-    images: list[UploadFile],
+    images: list[UploadFile] = File(default=[]),
+    text_content: str | None = Form(default=None),
     contact_id: str | None = Form(default=None),
     language: SupportedLanguage = Form(default="auto"),
     mode: SocialMode = Form(default="hype"),
 ) -> StreamingResponse:
-    if not images:
-        raise HTTPException(status_code=400, detail="Attach at least one screenshot.")
+    text_content = text_content.strip() if text_content else None
+
+    if not images and not text_content:
+        raise HTTPException(status_code=400, detail="Attach at least one screenshot or enter some text.")
+    if text_content and len(text_content) > MAX_TEXT_CONTENT_CHARS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Pasted text is too long - max {MAX_TEXT_CONTENT_CHARS} characters.",
+        )
     if len(images) > MAX_IMAGES_PER_ANALYZE:
         raise HTTPException(
             status_code=400,
             detail=f"Too many screenshots in one go - max {MAX_IMAGES_PER_ANALYZE} per read.",
         )
+
+    image_data: list[tuple[bytes, str]] = []
     for img in images:
-        if img.content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
+        resolved_type = _resolve_image_content_type(img.filename, img.content_type)
+        if resolved_type is None:
             raise HTTPException(
                 status_code=422,
                 detail=(
@@ -127,12 +169,14 @@ async def analyze(
                     f"({img.filename or 'unnamed file'}) - please upload JPEG, PNG, GIF, or WebP screenshots."
                 ),
             )
+        image_data.append((await img.read(), resolved_type))
 
     orchestrator = get_orchestrator()
-    image_data = [(await img.read(), img.content_type) for img in images]
 
     async def event_stream():
-        async for event in orchestrator.run_pipeline(image_data, contact_id, language, mode):
+        async for event in orchestrator.run_pipeline(
+            image_data or None, contact_id, language, mode, text_content=text_content
+        ):
             yield f"data: {event.model_dump_json()}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
@@ -152,7 +196,9 @@ async def suggest(request: SuggestRequest) -> SuggestResponse:
     vision_client, _ = _build_llm_clients()
     data = await vision_client.complete_json(
         SUGGEST_SYSTEM_PROMPT,
-        build_suggest_user_prompt(request.scenario, request.mode, response_language, user_style),
+        build_suggest_user_prompt(
+            request.scenario, request.mode, response_language, user_style, request.category, request.seed
+        ),
         SuggestResponse.model_json_schema(),
     )
     return SuggestResponse.model_validate(data)

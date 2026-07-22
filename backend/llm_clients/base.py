@@ -67,7 +67,8 @@ class MockLLMClient:
 
     async def complete_json(self, system: str, user: str, json_schema: dict[str, Any]) -> dict[str, Any]:
         await asyncio.sleep(self._latency_seconds)
-        if "suggestions" in json_schema.get("properties", {}):
+        properties = json_schema.get("properties", {})
+        if "suggestions" in properties:
             return {
                 "language": "English",
                 "suggestions": [
@@ -75,6 +76,18 @@ class MockLLMClient:
                     {"label": "Playful tease", "text": "You look like trouble, in a good way."},
                     {"label": "Direct", "text": "I'm glad I came over to talk to you."},
                 ]
+            }
+        if "messages" in properties:
+            # Text-only extraction (no screenshot) - see
+            # swarm_orchestrator.py::_extract_text_context.
+            return {
+                "contact_id": None,
+                "detected_language": "English",
+                "messages": [
+                    {"sender": "match", "text": "hey! saw you're into hiking too", "response_lag_seconds": None},
+                    {"sender": "user", "text": "yeah I try to get out most weekends, you?", "response_lag_seconds": 60.0},
+                    {"sender": "match", "text": "same! we should compare trail notes sometime", "response_lag_seconds": 420.0},
+                ],
             }
         return {
             "attraction_level": 7,

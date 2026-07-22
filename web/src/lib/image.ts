@@ -50,3 +50,35 @@ export async function compressImage(file: File): Promise<Blob> {
 export async function compressImages(files: File[]): Promise<Blob[]> {
   return Promise.all(files.map(compressImage));
 }
+
+/** First few bytes of each format's file signature - enough to distinguish the
+ * four types the backend accepts (see backend/main.py::ALLOWED_IMAGE_CONTENT_TYPES). */
+async function sniffImageMimeType(blob: Blob): Promise<string | null> {
+  const head = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
+  if (head[0] === 0xff && head[1] === 0xd8) return "image/jpeg";
+  if (head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4e && head[3] === 0x47) return "image/png";
+  if (head[0] === 0x47 && head[1] === 0x49 && head[2] === 0x46) return "image/gif";
+  const isRiff = head[0] === 0x52 && head[1] === 0x49 && head[2] === 0x46 && head[3] === 0x46;
+  const isWebp = head[8] === 0x57 && head[9] === 0x45 && head[10] === 0x42 && head[11] === 0x50;
+  if (isRiff && isWebp) return "image/webp";
+  return null;
+}
+
+/**
+ * Browsers occasionally hand back a Blob with an empty/generic `type` - canvas
+ * exports without an explicit mime, clipboard pastes, some drag-and-drop
+ * sources - even though the underlying bytes decode fine. The backend's
+ * octet-stream fallback (see backend/main.py::_resolve_image_content_type) only
+ * works if there's a recognizable filename extension, which a raw Blob rarely
+ * has. Sniff the real format from the file signature and re-wrap with an
+ * explicit content type before upload, so the multipart part's Content-Type
+ * header - which browsers derive from `blob.type`, not the filename - is
+ * actually correct. Falls through unchanged if the format isn't recognized, so
+ * the backend can still reject it with a clear error instead of silently
+ * mislabeling it.
+ */
+export async function ensureImageMimeType(blob: Blob): Promise<Blob> {
+  if (blob.type.startsWith("image/")) return blob;
+  const sniffed = await sniffImageMimeType(blob);
+  return sniffed ? blob.slice(0, blob.size, sniffed) : blob;
+}

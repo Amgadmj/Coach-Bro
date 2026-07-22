@@ -83,6 +83,7 @@ export interface Dict {
     spokenTitle: string;
     yourScreenshot: string;
     yourScreenshots: string;
+    yourMessage: string;
     statusDebating: string;
     statusDone: string;
     statusRunning: string;
@@ -177,6 +178,7 @@ const en: Dict = {
     spokenTitle: "The room has spoken",
     yourScreenshot: "Your screenshot",
     yourScreenshots: "Your screenshots",
+    yourMessage: "Your message",
     statusDebating: "Takes are in — now they hash it out.",
     statusDone: "Debate settled. Your read is ready.",
     statusRunning: "Three reads happening in parallel right now.",
@@ -288,6 +290,7 @@ const es: Dict = {
     spokenTitle: "La sala ya habló",
     yourScreenshot: "Tu captura",
     yourScreenshots: "Tus capturas",
+    yourMessage: "Tu mensaje",
     statusDebating: "Ya tienen sus lecturas — ahora lo discuten entre ellos.",
     statusDone: "Debate resuelto. Tu lectura está lista.",
     statusRunning: "Tres lecturas en paralelo, ahora mismo.",
@@ -399,6 +402,7 @@ const fr: Dict = {
     spokenTitle: "La salle a parlé",
     yourScreenshot: "Ta capture",
     yourScreenshots: "Tes captures",
+    yourMessage: "Ton message",
     statusDebating: "Les avis sont là — place au débat.",
     statusDone: "Débat terminé. Ta lecture est prête.",
     statusRunning: "Trois lectures en parallèle, en ce moment même.",
@@ -510,6 +514,7 @@ const pt: Dict = {
     spokenTitle: "O veredito saiu",
     yourScreenshot: "Seu print",
     yourScreenshots: "Seus prints",
+    yourMessage: "Sua mensagem",
     statusDebating: "As leituras chegaram — agora é debate.",
     statusDone: "Debate encerrado. Sua leitura está pronta.",
     statusRunning: "Três leituras acontecendo em paralelo agora.",
@@ -621,6 +626,7 @@ const hi: Dict = {
     spokenTitle: "फ़ैसला आ गया",
     yourScreenshot: "आपका स्क्रीनशॉट",
     yourScreenshots: "आपके स्क्रीनशॉट्स",
+    yourMessage: "आपका मैसेज",
     statusDebating: "तीनों की राय आ गई — अब बहस शुरू।",
     statusDone: "बहस खत्म। आपकी रीड तैयार है।",
     statusRunning: "अभी तीन रीड्स एक साथ चल रही हैं।",
@@ -732,6 +738,7 @@ const ar: Dict = {
     spokenTitle: "صدر الحكم",
     yourScreenshot: "لقطة شاشتك",
     yourScreenshots: "لقطات شاشتك",
+    yourMessage: "رسالتك",
     statusDebating: "وصلت آراؤهم — الآن يتناقشون.",
     statusDone: "انتهى النقاش. قراءتك جاهزة.",
     statusRunning: "ثلاث قراءات تجري بالتوازي الآن.",

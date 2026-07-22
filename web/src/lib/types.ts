@@ -23,6 +23,11 @@ export interface ConversationContext {
   messages: Message[];
   extracted_at: string;
   detected_language?: string | null;
+  // Only set when the user attached free-text commentary alongside screenshot(s) -
+  // see backend/models/schemas.py::ConversationContext.scenario_notes. Null for a
+  // text-only read (the text itself becomes `messages`, not this field) or a
+  // screenshot-only read.
+  scenario_notes?: string | null;
 }
 
 export interface AgentOpinion {
@@ -69,12 +74,17 @@ export interface DebateEvent {
   payload?: Record<string, unknown> | null;
 }
 
+// Product-facing mission chips ("Icebreaker" / "Vibe Shift" / "Exit Strategy") plus the
+// default cold-open case - see backend/agents/prompts.py::_SUGGEST_CATEGORY_INSTRUCTIONS.
+export type SuggestCategory = "opener" | "icebreaker" | "vibe_shift" | "exit_strategy";
+
 export interface Suggestion {
   label: string;
   text: string;
 }
 
 export interface SuggestResponse {
+  language: string;
   suggestions: Suggestion[];
 }
 

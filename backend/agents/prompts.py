@@ -84,6 +84,15 @@ def _mode_header(mode: str) -> str:
         "mode - never the substance of your read, your role, or the content boundary.\n\n"
     )
 
+
+def _scenario_notes_block(context: ConversationContext) -> str:
+    """Free-text commentary the user typed alongside their screenshot(s) - see
+    ConversationContext.scenario_notes in models/schemas.py. Empty when the read
+    came from a screenshot alone."""
+    if not context.scenario_notes:
+        return ""
+    return f"Additional context the user typed about this situation:\n{context.scenario_notes}\n\n"
+
 # Shared by Arthur/Clara/Leo's takes: this renders as a chat bubble in the debate
 # feed, not a document. A short headline is always visible; the detail only shows
 # if the user taps/hovers to expand it - so both must earn their place, not pad.
@@ -187,14 +196,56 @@ it all reads.
 """
 
 
-SUGGEST_SYSTEM_PROMPT = """\
-You are Bro Coach's opener writer - Leo's voice, Arthur's boundaries, Clara's read.
+# Mission text for each /say mission chip. Product-facing names/copy live in
+# web/src/lib/i18n.ts (same rationale as _SOCIAL_MODE_DESCRIPTIONS above) - these
+# are the same four meanings restated as concrete instructions for the model.
+_SUGGEST_CATEGORY_INSTRUCTIONS: dict[str, str] = {
+    "opener": (
+        "The user is about to start a NEW conversation cold - a match, a DM, an in-person "
+        "approach. Produce exactly three original opening lines, each in a different register:\n"
+        "1. Confident, higher-energy.\n"
+        "2. Warm, cheeky, playful tease.\n"
+        "3. Simple, honest, direct - no games."
+    ),
+    "icebreaker": (
+        "The conversation has gone quiet or stalled and the user needs to naturally get it "
+        "moving again. Produce exactly three re-opening lines, each in a different register:\n"
+        "1. Playful callback or light tease.\n"
+        "2. Curious question that invites a real answer.\n"
+        "3. Simple, low-pressure check-in."
+    ),
+    "vibe_shift": (
+        "The conversation has gone flat, too logistical, or lost its spark, and the user wants "
+        "to shift the energy without it feeling forced. Produce exactly three lines that pivot "
+        "the vibe, each in a different register:\n"
+        "1. Bold, high-energy redirect.\n"
+        "2. Flirtatious, playful misdirection.\n"
+        "3. Sincere, direct reset of the tone."
+    ),
+    "exit_strategy": (
+        "The user wants to end this exchange gracefully - either a warm wrap-up, or disengaging "
+        "from something that isn't working. Produce exactly three exit lines, each in a "
+        "different register:\n"
+        "1. Warm, upbeat sign-off that leaves the door open.\n"
+        "2. Playful, light exit.\n"
+        "3. Direct, honest, no-hard-feelings close."
+    ),
+}
 
-The user describes an in-person social scenario (no screenshot). Produce exactly three \
-suggested things to say, each in a different register:
-1. Confident, higher-energy.
-2. Warm, cheeky, playful tease.
-3. Simple, honest, direct - no games.
+
+def _category_header(category: str) -> str:
+    instructions = _SUGGEST_CATEGORY_INSTRUCTIONS.get(category, _SUGGEST_CATEGORY_INSTRUCTIONS["opener"])
+    return f"MISSION FOR THIS REQUEST:\n{instructions}\n\n"
+
+
+SUGGEST_SYSTEM_PROMPT = """\
+You are Bro Coach's line writer - Leo's voice, Arthur's boundaries, Clara's read.
+
+The user describes a social scenario (no screenshot) and has picked a specific mission - \
+opener, icebreaker, vibe shift, or exit strategy. The exact mission for this request, including \
+what each of the three registers should accomplish, is given in the user message below under \
+"MISSION FOR THIS REQUEST" - follow it exactly, don't default to generic opener lines if a \
+different mission was given.
 
 The `label` field for each is a short (1-3 word) category tag naming that register - write \
 it in the same language as everything else in your response, never left in English unless \
@@ -204,6 +255,10 @@ You must always fill the top-level `language` field with the language you are re
 - never skip it, never guess a language unrelated to the scenario's own wording or an explicit \
 override. Do not let the Social Mode's name (e.g. "romantic") bias your choice of language.
 
+If the user message includes a variation round above 0, that means this is a repeat request for \
+the exact same scenario - the three lines must be genuinely fresh (different wording, different \
+angle), never a light reword of a typical first-pass answer.
+
 Calibrate all three to the user's declared Social Mode. Keep each line short enough to \
 actually say out loud. Never negging, never a pickup-artist script, never bitter - warm, \
 respectful, win-win only.
@@ -211,7 +266,12 @@ respectful, win-win only.
 
 
 def build_suggest_user_prompt(
-    scenario: str, mode: str, language: str | None = None, user_style: str | None = None
+    scenario: str,
+    mode: str,
+    language: str | None = None,
+    user_style: str | None = None,
+    category: str = "opener",
+    seed: int = 0,
 ) -> str:
     """`language=None` is the "auto" case (no screenshot to pre-detect from).
 
@@ -224,14 +284,58 @@ def build_suggest_user_prompt(
     """
     header = _language_header(language) if language else ""
     style_block = f"How the user actually talks:\n{user_style}\n\n" if user_style else ""
+    variation_block = f"Variation round: {seed}\n\n" if seed else ""
     return (
         header
         + _mode_header(mode)
+        + _category_header(category)
         + style_block
+        + variation_block
         + f"Scenario: {scenario}\n\n"
         "Detect the scenario's language and fill the `language` field with it before "
         "writing the suggestions, unless a language override is specified above."
     )
+
+
+TEXT_EXTRACT_SYSTEM_PROMPT = """\
+You parse a pasted or typed chat transcript into structured conversation data, precisely and \
+literally - the same contract as screenshot extraction, but the input is plain text instead of \
+an image.
+"""
+
+_TEXT_EXTRACT_PROMPT_TEMPLATE = """\
+The user pasted or typed the text below, copied out of a messaging app or typed from memory. It \
+may use prefixes like "Me:", "You:", "Her:", a contact's name, or no prefix at all - if there's \
+no explicit label, alternating lines are usually alternating speakers.
+
+First, fill detected_language: the specific language (and dialect/region if identifiable) the \
+conversation is actually written in, judged from the message text itself. Always fill this \
+field - never skip it, even if it feels obvious. If the text isn't actually a conversation \
+transcript at all (e.g. just a description of a situation with no real back-and-forth lines), \
+leave it null and treat the whole thing as a single "user" message instead of guessing a split.
+
+Then extract every message as ONE single, chronologically ordered list:
+
+- sender: "user" for the phone owner's own outgoing lines (labeled "Me"/"You"/his own name, or \
+the first speaker if unlabeled and clearly alternating), "match" for the other person's lines.
+- text: the exact message text, transcribed verbatim in its ORIGINAL language and script - never \
+translate it here. Strip any sender prefix/label before storing it.
+- timestamp: only if a timestamp is explicitly written inline (e.g. "[9:41 PM]"), else omit.
+- message_type: always "text" - plain pasted text gives no way to detect voice notes, images, \
+stickers, or reactions. Leave duration_seconds and reactions at their defaults.
+- response_lag_seconds: omit - not inferable from plain text without visible timestamps.
+
+Pasted text:
+---
+{text_content}
+---
+
+Call the record_conversation tool with the extracted data.
+"""
+
+
+def build_text_extract_user_prompt(text_content: str) -> str:
+    return _TEXT_EXTRACT_PROMPT_TEMPLATE.format(text_content=text_content)
 
 
 USER_STYLE_SYSTEM_PROMPT = """\
@@ -322,6 +426,7 @@ def build_debate_user_prompt(
     return (
         _language_header(language)
         + _mode_header(mode)
+        + _scenario_notes_block(context)
         + f"Conversation so far:\n{transcript}\n\n"
         f"What we know about her from previous reads:\n{persona_block}\n\n"
         f"Recent read history:\n{history_block}\n\n"
@@ -389,6 +494,7 @@ def build_synthesis_user_prompt(
     return (
         _language_header(language)
         + _mode_header(mode)
+        + _scenario_notes_block(context)
         + f"Conversation:\n{transcript}\n\n"
         f"{persona_block}"
         f"{style_block}"

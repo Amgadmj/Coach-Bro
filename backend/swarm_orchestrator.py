@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import AsyncIterator
+from datetime import datetime, timezone
 from typing import Protocol
 
 from agents.prompts import (
@@ -20,11 +21,13 @@ from agents.prompts import (
     LEO_SYSTEM_PROMPT,
     PERSONA_SYSTEM_PROMPT,
     SYNTHESIZER_SYSTEM_PROMPT,
+    TEXT_EXTRACT_SYSTEM_PROMPT,
     USER_STYLE_SYSTEM_PROMPT,
     build_debate_user_prompt,
     build_persona_user_prompt,
     build_rebuttal_user_prompt,
     build_synthesis_user_prompt,
+    build_text_extract_user_prompt,
     build_user_style_user_prompt,
     resolve_response_language,
 )
@@ -85,14 +88,23 @@ class SwarmOrchestrator:
 
     async def run_pipeline(
         self,
-        images: list[tuple[bytes, str]],
+        images: list[tuple[bytes, str]] | None,
         contact_id: str | None,
         language: SupportedLanguage = "auto",
         mode: SocialMode = "hype",
+        text_content: str | None = None,
     ) -> AsyncIterator[DebateEvent]:
         """`images` is one or more (image_bytes, mime_type) pairs - multiple
         screenshots of the same conversation (e.g. from scrolling) are merged
         into one ConversationContext during extraction, not analyzed separately.
+        At least one of `images` or `text_content` must be given.
+
+        `text_content` is copy-pasted/typed conversation text. If given without
+        images, it IS the conversation and is parsed into a ConversationContext
+        the same way a screenshot would be (see _extract_text_context). If given
+        alongside images, it's treated as the user's own free-text commentary on
+        top of the screenshot(s) and attached as ConversationContext.scenario_notes
+        instead of being parsed as dialogue.
 
         Yields DebateEvents for each stage; any failure anywhere in the pipeline
         (provider timeout, rate limit, bad key) is caught and turned into one final
@@ -102,7 +114,7 @@ class SwarmOrchestrator:
         rate-limit error used to abort the HTTP response with no signal at all."""
         try:
             yield DebateEvent(type="extraction_started")
-            context = await self._extract_context(images, contact_id)
+            context = await self._extract_context(images, contact_id, text_content)
             yield DebateEvent(type="extraction_done", payload=context.model_dump(mode="json"))
 
             # Resolved once, after extraction sees the screenshot: an explicit user
@@ -167,12 +179,39 @@ class SwarmOrchestrator:
             )
 
     async def _extract_context(
-        self, images: list[tuple[bytes, str]], contact_id: str | None
+        self,
+        images: list[tuple[bytes, str]] | None,
+        contact_id: str | None,
+        text_content: str | None = None,
     ) -> ConversationContext:
-        context = await self._vision_client.vision_extract(images)
+        if images:
+            context = await self._vision_client.vision_extract(images)
+            if text_content:
+                context = context.model_copy(update={"scenario_notes": text_content})
+        elif text_content:
+            context = await self._extract_text_context(text_content)
+        else:
+            raise ValueError("run_pipeline requires at least one of images or text_content")
+
         if contact_id and context.contact_id != contact_id:
             context = context.model_copy(update={"contact_id": contact_id})
         return context
+
+    async def _extract_text_context(self, text_content: str) -> ConversationContext:
+        """Parses copy-pasted/typed conversation text into a ConversationContext,
+        the text-only sibling of `vision_extract` (see llm_clients/anthropic_client.py
+        for the equivalent image path and its extracted_at/scenario_notes handling)."""
+        schema = ConversationContext.model_json_schema()
+        for field in ("extracted_at", "scenario_notes"):
+            schema["properties"].pop(field, None)
+        if "required" in schema:
+            schema["required"] = [f for f in schema["required"] if f not in ("extracted_at", "scenario_notes")]
+
+        data = await self._vision_client.complete_json(
+            TEXT_EXTRACT_SYSTEM_PROMPT, build_text_extract_user_prompt(text_content), schema
+        )
+        data["extracted_at"] = datetime.now(timezone.utc).isoformat()
+        return ConversationContext.model_validate(data)
 
     async def _run_debate_agents(
         self,

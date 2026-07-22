@@ -161,10 +161,13 @@ class AnthropicClient:
         from a single /analyze call, sent to Claude in one message so it can merge
         and de-duplicate across them (see EXTRACTION_PROMPT)."""
         schema = ConversationContext.model_json_schema()
-        # extracted_at is filled in locally, not by the model - drop it from what we ask for.
-        schema["properties"].pop("extracted_at", None)
+        # extracted_at is filled in locally, not by the model - drop it from what we ask
+        # for. scenario_notes is only ever attached by orchestrator code afterward (see
+        # swarm_orchestrator.py::_extract_context) - never by the extraction model itself.
+        for field in ("extracted_at", "scenario_notes"):
+            schema["properties"].pop(field, None)
         if "required" in schema:
-            schema["required"] = [f for f in schema["required"] if f != "extracted_at"]
+            schema["required"] = [f for f in schema["required"] if f not in ("extracted_at", "scenario_notes")]
 
         image_blocks: list[dict[str, Any]] = [
             {

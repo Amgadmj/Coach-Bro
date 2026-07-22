@@ -64,6 +64,11 @@ class ConversationContext(BaseModel):
     detected_language: str | None = None
     messages: list[Message]
     extracted_at: datetime
+    # Only ever set by orchestrator code (never by the extraction model itself -
+    # see swarm_orchestrator.py::_extract_context), when the user attached free-text
+    # commentary alongside screenshots (e.g. "she's been slow to reply all week").
+    # Popped from the extraction JSON schema so no model ever tries to fill it.
+    scenario_notes: str | None = None
 
 
 class AgentOpinion(BaseModel):
@@ -161,11 +166,21 @@ class AnalyzeResponse(BaseModel):
 
 SocialMode = Literal["hype", "chill", "romantic", "direct"]
 
+# Product-facing mission chips in the UI ("Opener" / "Icebreaker" / "Vibe Shift" /
+# "Exit Strategy") - each maps to distinct instructions in
+# agents/prompts.py::_SUGGEST_CATEGORY_INSTRUCTIONS.
+SuggestCategory = Literal["opener", "icebreaker", "vibe_shift", "exit_strategy"]
+
 
 class SuggestRequest(BaseModel):
     scenario: str = Field(min_length=1, max_length=2000)
     mode: SocialMode = "hype"
     language: SupportedLanguage = "auto"
+    category: SuggestCategory = "opener"
+    # Incremented by the client each time the user taps "Give me 3 new ones" for the
+    # same scenario, so the prompt can explicitly ask for lines distinct from a
+    # typical first pass instead of returning near-duplicates. 0 = first request.
+    seed: int = Field(default=0, ge=0)
 
 
 class Suggestion(BaseModel):

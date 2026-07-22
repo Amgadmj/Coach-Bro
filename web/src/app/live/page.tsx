@@ -8,14 +8,14 @@ import { TabBar } from "@/components/TabBar";
 import { fetchContacts } from "@/lib/api";
 import { useAnalysis } from "@/lib/analysis";
 import { useT } from "@/lib/i18n";
-import type { ContactSummary } from "@/lib/types";
+import type { ContactSummary, SuggestCategory } from "@/lib/types";
 import { clsx } from "@/lib/clsx";
 
 const MISSION_KEYS = [
-  { key: "icebreaker", bg: "var(--hype-soft)", color: "var(--hype)" },
-  { key: "vibeShift", bg: "var(--chill-soft)", color: "var(--chill)" },
-  { key: "exitStrategy", bg: "var(--direct-soft)", color: "var(--direct)" },
-] as const;
+  { key: "icebreaker", category: "icebreaker", bg: "var(--hype-soft)", color: "var(--hype)" },
+  { key: "vibeShift", category: "vibe_shift", bg: "var(--chill-soft)", color: "var(--chill)" },
+  { key: "exitStrategy", category: "exit_strategy", bg: "var(--direct-soft)", color: "var(--direct)" },
+] as const satisfies readonly { key: string; category: SuggestCategory; bg: string; color: string }[];
 
 /** Mirrors backend/main.py's MAX_IMAGES_PER_ANALYZE default - catching this
  * client-side gives an immediate, friendly message instead of a failed
@@ -37,6 +37,12 @@ export default function LiveScenarioInput() {
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
   const [screenshots, setScreenshots] = useState<File[]>([]);
   const [attachError, setAttachError] = useState<string | null>(null);
+  // Set by tapping a mission chip; cleared the moment the user hand-edits the
+  // scenario text afterward (see the textarea's onChange below) so an edited
+  // message reverts to the default full-debate send instead of silently still
+  // routing to the lightweight /say suggestions.
+  const [missionCategory, setMissionCategory] = useState<SuggestCategory | null>(null);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -64,12 +70,23 @@ export default function LiveScenarioInput() {
   }
 
   function submit() {
-    if (screenshots.length > 0) {
-      // Screenshots get the full Arthur - Clara - Leo debate.
-      void runAnalysis(screenshots, selectedContact, scenario || null);
+    const trimmed = scenario.trim();
+
+    // A mission chip is a distinct, lighter request (three short lines for a
+    // specific job) rather than a full screenshot-style read - route straight
+    // to /say with its category. Only applies screenshot-free: if the user also
+    // attached screenshots, the mission text is folded into the debate instead.
+    if (screenshots.length === 0 && missionCategory && trimmed) {
+      router.push(`/say?category=${missionCategory}&scenario=${encodeURIComponent(trimmed)}`);
+      return;
+    }
+
+    // Screenshots and/or typed/pasted text both get the full Arthur - Clara -
+    // Leo swarm debate - see CLAUDE.md's user-facing behavior note: pasted text
+    // is not a lighter code path than a screenshot.
+    if (screenshots.length > 0 || trimmed) {
+      void runAnalysis({ images: screenshots, textContent: trimmed || null, contactId: selectedContact });
       router.push("/read");
-    } else if (scenario.trim()) {
-      router.push(`/say?scenario=${encodeURIComponent(scenario.trim())}`);
     }
   }
 
@@ -134,85 +151,103 @@ export default function LiveScenarioInput() {
         </button>
       </div>
 
-      <GlassCard className="mt-4 p-3.5">
-        <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-ink3">
-          {t("live.scenarioLabel")}
-        </div>
-        <textarea
-          value={scenario}
-          onChange={(e) => setScenario(e.target.value)}
-          placeholder={t("live.scenarioPlaceholder")}
-          rows={3}
-          className="mt-1.5 w-full resize-none bg-transparent text-[13px] leading-relaxed text-ink outline-none placeholder:text-ink3"
-        />
-
-        {screenshots.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {screenshots.map((file, i) => (
-              <span
-                key={fileKey(file)}
-                className="flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-1 pl-2.5 pr-1 text-[10px] font-bold text-accent-deep"
-              >
-                {file.name.length > 16 ? `${file.name.slice(0, 16)}…` : file.name}
-                <button
-                  type="button"
-                  aria-label={t("live.removeScreenshot")}
-                  onClick={() => removeFile(i)}
-                  className="flex h-4 w-4 items-center justify-center rounded-full text-[11px] leading-none text-accent-deep hover:bg-white/40"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDraggingFile(true);
+        }}
+        onDragLeave={() => setIsDraggingFile(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDraggingFile(false);
+          addFiles(e.dataTransfer.files);
+        }}
+      >
+        <GlassCard
+          className={clsx("mt-4 p-3.5", isDraggingFile && "ring-2 ring-accent ring-offset-2 ring-offset-transparent")}
+        >
+          <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-ink3">
+            {t("live.scenarioLabel")}
           </div>
-        )}
-
-        <div className="mt-2 flex items-center justify-between">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            multiple
-            // display:none can fail to fire a programmatic .click() reliably in
-            // some WebKit standalone-PWA contexts (installed home-screen apps) -
-            // sr-only keeps it clipped to a 0-area box (via `clip`) instead of
-            // display:none, which is what actually keeps it from ever painting
-            // over - or intercepting clicks meant for - the buttons next to it
-            // (a plain absolute+opacity-0 box has no clip, so it still occupies
-            // a hit-testable area and, being positioned, paints above its
-            // static-position siblings per stacking rules).
-            className="sr-only"
-            tabIndex={-1}
+          <textarea
+            value={scenario}
             onChange={(e) => {
-              addFiles(e.target.files);
-              e.target.value = ""; // allow re-selecting the same file later
+              setScenario(e.target.value);
+              setMissionCategory(null);
             }}
+            placeholder={t("live.scenarioPlaceholder")}
+            rows={3}
+            className="mt-1.5 w-full resize-none bg-transparent text-[13px] leading-relaxed text-ink outline-none placeholder:text-ink3"
           />
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className={clsx(
-              "whitespace-nowrap rounded-full border px-3.5 py-2 font-display text-[10.5px] font-bold",
-              screenshots.length > 0 ? "border-accent text-accent-deep" : "border-hairline bg-glass text-ink2",
-            )}
-          >
-            {screenshots.length === 0
-              ? t("live.addScreenshot")
-              : `${t("live.screenshotsCount", { count: screenshots.length })} · ${t("live.addMoreScreenshots")}`}
-          </button>
-          <button
-            type="button"
-            aria-label={t("live.send")}
-            onClick={submit}
-            disabled={screenshots.length === 0 && !scenario.trim()}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(160deg,var(--mode),var(--mode-deep))] shadow-clay transition-transform active:translate-y-0.5 disabled:opacity-40"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" className="rtl:-scale-x-100">
-              <path d="M3 2 L11 7 L3 12 Z" fill="#fff" />
-            </svg>
-          </button>
-        </div>
-      </GlassCard>
+
+          {screenshots.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {screenshots.map((file, i) => (
+                <span
+                  key={fileKey(file)}
+                  className="flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-1 pl-2.5 pr-1 text-[10px] font-bold text-accent-deep"
+                >
+                  {file.name.length > 16 ? `${file.name.slice(0, 16)}…` : file.name}
+                  <button
+                    type="button"
+                    aria-label={t("live.removeScreenshot")}
+                    onClick={() => removeFile(i)}
+                    className="flex h-4 w-4 items-center justify-center rounded-full text-[11px] leading-none text-accent-deep hover:bg-white/40"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-2 flex items-center justify-between">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              // display:none can fail to fire a programmatic .click() reliably in
+              // some WebKit standalone-PWA contexts (installed home-screen apps) -
+              // sr-only keeps it clipped to a 0-area box (via `clip`) instead of
+              // display:none, which is what actually keeps it from ever painting
+              // over - or intercepting clicks meant for - the buttons next to it
+              // (a plain absolute+opacity-0 box has no clip, so it still occupies
+              // a hit-testable area and, being positioned, paints above its
+              // static-position siblings per stacking rules).
+              className="sr-only"
+              tabIndex={-1}
+              onChange={(e) => {
+                addFiles(e.target.files);
+                e.target.value = ""; // allow re-selecting the same file later
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className={clsx(
+                "whitespace-nowrap rounded-full border px-3.5 py-2 font-display text-[10.5px] font-bold",
+                screenshots.length > 0 ? "border-accent text-accent-deep" : "border-hairline bg-glass text-ink2",
+              )}
+            >
+              {screenshots.length === 0
+                ? t("live.addScreenshot")
+                : `${t("live.screenshotsCount", { count: screenshots.length })} · ${t("live.addMoreScreenshots")}`}
+            </button>
+            <button
+              type="button"
+              aria-label={t("live.send")}
+              onClick={submit}
+              disabled={screenshots.length === 0 && !scenario.trim()}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(160deg,var(--mode),var(--mode-deep))] shadow-clay transition-transform active:translate-y-0.5 disabled:opacity-40"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" className="rtl:-scale-x-100">
+                <path d="M3 2 L11 7 L3 12 Z" fill="#fff" />
+              </svg>
+            </button>
+          </div>
+        </GlassCard>
+      </div>
       <p className={clsx("mt-3 text-center text-[11px]", attachError ? "font-bold text-accent-deep" : "text-ink3")}>
         {attachError ?? t("live.screenshotHint")}
       </p>
@@ -223,8 +258,14 @@ export default function LiveScenarioInput() {
           <button
             key={chip.key}
             type="button"
-            onClick={() => setScenario(`${t(`missions.${chip.key}.title`)}: `)}
-            className="rounded-full px-3.5 py-2 font-display text-[11px] font-bold"
+            onClick={() => {
+              setMissionCategory(chip.category);
+              setScenario(`${t(`missions.${chip.key}.title`)}: `);
+            }}
+            className={clsx(
+              "rounded-full px-3.5 py-2 font-display text-[11px] font-bold",
+              missionCategory === chip.category && "ring-2 ring-offset-1",
+            )}
             style={{ background: chip.bg, color: chip.color }}
           >
             {t(`missions.${chip.key}.title`)}

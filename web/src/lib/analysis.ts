@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 
-import { analyzeScreenshot } from "./api";
+import { analyzeInput } from "./api";
 import { useSession } from "./session";
 import type { AgentName, DebateEvent, MemoryUpdate, SynthesisResult } from "./types";
 
@@ -35,13 +35,17 @@ interface AnalysisState {
   /** How many screenshots were attached to this read - drives singular/plural
    * copy on the debate screen ("Your screenshot" vs "Your screenshots"). */
   imageCount: number;
-  scenario: string | null;
+  /** Whether this read included typed/pasted text (standalone or alongside
+   * screenshots) - see read/page.tsx for how this and imageCount together
+   * pick the debate screen's header copy. */
+  hasText: boolean;
+  textContent: string | null;
   error: string | null;
-  run: (
-    images: (File | Blob)[],
-    contactId?: string | null,
-    scenario?: string | null,
-  ) => Promise<void>;
+  run: (opts: {
+    images?: File[];
+    textContent?: string | null;
+    contactId?: string | null;
+  }) => Promise<void>;
   reset: () => void;
 }
 
@@ -55,7 +59,8 @@ const INITIAL = {
   result: null,
   memoryUpdate: null,
   imageCount: 0,
-  scenario: null,
+  hasText: false,
+  textContent: null,
   error: null,
 };
 
@@ -66,14 +71,16 @@ export const useAnalysis = create<AnalysisState>((set, get) => ({
 
   reset: () => set({ ...INITIAL, agentStatus: { ...INITIAL.agentStatus }, messages: [] }),
 
-  run: async (images, contactId, scenario) => {
+  run: async ({ images = [], textContent = null, contactId = null }) => {
+    const trimmedText = textContent?.trim() || null;
     set({
       ...INITIAL,
       agentStatus: { ...INITIAL.agentStatus },
       messages: [],
       status: "running",
       imageCount: images.length,
-      scenario: scenario ?? null,
+      hasText: !!trimmedText,
+      textContent: trimmedText,
     });
 
     let lastReveal = 0;
@@ -126,7 +133,7 @@ export const useAnalysis = create<AnalysisState>((set, get) => ({
 
     try {
       const { language, mode } = useSession.getState();
-      for await (const event of analyzeScreenshot(images, contactId, language, mode)) {
+      for await (const event of analyzeInput(images, trimmedText ?? undefined, contactId, language, mode)) {
         await applyEvent(event);
       }
       // stream ended without a synthesis_done (backend crash mid-run, dropped

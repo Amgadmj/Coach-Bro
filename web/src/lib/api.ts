@@ -1,9 +1,10 @@
-import { compressImage } from "./image";
+import { compressImage, ensureImageMimeType } from "./image";
 import type {
   ContactSummary,
   DebateEvent,
   MemoryRecord,
   SocialMode,
+  SuggestCategory,
   SuggestResponse,
   SupportedLanguage,
 } from "./types";
@@ -37,27 +38,39 @@ async function describeAnalyzeError(response: Response): Promise<string> {
  * POST /analyze - streams DebateEvents over SSE (see docs/architecture.md §4).
  * Intentionally an async generator so screens can render each event as it lands;
  * never collapse this into a single awaited JSON response (CLAUDE.md principle #5).
+ *
+ * Accepts screenshots, typed/pasted text, or both - both trigger the full swarm
+ * debate identically (CLAUDE.md: pasted text is not a lighter code path). At
+ * least one of `images` or `textContent` must be given.
  */
-export async function* analyzeScreenshot(
-  images: (File | Blob)[],
+export async function* analyzeInput(
+  images: (File | Blob)[] | undefined,
+  textContent: string | undefined,
   contactId?: string | null,
   language: SupportedLanguage = "auto",
   mode: SocialMode = "hype",
 ): AsyncGenerator<DebateEvent> {
-  if (images.length === 0) throw new Error("Attach at least one screenshot.");
-
-  // Downscale/recompress oversized screenshots before they ever hit the wire -
-  // see lib/image.ts for why. Non-File Blobs (already-processed callers) pass through.
-  const compressed = await Promise.all(
-    images.map((image) => (image instanceof File ? compressImage(image) : image)),
-  );
+  const trimmedText = textContent?.trim();
+  if ((!images || images.length === 0) && !trimmedText) {
+    throw new Error("Attach at least one screenshot or enter some text.");
+  }
 
   const form = new FormData();
-  compressed.forEach((image, i) => {
-    const original = images[i];
-    const name = original instanceof File ? original.name : `screenshot-${i}.png`;
-    form.append("images", image, name);
-  });
+  if (images && images.length > 0) {
+    // Downscale/recompress oversized screenshots before they ever hit the wire -
+    // see lib/image.ts for why. Non-File Blobs (already-processed callers) pass through.
+    const compressed = await Promise.all(
+      images.map((image) => (image instanceof File ? compressImage(image) : image)),
+    );
+    const prepared = await Promise.all(compressed.map(ensureImageMimeType));
+    prepared.forEach((image, i) => {
+      const original = images[i];
+      const extension = image.type.split("/")[1] ?? "jpg";
+      const name = original instanceof File ? original.name : `screenshot-${i}.${extension}`;
+      form.append("images", image, name);
+    });
+  }
+  if (trimmedText) form.append("text_content", trimmedText);
   if (contactId) form.append("contact_id", contactId);
   form.append("language", language);
   form.append("mode", mode);
@@ -96,11 +109,13 @@ export async function suggestOpeners(
   scenario: string,
   mode: SocialMode,
   language: SupportedLanguage = "auto",
+  category: SuggestCategory = "opener",
+  seed: number = 0,
 ): Promise<SuggestResponse> {
   const response = await fetch(`${API_BASE_URL}/suggest`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ scenario, mode, language }),
+    body: JSON.stringify({ scenario, mode, language, category, seed }),
   });
   if (!response.ok) throw new Error(`/suggest failed: ${response.status} ${await response.text()}`);
   return response.json();

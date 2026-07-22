@@ -35,7 +35,7 @@ function TypingRow({ agent, side }: { agent: AgentName; side: "left" | "right" }
 
 export default function DebateRoom() {
   const router = useRouter();
-  const { status, agentStatus, messages, error, imageCount } = useAnalysis();
+  const { status, agentStatus, messages, error, imageCount, hasText } = useAnalysis();
   const endRef = useRef<HTMLDivElement>(null);
   const t = useT();
 
@@ -62,11 +62,16 @@ export default function DebateRoom() {
 
       <GlassCard className="mt-3.5 flex items-center gap-3 rounded-[18px] p-3">
         <div className="flex h-12 w-12 flex-none items-center justify-center rounded-xl border border-dashed border-hairline bg-[repeating-linear-gradient(45deg,var(--ground2)_0_6px,transparent_6px_12px)] font-mono text-[8px] text-ink3">
-          shot
+          {imageCount > 0 ? "shot" : "text"}
         </div>
         <div className="min-w-0 flex-1">
           <div className="font-display text-[13px] font-extrabold">
-            {imageCount === 1 ? t("read.yourScreenshot") : t("read.yourScreenshots")}
+            {imageCount === 0
+              ? t("read.yourMessage")
+              : imageCount === 1
+                ? t("read.yourScreenshot")
+                : t("read.yourScreenshots")}
+            {imageCount > 0 && hasText ? ` + ${t("read.yourMessage").toLowerCase()}` : ""}
           </div>
           <div className="text-[10.5px] text-ink2">
             {debating ? t("read.statusDebating") : status === "done" ? t("read.statusDone") : t("read.statusRunning")}

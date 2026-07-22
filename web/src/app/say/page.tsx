@@ -9,7 +9,7 @@ import { TopBar } from "@/components/TopBar";
 import { suggestOpeners } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
-import type { Suggestion } from "@/lib/types";
+import type { Suggestion, SuggestCategory } from "@/lib/types";
 
 const CARD_GRADIENTS = [
   "linear-gradient(160deg,var(--hype),var(--hype-deep))",
@@ -17,9 +17,24 @@ const CARD_GRADIENTS = [
   "linear-gradient(160deg,var(--direct),var(--direct-deep))",
 ];
 
+const VALID_CATEGORIES: SuggestCategory[] = ["opener", "icebreaker", "vibe_shift", "exit_strategy"];
+
+// Maps the backend's snake_case category back to i18n.ts's camelCase mission
+// keys (see lib/i18n.ts::Dict.missions) - "opener" has no mission chip, it
+// uses say.title instead.
+const CATEGORY_TO_MISSION_KEY: Partial<Record<SuggestCategory, "icebreaker" | "vibeShift" | "exitStrategy">> = {
+  icebreaker: "icebreaker",
+  vibe_shift: "vibeShift",
+  exit_strategy: "exitStrategy",
+};
+
 function WhatToSayNext() {
   const params = useSearchParams();
   const scenario = params.get("scenario") ?? "";
+  const categoryParam = params.get("category") ?? "opener";
+  const category: SuggestCategory = VALID_CATEGORIES.includes(categoryParam as SuggestCategory)
+    ? (categoryParam as SuggestCategory)
+    : "opener";
   const { mode, language } = useSession();
   const t = useT();
   const [suggestions, setSuggestions] = useState<Suggestion[] | null>(null);
@@ -27,13 +42,16 @@ function WhatToSayNext() {
   const [copied, setCopied] = useState<number | null>(null);
   const [round, setRound] = useState(0);
 
+  const missionKey = CATEGORY_TO_MISSION_KEY[category];
+  const title = missionKey ? t(`missions.${missionKey}.title`) : t("say.title");
+
   useEffect(() => {
     setSuggestions(null);
     setError(null);
-    suggestOpeners(scenario, mode, language)
+    suggestOpeners(scenario, mode, language, category, round)
       .then((r) => setSuggestions(r.suggestions))
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
-  }, [scenario, mode, language, round]);
+  }, [scenario, mode, language, category, round]);
 
   async function copy(text: string, i: number) {
     await navigator.clipboard.writeText(text);
@@ -43,7 +61,7 @@ function WhatToSayNext() {
 
   return (
     <main>
-      <TopBar title={t("say.title")} />
+      <TopBar title={title} />
 
       {scenario && (
         <div className="mt-3.5 flex items-center gap-2 rounded-2xl border border-glass-line bg-glass px-3.5 py-2.5">
