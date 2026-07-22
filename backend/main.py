@@ -57,6 +57,15 @@ suggest_limiter = RateLimiter(
 # cap belongs here regardless of what the UI allows. Raise via env if needed.
 MAX_IMAGES_PER_ANALYZE = int(os.environ.get("MAX_IMAGES_PER_ANALYZE", "20"))
 
+# Anthropic's vision API only decodes these four - anything else (HEIC/HEIF from
+# an iOS photo library pick, BMP/TIFF, or a browser sending no content-type at
+# all) used to sail straight through main.py's `content_type or "image/jpeg"`
+# fallback and fail deep inside the Anthropic call instead, surfacing as one
+# generic "something went wrong" error event for the whole read with no
+# indication of which file or why. Reject it here instead, before the SSE
+# stream (and the LLM spend) even starts.
+ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+
 
 def _build_llm_clients() -> tuple[LLMClient, LLMClient]:
     mode = os.environ.get("LLM_MODE", "mock")
@@ -107,9 +116,18 @@ async def analyze(
             status_code=400,
             detail=f"Too many screenshots in one go - max {MAX_IMAGES_PER_ANALYZE} per read.",
         )
+    for img in images:
+        if img.content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"Unsupported image type '{img.content_type or 'unknown'}' "
+                    f"({img.filename or 'unnamed file'}) - please upload JPEG, PNG, GIF, or WebP screenshots."
+                ),
+            )
 
     orchestrator = get_orchestrator()
-    image_data = [(await img.read(), img.content_type or "image/jpeg") for img in images]
+    image_data = [(await img.read(), img.content_type) for img in images]
 
     async def event_stream():
         async for event in orchestrator.run_pipeline(image_data, contact_id, language):

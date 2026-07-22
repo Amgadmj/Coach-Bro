@@ -44,3 +44,22 @@ def test_analyze_rejects_more_than_the_configured_max(monkeypatch) -> None:
     )
     assert response.status_code == 400
     assert "Too many screenshots" in response.json()["detail"]
+
+
+def test_analyze_rejects_an_unsupported_image_type() -> None:
+    # e.g. a HEIC photo-library pick on iOS - Anthropic's vision API can't
+    # decode it, so this should fail fast and clearly, not deep in the pipeline.
+    response = client.post(
+        "/analyze",
+        files=[("images", ("shot.heic", io.BytesIO(b"fake-bytes"), "image/heic"))],
+    )
+    assert response.status_code == 422
+    assert "image/heic" in response.json()["detail"]
+
+
+def test_analyze_rejects_a_missing_content_type() -> None:
+    response = client.post(
+        "/analyze",
+        files=[("images", ("shot", io.BytesIO(b"fake-bytes"), "application/octet-stream"))],
+    )
+    assert response.status_code == 422

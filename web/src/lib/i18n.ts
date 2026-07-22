@@ -71,6 +71,7 @@ export interface Dict {
     screenshotsCount: string;
     removeScreenshot: string;
     screenshotHint: string;
+    tooManyScreenshots: string;
     orMission: string;
     read: string;
     reads: string;
@@ -164,6 +165,7 @@ const en: Dict = {
     screenshotsCount: "{count} attached",
     removeScreenshot: "Remove",
     screenshotHint: "Screenshots get the full Arthur · Clara · Leo debate.",
+    tooManyScreenshots: "That's too many at once - max {max} screenshots per read.",
     orMission: "Or start from a mission",
     read: "read",
     reads: "reads",
@@ -274,6 +276,7 @@ const es: Dict = {
     screenshotsCount: "{count} adjuntas",
     removeScreenshot: "Quitar",
     screenshotHint: "Las capturas activan el debate completo de Arthur · Clara · Leo.",
+    tooManyScreenshots: "Son demasiadas de una vez - máximo {max} capturas por lectura.",
     orMission: "O empieza con una misión",
     read: "lectura",
     reads: "lecturas",
@@ -384,6 +387,7 @@ const fr: Dict = {
     screenshotsCount: "{count} jointes",
     removeScreenshot: "Retirer",
     screenshotHint: "Les captures déclenchent le débat complet d'Arthur, Clara et Leo.",
+    tooManyScreenshots: "C'est trop d'un coup - {max} captures maximum par lecture.",
     orMission: "Ou commence par une mission",
     read: "lecture",
     reads: "lectures",
@@ -494,6 +498,7 @@ const pt: Dict = {
     screenshotsCount: "{count} anexados",
     removeScreenshot: "Remover",
     screenshotHint: "Prints ativam o debate completo de Arthur · Clara · Leo.",
+    tooManyScreenshots: "Isso é demais de uma vez - máximo de {max} prints por leitura.",
     orMission: "Ou comece por uma missão",
     read: "leitura",
     reads: "leituras",
@@ -604,6 +609,7 @@ const hi: Dict = {
     screenshotsCount: "{count} जुड़े",
     removeScreenshot: "हटाएं",
     screenshotHint: "स्क्रीनशॉट से आर्थर · क्लारा · लियो की पूरी बहस मिलती है।",
+    tooManyScreenshots: "एक बार में इतने ज़्यादा नहीं - हर रीड में अधिकतम {max} स्क्रीनशॉट।",
     orMission: "या किसी मिशन से शुरू करें",
     read: "रीड",
     reads: "रीड्स",
@@ -714,6 +720,7 @@ const ar: Dict = {
     screenshotsCount: "تم إرفاق {count}",
     removeScreenshot: "إزالة",
     screenshotHint: "لقطات الشاشة تُفعّل نقاش آرثر وكلارا وليو كاملاً.",
+    tooManyScreenshots: "هذا كثير جدًا دفعة واحدة - الحد الأقصى {max} لقطة شاشة لكل قراءة.",
     orMission: "أو ابدأ بمهمة",
     read: "قراءة",
     reads: "قراءات",

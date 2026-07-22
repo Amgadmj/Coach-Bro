@@ -1,3 +1,4 @@
+import { compressImage } from "./image";
 import type {
   ContactSummary,
   DebateEvent,
@@ -8,6 +9,29 @@ import type {
 } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
+/**
+ * 413 (and some proxy-level rejections in general, e.g. a hosting gateway in
+ * front of the backend) never reach FastAPI, so they come back with no CORS
+ * headers and often an HTML body from the gateway itself, not backend JSON.
+ * Read the body defensively rather than dumping a raw HTML error page - or a
+ * generic "Failed to fetch"/CORS-looking browser error, which is what a 413
+ * often surfaces as - into the debate screen.
+ */
+async function describeAnalyzeError(response: Response): Promise<string> {
+  if (response.status === 413) {
+    return "That upload was too large for the server to accept - try attaching fewer screenshots, or retake them at a smaller size.";
+  }
+  const text = await response.text().catch(() => "");
+  try {
+    const parsed = JSON.parse(text) as { detail?: string };
+    if (parsed.detail) return parsed.detail;
+  } catch {
+    // Not JSON (e.g. an HTML error page from a gateway) - fall through.
+  }
+  const snippet = text.replace(/\s+/g, " ").trim().slice(0, 200);
+  return `/analyze failed: ${response.status}${snippet ? ` - ${snippet}` : ""}`;
+}
 
 /**
  * POST /analyze - streams DebateEvents over SSE (see docs/architecture.md §4).
@@ -21,16 +45,24 @@ export async function* analyzeScreenshot(
 ): AsyncGenerator<DebateEvent> {
   if (images.length === 0) throw new Error("Attach at least one screenshot.");
 
+  // Downscale/recompress oversized screenshots before they ever hit the wire -
+  // see lib/image.ts for why. Non-File Blobs (already-processed callers) pass through.
+  const compressed = await Promise.all(
+    images.map((image) => (image instanceof File ? compressImage(image) : image)),
+  );
+
   const form = new FormData();
-  images.forEach((image, i) => {
-    form.append("images", image, image instanceof File ? image.name : `screenshot-${i}.png`);
+  compressed.forEach((image, i) => {
+    const original = images[i];
+    const name = original instanceof File ? original.name : `screenshot-${i}.png`;
+    form.append("images", image, name);
   });
   if (contactId) form.append("contact_id", contactId);
   form.append("language", language);
 
   const response = await fetch(`${API_BASE_URL}/analyze`, { method: "POST", body: form });
   if (!response.ok || !response.body) {
-    throw new Error(`/analyze failed: ${response.status} ${await response.text()}`);
+    throw new Error(await describeAnalyzeError(response));
   }
 
   const reader = response.body.getReader();

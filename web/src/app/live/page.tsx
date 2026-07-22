@@ -17,6 +17,11 @@ const MISSION_KEYS = [
   { key: "exitStrategy", bg: "var(--direct-soft)", color: "var(--direct)" },
 ] as const;
 
+/** Mirrors backend/main.py's MAX_IMAGES_PER_ANALYZE default - catching this
+ * client-side gives an immediate, friendly message instead of a failed
+ * request after the user has already waited for the upload. */
+const MAX_SCREENSHOTS = 20;
+
 /** Dedupe key for a File so re-picking the same file twice (e.g. reopening the
  * picker and selecting it again by mistake) doesn't attach it twice. */
 function fileKey(f: File): string {
@@ -31,6 +36,7 @@ export default function LiveScenarioInput() {
   const [contacts, setContacts] = useState<ContactSummary[]>([]);
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
   const [screenshots, setScreenshots] = useState<File[]>([]);
+  const [attachError, setAttachError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -42,11 +48,18 @@ export default function LiveScenarioInput() {
     setScreenshots((prev) => {
       const seen = new Set(prev.map(fileKey));
       const additions = Array.from(files).filter((f) => !seen.has(fileKey(f)));
-      return [...prev, ...additions];
+      const room = MAX_SCREENSHOTS - prev.length;
+      if (additions.length > room) {
+        setAttachError(t("live.tooManyScreenshots", { max: MAX_SCREENSHOTS }));
+      } else {
+        setAttachError(null);
+      }
+      return [...prev, ...additions.slice(0, Math.max(0, room))];
     });
   }
 
   function removeFile(index: number) {
+    setAttachError(null);
     setScreenshots((prev) => prev.filter((_, i) => i !== index));
   }
 
@@ -200,7 +213,9 @@ export default function LiveScenarioInput() {
           </button>
         </div>
       </GlassCard>
-      <p className="mt-3 text-center text-[11px] text-ink3">{t("live.screenshotHint")}</p>
+      <p className={clsx("mt-3 text-center text-[11px]", attachError ? "font-bold text-accent-deep" : "text-ink3")}>
+        {attachError ?? t("live.screenshotHint")}
+      </p>
 
       <h2 className="mt-4 font-display text-[15px] font-extrabold">{t("live.orMission")}</h2>
       <div className="mt-2 flex flex-wrap gap-1.5">
