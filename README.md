@@ -1,6 +1,6 @@
 # RESET AI
 
-**Your digital wingman.** Drop in screenshots of a text conversation — one or a whole scrollback's worth. Three AI personas debate it in real time — then hand you one clear answer: how interested she actually is, what she's really thinking, and the exact words to text back.
+**Your digital wingman.** Drop in screenshots of a text conversation — one or a whole scrollback's worth. Three AI personas debate it in real time — then hand you one clear answer: how interested she actually is, what she might be thinking, and the exact words to text back.
 
 No spinner. You watch the debate happen.
 
