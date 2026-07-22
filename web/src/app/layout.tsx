@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 
 import { ModeSync } from "@/components/ModeSync";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-28 pt-4">
           {children}
         </div>
+        <Analytics />
       </body>
     </html>
   );
