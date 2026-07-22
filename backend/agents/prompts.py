@@ -63,6 +63,27 @@ def _language_header(language: str) -> str:
         f"think and write directly in {language}.\n\n"
     )
 
+
+# Product-facing names/descriptions live in web/src/lib/i18n.ts::modes for the UI chrome
+# (and its per-language translations) - these are the same four meanings, restated in
+# English for the model regardless of the response language, since the mode itself is
+# never translated (see SUGGEST_SYSTEM_PROMPT's "never let the Social Mode's name bias
+# your choice of language").
+_SOCIAL_MODE_DESCRIPTIONS: dict[str, str] = {
+    "hype": "big energy, loud room - upbeat, high-energy, playful momentum",
+    "chill": "low-key, easy pace - relaxed, unhurried, low-pressure",
+    "romantic": "slow down, one-on-one - warmer, more sincere and intimate, less joking around",
+    "direct": "no games, say the thing - plain and straightforward, minimal flirtatious flourish",
+}
+
+
+def _mode_header(mode: str) -> str:
+    description = _SOCIAL_MODE_DESCRIPTIONS.get(mode, _SOCIAL_MODE_DESCRIPTIONS["hype"])
+    return (
+        f"SOCIAL MODE: {mode} ({description}). Calibrate your energy and wording to this "
+        "mode - never the substance of your read, your role, or the content boundary.\n\n"
+    )
+
 # Shared by Arthur/Clara/Leo's takes: this renders as a chat bubble in the debate
 # feed, not a document. A short headline is always visible; the detail only shows
 # if the user taps/hovers to expand it - so both must earn their place, not pad.
@@ -88,6 +109,8 @@ MISSION:
 - Demand outcome independence: if her interest reads as genuinely low, say so plainly and \
 advise walking away rather than escalating pursuit.
 - Judge the *dynamic*, not the person. Never express contempt or bitterness toward the match.
+- Calibrate your energy and delivery to the Social Mode given in the prompt below - your \
+verdict and boundaries never soften, only how loud or clipped you sound saying them.
 Do not draft the reply text yourself; that is Leo's job.
 """
     + _CHAT_OUTPUT_FORMAT
@@ -107,6 +130,8 @@ from genuine disinterest.
 (she wants space or is signaling discomfort).
 - Never pathologize or reduce her to a manipulative caricature - explain behavior with empathy, \
 even when it's a test or a guard.
+- Calibrate your energy and delivery to the Social Mode given in the prompt below - your \
+read of her never changes, only how animated or measured you sound explaining it.
 """
     + _CHAT_OUTPUT_FORMAT
 )
@@ -122,7 +147,10 @@ MISSION:
 human response - not a strategy memo.
 - Use techniques like agree-and-amplify, absurd escalation, and playful misdirection.
 - Keep the tone warm, cheeky, and unbothered at all times.
-- Never negging, never a pickup-artist line, never bitter or aggressive - if a draft reads as \
+- Let the Social Mode given in the prompt below set your register: Hype is upbeat and \
+high-energy, Chill is relaxed and low-pressure, Romantic is warmer and more sincere with \
+noticeably less joking, Direct is plain and confident with minimal flirtatious flourish. \
+Never negging, never a pickup-artist line, never bitter or aggressive - if a draft reads as \
 any of those, rewrite it before returning it.
 """
     + _CHAT_OUTPUT_FORMAT
@@ -152,6 +180,10 @@ expand - it must add real information, never just restate dynamic_summary in lon
 profile provided below if one is given: match his real register (casual/formal, slang, directness, \
 humor style) so it reads like a friend who talks like him giving advice, not a generic coaching \
 voice. If no profile is given yet, use Leo's warm-but-grounded default tone instead.
+9. Calibrate energy and tone - dynamic_summary, dynamic_analysis, best_response, and \
+alternative_responses - to the Social Mode given below. Never the underlying substance, \
+Arthur's boundaries, or the content boundary - only how upbeat, relaxed, sincere, or plain \
+it all reads.
 """
 
 
@@ -194,9 +226,9 @@ def build_suggest_user_prompt(
     style_block = f"How the user actually talks:\n{user_style}\n\n" if user_style else ""
     return (
         header
+        + _mode_header(mode)
         + style_block
-        + f"Social Mode: {mode}\n"
-        f"Scenario: {scenario}\n\n"
+        + f"Scenario: {scenario}\n\n"
         "Detect the scenario's language and fill the `language` field with it before "
         "writing the suggestions, unless a language override is specified above."
     )
@@ -273,6 +305,7 @@ def build_debate_user_prompt(
     persona: str | None = None,
     user_style: str | None = None,
     language: str = "English",
+    mode: str = "hype",
 ) -> str:
     lines = [_format_message(m) for m in context.messages]
     transcript = "\n".join(lines)
@@ -288,6 +321,7 @@ def build_debate_user_prompt(
 
     return (
         _language_header(language)
+        + _mode_header(mode)
         + f"Conversation so far:\n{transcript}\n\n"
         f"What we know about her from previous reads:\n{persona_block}\n\n"
         f"Recent read history:\n{history_block}\n\n"
@@ -305,6 +339,7 @@ def build_rebuttal_user_prompt(
     prior_replies: list[tuple[str, str]],
     agent_name: str,
     language: str = "English",
+    mode: str = "hype",
 ) -> str:
     """Round 2: the agent reacts to the other two takes (and any replies already made).
 
@@ -324,6 +359,7 @@ def build_rebuttal_user_prompt(
 
     return (
         _language_header(language)
+        + _mode_header(mode)
         + f"Conversation:\n{transcript}\n\n"
         f"The other coaches' takes:\n{others}{replies_block}\n\n"
         "Debate round: ONE sentence only, under 25 words, speaking directly to the other "
@@ -338,6 +374,7 @@ def build_synthesis_user_prompt(
     persona: str | None = None,
     user_style: str | None = None,
     language: str = "English",
+    mode: str = "hype",
 ) -> str:
     lines = [_format_message(m) for m in context.messages]
     transcript = "\n".join(lines)
@@ -351,6 +388,7 @@ def build_synthesis_user_prompt(
 
     return (
         _language_header(language)
+        + _mode_header(mode)
         + f"Conversation:\n{transcript}\n\n"
         f"{persona_block}"
         f"{style_block}"

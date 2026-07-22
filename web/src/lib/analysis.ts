@@ -125,8 +125,8 @@ export const useAnalysis = create<AnalysisState>((set, get) => ({
     }
 
     try {
-      const language = useSession.getState().language;
-      for await (const event of analyzeScreenshot(images, contactId, language)) {
+      const { language, mode } = useSession.getState();
+      for await (const event of analyzeScreenshot(images, contactId, language, mode)) {
         await applyEvent(event);
       }
       // stream ended without a synthesis_done (backend crash mid-run, dropped

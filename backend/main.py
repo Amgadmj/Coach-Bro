@@ -25,6 +25,7 @@ from models.schemas import (
     LANGUAGE_NAMES,
     ContactSummary,
     MemoryRecord,
+    SocialMode,
     SuggestRequest,
     SuggestResponse,
     SupportedLanguage,
@@ -108,6 +109,7 @@ async def analyze(
     images: list[UploadFile],
     contact_id: str | None = Form(default=None),
     language: SupportedLanguage = Form(default="auto"),
+    mode: SocialMode = Form(default="hype"),
 ) -> StreamingResponse:
     if not images:
         raise HTTPException(status_code=400, detail="Attach at least one screenshot.")
@@ -130,7 +132,7 @@ async def analyze(
     image_data = [(await img.read(), img.content_type) for img in images]
 
     async def event_stream():
-        async for event in orchestrator.run_pipeline(image_data, contact_id, language):
+        async for event in orchestrator.run_pipeline(image_data, contact_id, language, mode):
             yield f"data: {event.model_dump_json()}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")

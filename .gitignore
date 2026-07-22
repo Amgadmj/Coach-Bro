@@ -17,6 +17,9 @@ venv/
 backend/data/
 *.db
 
+# run_app.py state/logs
+.run/
+
 # Node / Expo / Next.js
 node_modules/
 .expo/

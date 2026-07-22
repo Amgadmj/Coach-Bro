@@ -1,12 +1,14 @@
 """Real-provider smoke test: runs the full pipeline against live LLM APIs.
 
 Usage (from backend/, with keys in .env and LLM_MODE=real):
-    python scripts/run_pipeline_real.py [path/to/screenshot.png ...]
+    python scripts/run_pipeline_real.py [--mode=hype|chill|romantic|direct] [path/to/screenshot.png ...]
 
 Pass multiple paths to test the multi-screenshot merge/de-dupe path (e.g. two
 scrolled captures of the same conversation). Prints each stage with timing so
 provider/key problems are pinpointed to the exact call that failed (vision vs.
-debate vs. synthesis vs. persona).
+debate vs. synthesis vs. persona). --mode lets you spot-check that Social Mode
+actually shifts the agents' tone against a real model, not just the mock client -
+each mode gets its own contact_id so personas/memory don't bleed across runs.
 """
 
 from __future__ import annotations
@@ -30,9 +32,9 @@ from models.schemas import SynthesisResult
 from swarm_orchestrator import SwarmOrchestrator
 
 
-async def main(image_paths: list[Path]) -> None:
+async def main(image_paths: list[Path], social_mode: str) -> None:
     print(f"mode={os.environ.get('LLM_MODE')} vision_model={os.environ.get('ANTHROPIC_VISION_MODEL')} "
-          f"fast_provider={os.environ.get('FAST_LLM_PROVIDER')}")
+          f"fast_provider={os.environ.get('FAST_LLM_PROVIDER')} social_mode={social_mode}")
     images = [(p.read_bytes(), "image/png") for p in image_paths]
     for p, (data, _) in zip(image_paths, images):
         print(f"image: {p} ({len(data)} bytes)")
@@ -52,7 +54,9 @@ async def main(image_paths: list[Path]) -> None:
     last = t0
     final: SynthesisResult | None = None
     try:
-        async for event in orchestrator.run_pipeline(images, contact_id="realtest"):
+        async for event in orchestrator.run_pipeline(
+            images, contact_id=f"realtest-{social_mode}", mode=social_mode
+        ):
             now = time.monotonic()
             stamp = f"[{now - t0:6.1f}s +{now - last:5.1f}s]"
             last = now
@@ -80,12 +84,17 @@ async def main(image_paths: list[Path]) -> None:
 
 
 if __name__ == "__main__":
+    args = sys.argv[1:]
+    mode = "hype"
+    for arg in list(args):
+        if arg.startswith("--mode="):
+            mode = arg.split("=", 1)[1]
+            args.remove(arg)
+
     paths = (
-        [Path(p) for p in sys.argv[1:]]
-        if len(sys.argv) > 1
-        else [Path(__file__).parent / "fixtures" / "test_chat.png"]
+        [Path(p) for p in args] if args else [Path(__file__).parent / "fixtures" / "test_chat.png"]
     )
     for path in paths:
         if not path.exists():
             raise SystemExit(f"No screenshot at {path} - run scripts/generate_test_screenshot.py first")
-    asyncio.run(main(paths))
+    asyncio.run(main(paths, mode))

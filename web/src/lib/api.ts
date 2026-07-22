@@ -42,6 +42,7 @@ export async function* analyzeScreenshot(
   images: (File | Blob)[],
   contactId?: string | null,
   language: SupportedLanguage = "auto",
+  mode: SocialMode = "hype",
 ): AsyncGenerator<DebateEvent> {
   if (images.length === 0) throw new Error("Attach at least one screenshot.");
 
@@ -59,6 +60,7 @@ export async function* analyzeScreenshot(
   });
   if (contactId) form.append("contact_id", contactId);
   form.append("language", language);
+  form.append("mode", mode);
 
   const response = await fetch(`${API_BASE_URL}/analyze`, { method: "POST", body: form });
   if (!response.ok || !response.body) {

@@ -35,6 +35,7 @@ from models.schemas import (
     ConversationContext,
     DebateEvent,
     MemoryRecord,
+    SocialMode,
     SupportedLanguage,
     SynthesisResult,
 )
@@ -87,6 +88,7 @@ class SwarmOrchestrator:
         images: list[tuple[bytes, str]],
         contact_id: str | None,
         language: SupportedLanguage = "auto",
+        mode: SocialMode = "hype",
     ) -> AsyncIterator[DebateEvent]:
         """`images` is one or more (image_bytes, mime_type) pairs - multiple
         screenshots of the same conversation (e.g. from scrolling) are merged
@@ -121,7 +123,7 @@ class SwarmOrchestrator:
 
             opinions: list[AgentOpinion] = []
             async for event, opinion in self._run_debate_agents(
-                context, memory, persona, user_style, response_language
+                context, memory, persona, user_style, response_language, mode
             ):
                 yield event
                 if opinion is not None:
@@ -130,11 +132,13 @@ class SwarmOrchestrator:
             # Round 2: each agent reacts to the other takes, sequentially, so later
             # speakers can reference earlier replies - this is the visible "debate"
             # the client renders as a conversation feed.
-            async for event in self._run_rebuttal_round(context, opinions, response_language):
+            async for event in self._run_rebuttal_round(context, opinions, response_language, mode):
                 yield event
 
             yield DebateEvent(type="synthesis_started")
-            result = await self._synthesize(context, opinions, persona, user_style, response_language)
+            result = await self._synthesize(
+                context, opinions, persona, user_style, response_language, mode
+            )
             yield DebateEvent(type="synthesis_done", payload=result.model_dump(mode="json"))
 
             # Learn the user's own voice from whatever he actually sent in this
@@ -177,6 +181,7 @@ class SwarmOrchestrator:
         persona: str | None = None,
         user_style: str | None = None,
         response_language: str = "English",
+        mode: SocialMode = "hype",
     ) -> AsyncIterator[tuple[DebateEvent, AgentOpinion | None]]:
         """Runs Arthur, Clara, and Leo concurrently, streaming progress events as they land.
 
@@ -190,7 +195,7 @@ class SwarmOrchestrator:
         async def run_one(agent_name: AgentName, system_prompt: str) -> AgentOpinion:
             await queue.put(DebateEvent(type="agent_started", agent=agent_name))
             user_prompt = build_debate_user_prompt(
-                context, memory, persona, user_style, response_language
+                context, memory, persona, user_style, response_language, mode
             )
             raw = await self._debate_client.complete_text(system_prompt, user_prompt)
             headline, detail = split_headline_and_detail(raw)
@@ -233,11 +238,12 @@ class SwarmOrchestrator:
         context: ConversationContext,
         opinions: list[AgentOpinion],
         response_language: str = "English",
+        mode: SocialMode = "hype",
     ) -> AsyncIterator[DebateEvent]:
         prior_replies: list[tuple[str, str]] = []
         for agent_name, system_prompt in _DEBATE_AGENTS:
             user_prompt = build_rebuttal_user_prompt(
-                context, opinions, prior_replies, agent_name, response_language
+                context, opinions, prior_replies, agent_name, response_language, mode
             )
             raw = await self._debate_client.complete_text(system_prompt, user_prompt)
             text = cap_sentences(raw, max_sentences=1, max_chars=220)
@@ -251,9 +257,10 @@ class SwarmOrchestrator:
         persona: str | None = None,
         user_style: str | None = None,
         response_language: str = "English",
+        mode: SocialMode = "hype",
     ) -> SynthesisResult:
         user_prompt = build_synthesis_user_prompt(
-            context, opinions, persona, user_style, response_language
+            context, opinions, persona, user_style, response_language, mode
         )
         schema = SynthesisResult.model_json_schema()
         data = await self._vision_client.complete_json(SYNTHESIZER_SYSTEM_PROMPT, user_prompt, schema)
