@@ -36,8 +36,14 @@ services:
         sync: false
       - key: MEMORY_DB_PATH
         value: /var/data/memory.db
+      # Committed here, not just set in the Render dashboard: envVars without
+      # `sync: false` get silently reset to this file's value on every Blueprint
+      # sync/redeploy, which is exactly what kept wiping out the Vercel origin
+      # when it was only ever added by hand in the dashboard. Update this line
+      # (and redeploy) if the Vercel URL ever changes instead of editing it
+      # only in the dashboard.
       - key: ALLOWED_ORIGINS
-        value: http://localhost:3000 # add your Vercel URL after the web deploy
+        value: http://localhost:3000,https://coach-bro-tul6.vercel.app
       - key: ANALYZE_RATE_LIMIT_PER_HOUR
         value: "20"
       - key: SUGGEST_RATE_LIMIT_PER_HOUR
