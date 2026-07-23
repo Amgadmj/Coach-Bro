@@ -28,10 +28,12 @@ pillow_heif.register_heif_opener()
 
 from agents.prompts import SUGGEST_SYSTEM_PROMPT, build_suggest_user_prompt
 from llm_clients.base import LLMClient, MockLLMClient
+from markdown_format import conversation_to_markdown
 from memory.store import get_memory_store
 from models.schemas import (
     LANGUAGE_NAMES,
     ContactSummary,
+    ExtractResponse,
     MemoryRecord,
     SocialMode,
     SuggestRequest,
@@ -59,6 +61,12 @@ analyze_limiter = RateLimiter(
 )
 suggest_limiter = RateLimiter(
     max_requests=int(os.environ.get("SUGGEST_RATE_LIMIT_PER_HOUR", "60")), window_seconds=3600
+)
+# Fires far more often than a deliberate /analyze Send - once per screenshot
+# attach/remove on the Live screen, not once per read - so it gets its own,
+# separate budget rather than sharing analyze_limiter's.
+extract_limiter = RateLimiter(
+    max_requests=int(os.environ.get("EXTRACT_RATE_LIMIT_PER_HOUR", "40")), window_seconds=3600
 )
 
 # Not literally "unlimited": each image adds real tokens/cost to the vision call,
@@ -131,6 +139,48 @@ def _convert_heic_to_jpeg(data: bytes) -> bytes:
         raise ValueError(f"Could not decode HEIC/HEIF image: {exc}") from exc
 
 
+async def _prepare_images(images: list[UploadFile]) -> list[tuple[bytes, str]]:
+    """Validates and normalizes uploaded images into (bytes, mime_type) pairs the
+    vision client can actually decode - shared by /analyze and /extract so both
+    apply the same size cap, content-type check, and in-memory HEIC transcode
+    instead of duplicating this per route. Raises HTTPException on any problem."""
+    if len(images) > MAX_IMAGES_PER_ANALYZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Too many screenshots in one go - max {MAX_IMAGES_PER_ANALYZE} per read.",
+        )
+
+    image_data: list[tuple[bytes, str]] = []
+    for img in images:
+        resolved_type = _resolve_image_content_type(img.filename, img.content_type)
+        if resolved_type is None:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"Unsupported image type '{img.content_type or 'unknown'}' "
+                    f"({img.filename or 'unnamed file'}) - please upload JPEG, PNG, GIF, WebP, or HEIC/HEIF screenshots."
+                ),
+            )
+        raw_bytes = await img.read()
+        if resolved_type in HEIC_CONTENT_TYPES:
+            # Transcode to JPEG server-side so the vision client (and every
+            # downstream stage) only ever sees a format Anthropic can decode -
+            # never raw HEIC bytes. In-memory only; nothing touches disk.
+            try:
+                raw_bytes = _convert_heic_to_jpeg(raw_bytes)
+            except ValueError as exc:
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        f"Could not read '{img.filename or 'unnamed file'}' as a HEIC/HEIF image - "
+                        f"the file may be corrupt. ({exc})"
+                    ),
+                ) from exc
+            resolved_type = "image/jpeg"
+        image_data.append((raw_bytes, resolved_type))
+    return image_data
+
+
 def _build_llm_clients() -> tuple[LLMClient, LLMClient]:
     mode = os.environ.get("LLM_MODE", "mock")
     if mode == "mock":
@@ -184,40 +234,8 @@ async def analyze(
             status_code=400,
             detail=f"Pasted text is too long - max {MAX_TEXT_CONTENT_CHARS} characters.",
         )
-    if len(images) > MAX_IMAGES_PER_ANALYZE:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Too many screenshots in one go - max {MAX_IMAGES_PER_ANALYZE} per read.",
-        )
 
-    image_data: list[tuple[bytes, str]] = []
-    for img in images:
-        resolved_type = _resolve_image_content_type(img.filename, img.content_type)
-        if resolved_type is None:
-            raise HTTPException(
-                status_code=422,
-                detail=(
-                    f"Unsupported image type '{img.content_type or 'unknown'}' "
-                    f"({img.filename or 'unnamed file'}) - please upload JPEG, PNG, GIF, WebP, or HEIC/HEIF screenshots."
-                ),
-            )
-        raw_bytes = await img.read()
-        if resolved_type in HEIC_CONTENT_TYPES:
-            # Transcode to JPEG server-side so the vision client (and every
-            # downstream stage) only ever sees a format Anthropic can decode -
-            # never raw HEIC bytes. In-memory only; nothing touches disk.
-            try:
-                raw_bytes = _convert_heic_to_jpeg(raw_bytes)
-            except ValueError as exc:
-                raise HTTPException(
-                    status_code=422,
-                    detail=(
-                        f"Could not read '{img.filename or 'unnamed file'}' as a HEIC/HEIF image - "
-                        f"the file may be corrupt. ({exc})"
-                    ),
-                ) from exc
-            resolved_type = "image/jpeg"
-        image_data.append((raw_bytes, resolved_type))
+    image_data = await _prepare_images(images)
 
     orchestrator = get_orchestrator()
 
@@ -228,6 +246,25 @@ async def analyze(
             yield f"data: {event.model_dump_json()}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+@app.post("/extract", dependencies=[Depends(extract_limiter)])
+async def extract(images: list[UploadFile] = File(...)) -> ExtractResponse:
+    """Vision-extraction-only preview, fired the moment a screenshot is attached
+    on the Live screen - not at Send. Reuses the exact same vision_extract call
+    /analyze's pipeline makes as its first stage (see swarm_orchestrator.py::
+    SwarmOrchestrator._extract_context), so the user can see and fix the
+    transcript before spending a full debate on it. Stateless: no memory write,
+    no contact linkage - screenshots are processed in-memory and discarded here
+    exactly like /analyze (CLAUDE.md's no-raw-screenshot-persistence rule).
+    """
+    if not images:
+        raise HTTPException(status_code=400, detail="Attach at least one screenshot.")
+
+    image_data = await _prepare_images(images)
+    vision_client, _ = _build_llm_clients()
+    context = await vision_client.vision_extract(image_data)
+    return ExtractResponse(context=context, markdown=conversation_to_markdown(context))
 
 
 @app.post("/suggest", dependencies=[Depends(suggest_limiter)])

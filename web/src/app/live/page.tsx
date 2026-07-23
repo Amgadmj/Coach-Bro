@@ -6,12 +6,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Coachmark, type CoachmarkStep } from "@/components/Coachmark";
 import { GlassCard } from "@/components/GlassCard";
 import { TabBar } from "@/components/TabBar";
-import { fetchContacts } from "@/lib/api";
+import { extractConversation, fetchContacts } from "@/lib/api";
 import { useAnalysis } from "@/lib/analysis";
 import { useT } from "@/lib/i18n";
 import { useTutorial } from "@/lib/tutorial";
 import type { ContactSummary, SuggestCategory } from "@/lib/types";
 import { clsx } from "@/lib/clsx";
+
+/** Debounce window for the extract-on-attach effect below - long enough that
+ * a multi-file picker selection or a quick add/remove/add doesn't fire one
+ * POST /extract per intermediate state, short enough to still feel instant. */
+const EXTRACT_DEBOUNCE_MS = 600;
 
 const LIVE_STEPS: CoachmarkStep[] = [
   { target: "live-contacts", titleKey: "tutorial.live.contactsTitle", bodyKey: "tutorial.live.contactsBody" },
@@ -57,9 +62,18 @@ function LiveScenarioInput() {
   const [missionCategory, setMissionCategory] = useState<SuggestCategory | null>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [readsExpanded, setReadsExpanded] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [extractionError, setExtractionError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const welcomeSeen = useTutorial((s) => s.welcomeSeen);
   const startPage = useTutorial((s) => s.startPage);
+  // The exact block (including its separator line) last auto-inserted into
+  // `scenario`, and the screenshot batch it was extracted from - refs, not
+  // state, since they're only ever read inside callbacks (the debounced
+  // effect below, and submit()'s skip-re-extraction check), never rendered.
+  const extractedBlockRef = useRef<string | null>(null);
+  const extractedForKeyRef = useRef<string | null>(null);
+  const extractionGenRef = useRef(0);
 
   useEffect(() => {
     fetchContacts().then(setContacts).catch(() => setContacts([]));
@@ -68,6 +82,53 @@ function LiveScenarioInput() {
   useEffect(() => {
     startPage("live", LIVE_STEPS.length);
   }, [welcomeSeen, startPage]);
+
+  // Fires the moment a screenshot is attached (or removed) - not at Send -
+  // so the user sees and can fix the extracted transcript before spending a
+  // full debate on it. Debounced + generation-guarded so a rapid add/remove
+  // sequence, or a slow response outlived by a newer one, can't clobber a
+  // more recent result. Always a progressive enhancement: failure here never
+  // blocks attaching more screenshots or hitting Send (see submit() below).
+  useEffect(() => {
+    setExtractionError(null);
+    if (screenshots.length === 0) {
+      setExtracting(false);
+      return;
+    }
+    const gen = ++extractionGenRef.current;
+    const timer = window.setTimeout(async () => {
+      setExtracting(true);
+      try {
+        const { markdown } = await extractConversation(screenshots);
+        if (extractionGenRef.current !== gen) return; // superseded by a newer batch
+        setExtracting(false);
+        if (!markdown.trim()) {
+          setExtractionError(t("live.extractionFailed"));
+          return;
+        }
+        const separator = t("live.extractedSeparator");
+        const newBlock = `${separator}\n${markdown}`;
+        const prevBlock = extractedBlockRef.current;
+        setScenario((prev) => {
+          // The user edited or deleted the block we last inserted - respect
+          // that instead of overwriting it. We still update the refs below so
+          // a *future* untouched extraction builds on the new state, not on
+          // this now-stale one.
+          if (prevBlock && !prev.includes(prevBlock)) return prev;
+          const base = prevBlock ? prev.replace(prevBlock, "").trimEnd() : prev.trimEnd();
+          return base ? `${base}\n\n${newBlock}` : newBlock;
+        });
+        extractedBlockRef.current = newBlock;
+        extractedForKeyRef.current = screenshots.map(fileKey).join(",");
+      } catch {
+        if (extractionGenRef.current !== gen) return;
+        setExtracting(false);
+        setExtractionError(t("live.extractionFailed"));
+      }
+    }, EXTRACT_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screenshots]);
 
   // R3: Home and Playbook link here via `/live?mission=<key>` instead of this
   // page hosting its own mission-picker chips. Reproduce exactly what tapping
@@ -83,9 +144,17 @@ function LiveScenarioInput() {
 
   function addFiles(files: FileList | null) {
     if (!files) return;
+    // Snapshot synchronously, before the state updater below runs - `files`
+    // is a *live* FileList tied to the <input>, and the file-picker's
+    // onChange handler resets `e.target.value` right after calling this (to
+    // allow re-selecting the same file later). React defers this
+    // setScreenshots updater until after that handler finishes, so reading
+    // `files` lazily inside it would see the list already cleared to empty
+    // by the time it runs - silently dropping every picker-based attach.
+    const incoming = Array.from(files);
     setScreenshots((prev) => {
       const seen = new Set(prev.map(fileKey));
-      const additions = Array.from(files).filter((f) => !seen.has(fileKey(f)));
+      const additions = incoming.filter((f) => !seen.has(fileKey(f)));
       const room = MAX_SCREENSHOTS - prev.length;
       if (additions.length > room) {
         setAttachError(t("live.tooManyScreenshots", { max: MAX_SCREENSHOTS }));
@@ -117,7 +186,27 @@ function LiveScenarioInput() {
     // Leo swarm debate - see CLAUDE.md's user-facing behavior note: pasted text
     // is not a lighter code path than a screenshot.
     if (screenshots.length > 0 || trimmed) {
-      void runAnalysis({ images: screenshots, textContent: trimmed || null, contactId: selectedContact });
+      // Once a screenshot's been auto-extracted into an untouched block in the
+      // textarea (see the effect above), that block already fully captures
+      // the transcript - send it as text_content and drop the raw image(s)
+      // rather than re-sending them for a redundant extraction inside
+      // /analyze. Requires the CURRENT screenshot batch to exactly match what
+      // extraction last ran on (not just "the old block is still visible") -
+      // otherwise falls back to sending the raw images, exactly like before
+      // this feature existed, which is always correct even if more expensive.
+      const currentKey = screenshots.map(fileKey).join(",");
+      const canSkipImages =
+        screenshots.length > 0 &&
+        !extracting &&
+        extractedForKeyRef.current === currentKey &&
+        extractedBlockRef.current !== null &&
+        scenario.includes(extractedBlockRef.current);
+
+      void runAnalysis({
+        images: canSkipImages ? [] : screenshots,
+        textContent: trimmed || null,
+        contactId: selectedContact,
+      });
       router.push("/read");
     }
   }
@@ -255,6 +344,12 @@ function LiveScenarioInput() {
                 </span>
               ))}
             </div>
+          )}
+
+          {screenshots.length > 0 && (extracting || extractionError) && (
+            <p className={clsx("mt-2 text-[10.5px]", extractionError ? "font-bold text-accent-deep" : "text-ink3")}>
+              {extractionError ?? t("live.extracting")}
+            </p>
           )}
 
           <div className="mt-2 flex items-center justify-between">

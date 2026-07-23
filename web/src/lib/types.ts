@@ -30,6 +30,14 @@ export interface ConversationContext {
   scenario_notes?: string | null;
 }
 
+export interface ExtractResponse {
+  context: ConversationContext;
+  // A rendering of `context` for display in the Live screen's editable
+  // scenario textarea - see backend/markdown_format.py::conversation_to_markdown,
+  // the single formatter both fields are built from.
+  markdown: string;
+}
+
 export interface AgentOpinion {
   agent: AgentName;
   headline: string; // one short sentence, always visible in the debate feed

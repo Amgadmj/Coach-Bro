@@ -164,6 +164,18 @@ class AnalyzeResponse(BaseModel):
     result: SynthesisResult
 
 
+class ExtractResponse(BaseModel):
+    """POST /extract's response - a vision-extraction-only preview, triggered
+    the moment a screenshot is attached on the Live screen (see main.py and
+    web/src/app/live/page.tsx), separate from the full /analyze debate pipeline.
+    `markdown` is a rendering of `context` for display in an editable textarea -
+    see markdown_format.py::conversation_to_markdown, the single formatter both
+    fields are built from."""
+
+    context: ConversationContext
+    markdown: str
+
+
 SocialMode = Literal["hype", "chill", "romantic", "direct"]
 
 # Product-facing mission chips in the UI ("Opener" / "Icebreaker" / "Vibe Shift" /

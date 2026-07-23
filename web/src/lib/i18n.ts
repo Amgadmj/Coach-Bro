@@ -86,6 +86,15 @@ export interface Dict {
     read: string;
     reads: string;
     send: string;
+    /** Shown near the attach row while POST /extract is running for the
+     * current screenshot batch - see app/live/page.tsx. */
+    extracting: string;
+    /** Non-blocking - Send still works with the raw screenshot either way. */
+    extractionFailed: string;
+    /** The delimiter marking the auto-inserted transcript block in the
+     * scenario textarea, so it can be found-and-replaced on the next
+     * extraction without touching text the user typed themselves. */
+    extractedSeparator: string;
   };
   say: { title: string; thinking: string; giveMeThree: string; copy: string; copied: string };
   read: {
@@ -238,6 +247,9 @@ const en: Dict = {
     read: "read",
     reads: "reads",
     send: "Send",
+    extracting: "Reading screenshot…",
+    extractionFailed: "Couldn't read that screenshot automatically - you can still send it.",
+    extractedSeparator: "--- Extracted from screenshot ---",
   },
   say: { title: "What to say next", thinking: "Thinking…", giveMeThree: "Give me three more", copy: "Copy", copied: "Copied!" },
   read: {
@@ -414,6 +426,9 @@ const es: Dict = {
     read: "lectura",
     reads: "lecturas",
     send: "Enviar",
+    extracting: "Leyendo la captura…",
+    extractionFailed: "No se pudo leer esa captura automáticamente - de todos modos puedes enviarla.",
+    extractedSeparator: "--- Extraído de la captura ---",
   },
   say: { title: "Qué decir ahora", thinking: "Pensando…", giveMeThree: "Dame tres más", copy: "Copiar", copied: "¡Copiado!" },
   read: {
@@ -590,6 +605,9 @@ const fr: Dict = {
     read: "lecture",
     reads: "lectures",
     send: "Envoyer",
+    extracting: "Lecture de la capture…",
+    extractionFailed: "Impossible de lire cette capture automatiquement - tu peux quand même l'envoyer.",
+    extractedSeparator: "--- Extrait de la capture ---",
   },
   say: { title: "Que dire maintenant", thinking: "Réflexion…", giveMeThree: "Donne-m'en trois de plus", copy: "Copier", copied: "Copié !" },
   read: {
@@ -767,6 +785,9 @@ const pt: Dict = {
     read: "leitura",
     reads: "leituras",
     send: "Enviar",
+    extracting: "Lendo o print…",
+    extractionFailed: "Não deu pra ler esse print automaticamente - você ainda pode enviá-lo.",
+    extractedSeparator: "--- Extraído do print ---",
   },
   say: { title: "O que dizer agora", thinking: "Pensando…", giveMeThree: "Me dê mais três", copy: "Copiar", copied: "Copiado!" },
   read: {
@@ -943,6 +964,9 @@ const hi: Dict = {
     read: "रीड",
     reads: "रीड्स",
     send: "भेजें",
+    extracting: "स्क्रीनशॉट पढ़ा जा रहा है…",
+    extractionFailed: "वो स्क्रीनशॉट अपने आप नहीं पढ़ पाए - फिर भी आप इसे भेज सकते हैं।",
+    extractedSeparator: "--- स्क्रीनशॉट से निकाला गया ---",
   },
   say: { title: "आगे क्या कहें", thinking: "सोच रहे हैं…", giveMeThree: "तीन और दो", copy: "कॉपी करें", copied: "कॉपी हो गया!" },
   read: {
@@ -1116,6 +1140,9 @@ const ar: Dict = {
     read: "قراءة",
     reads: "قراءات",
     send: "إرسال",
+    extracting: "جارٍ قراءة لقطة الشاشة…",
+    extractionFailed: "تعذّرت قراءة لقطة الشاشة تلقائياً - يمكنك إرسالها رغم ذلك.",
+    extractedSeparator: "--- مستخرج من لقطة الشاشة ---",
   },
   say: { title: "ماذا تقول الآن", thinking: "يفكر…", giveMeThree: "أعطني ثلاثة أخرى", copy: "نسخ", copied: "تم النسخ!" },
   read: {

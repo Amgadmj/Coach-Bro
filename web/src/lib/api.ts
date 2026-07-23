@@ -2,6 +2,7 @@ import { compressImage, ensureImageMimeType } from "./image";
 import type {
   ContactSummary,
   DebateEvent,
+  ExtractResponse,
   MemoryRecord,
   SocialMode,
   SuggestCategory,
@@ -19,7 +20,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8
  * generic "Failed to fetch"/CORS-looking browser error, which is what a 413
  * often surfaces as - into the debate screen.
  */
-async function describeAnalyzeError(response: Response): Promise<string> {
+async function describeAnalyzeError(response: Response, route: string = "/analyze"): Promise<string> {
   if (response.status === 413) {
     return "That upload was too large for the server to accept - try attaching fewer screenshots, or retake them at a smaller size.";
   }
@@ -31,7 +32,7 @@ async function describeAnalyzeError(response: Response): Promise<string> {
     // Not JSON (e.g. an HTML error page from a gateway) - fall through.
   }
   const snippet = text.replace(/\s+/g, " ").trim().slice(0, 200);
-  return `/analyze failed: ${response.status}${snippet ? ` - ${snippet}` : ""}`;
+  return `${route} failed: ${response.status}${snippet ? ` - ${snippet}` : ""}`;
 }
 
 /**
@@ -103,6 +104,34 @@ export async function* analyzeInput(
   } finally {
     reader.releaseLock();
   }
+}
+
+/**
+ * POST /extract - vision-extraction-only preview, fired the moment a
+ * screenshot is attached on the Live screen (not at Send). Plain JSON, not
+ * SSE - it's a single fast stage, not the multi-stage debate /analyze runs.
+ * Reuses the same client-side compression as analyzeInput so both endpoints
+ * see identically-prepared images.
+ */
+export async function extractConversation(images: (File | Blob)[]): Promise<ExtractResponse> {
+  const compressed = await Promise.all(
+    images.map((image) => (image instanceof File ? compressImage(image) : image)),
+  );
+  const prepared = await Promise.all(compressed.map(ensureImageMimeType));
+
+  const form = new FormData();
+  prepared.forEach((image, i) => {
+    const original = images[i];
+    const extension = image.type.split("/")[1] ?? "jpg";
+    const name = original instanceof File ? original.name : `screenshot-${i}.${extension}`;
+    form.append("images", image, name);
+  });
+
+  const response = await fetch(`${API_BASE_URL}/extract`, { method: "POST", body: form });
+  if (!response.ok) {
+    throw new Error(await describeAnalyzeError(response, "/extract"));
+  }
+  return response.json();
 }
 
 export async function suggestOpeners(
