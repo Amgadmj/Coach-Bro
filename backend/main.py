@@ -35,6 +35,7 @@ from models.schemas import (
     ContactSummary,
     ExtractResponse,
     MemoryRecord,
+    SetMatchGenderRequest,
     SocialMode,
     SuggestRequest,
     SuggestResponse,
@@ -327,6 +328,23 @@ async def contact_history(
 ) -> list[MemoryRecord]:
     store = get_memory_store()
     return await store.get_contact_history(device_id, contact_id)
+
+
+@app.patch("/contacts/{contact_id}")
+async def set_contact_gender(
+    contact_id: str,
+    request: SetMatchGenderRequest,
+    device_id: str = Depends(get_device_id),
+) -> dict[str, str]:
+    """Sets a specific contact's gender - separate from the app user's own
+    gender, which lives client-side and is sent per-request (see
+    models.schemas.Gender). A single user may be dating people of more than
+    one gender, so this is per-contact rather than a single global default -
+    see web/src/app/live/page.tsx's "+ New" contact flow, which calls this
+    right after naming a new contact."""
+    store = get_memory_store()
+    await store.upsert_match_gender(device_id, contact_id, request.match_gender)
+    return {"status": "ok"}
 
 
 @app.get("/health")

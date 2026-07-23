@@ -4,6 +4,7 @@ import type {
   ContactSummary,
   DebateEvent,
   ExtractResponse,
+  Gender,
   MemoryRecord,
   SocialMode,
   SuggestCategory,
@@ -169,4 +170,20 @@ export async function fetchContactHistory(contactId: string): Promise<MemoryReco
   });
   if (!response.ok) throw new Error(`history failed: ${response.status}`);
   return response.json();
+}
+
+/**
+ * PATCH /contacts/{contactId} - sets a specific contact's gender. Separate
+ * from the app user's own gender (which never leaves the client except as a
+ * resolved per-request value - see analyzeInput) since a single user may be
+ * dating people of more than one gender. Called right after naming a new
+ * contact on the Live screen (see app/live/page.tsx).
+ */
+export async function setContactGender(contactId: string, gender: Gender | null): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/contacts/${contactId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", "X-Device-Id": getDeviceId() },
+    body: JSON.stringify({ match_gender: gender }),
+  });
+  if (!response.ok) throw new Error(`setContactGender failed: ${response.status}`);
 }

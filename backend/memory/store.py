@@ -31,6 +31,9 @@ class NoOpMemoryStore:
     async def upsert_persona(self, device_id: str, contact_id: str, persona: str) -> None:
         return None
 
+    async def upsert_match_gender(self, device_id: str, contact_id: str, match_gender: str | None) -> None:
+        return None
+
     async def get_read_count(self, device_id: str, contact_id: str) -> int:
         return 0
 
@@ -158,6 +161,21 @@ class MemoryStore:
         finally:
             await conn.close()
 
+    async def upsert_match_gender(self, device_id: str, contact_id: str, match_gender: str | None) -> None:
+        import asyncpg
+
+        conn = await asyncpg.connect(self._db_url)
+        try:
+            await self._ensure_contact(conn, device_id, contact_id)
+            await conn.execute(
+                "update contacts set match_gender = $3 where device_id = $1 and id = $2",
+                device_id,
+                contact_id,
+                match_gender,
+            )
+        finally:
+            await conn.close()
+
     async def get_read_count(self, device_id: str, contact_id: str) -> int:
         import asyncpg
 
@@ -204,7 +222,8 @@ class MemoryStore:
         try:
             rows = await conn.fetch(
                 """
-                select c.id, c.display_name, c.last_interaction_at, count(m.id) as session_count
+                select c.id, c.display_name, c.last_interaction_at, c.match_gender,
+                       count(m.id) as session_count
                 from contacts c
                 left join memory_embeddings m on m.device_id = c.device_id and m.contact_id = c.id
                 where c.device_id = $1
@@ -222,6 +241,7 @@ class MemoryStore:
                 display_name=row["display_name"],
                 session_count=row["session_count"],
                 last_interaction_at=row["last_interaction_at"],
+                match_gender=row["match_gender"],
             )
             for row in rows
         ]

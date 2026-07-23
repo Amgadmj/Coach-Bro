@@ -6,11 +6,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Coachmark, type CoachmarkStep } from "@/components/Coachmark";
 import { GlassCard } from "@/components/GlassCard";
 import { TabBar } from "@/components/TabBar";
-import { extractConversation, fetchContacts } from "@/lib/api";
+import { extractConversation, fetchContacts, setContactGender } from "@/lib/api";
 import { useAnalysis } from "@/lib/analysis";
 import { useT } from "@/lib/i18n";
 import { useTutorial } from "@/lib/tutorial";
-import type { ContactSummary, SuggestCategory } from "@/lib/types";
+import type { ContactSummary, Gender, SuggestCategory } from "@/lib/types";
 import { clsx } from "@/lib/clsx";
 
 /** Debounce window for the extract-on-attach effect below - long enough that
@@ -42,6 +42,16 @@ const MAX_SCREENSHOTS = 20;
  * picker and selecting it again by mistake) doesn't attach it twice. */
 function fileKey(f: File): string {
   return `${f.name}:${f.size}:${f.lastModified}`;
+}
+
+/** Loose free-text match for the crude contactGenderPrompt above - null
+ * (skip) for blank or anything unrecognized, never guessed. */
+function parseGenderAnswer(answer: string | undefined): Gender | null {
+  if (!answer) return null;
+  if (["m", "man", "male"].includes(answer)) return "male";
+  if (["w", "f", "woman", "female"].includes(answer)) return "female";
+  if (["nb", "non-binary", "nonbinary", "non binary", "enby"].includes(answer)) return "non_binary";
+  return null;
 }
 
 function LiveScenarioInput() {
@@ -288,6 +298,15 @@ function LiveScenarioInput() {
                 : [...prev, { id, display_name: name, session_count: 0 }],
             );
             setSelectedContact(id);
+
+            // Crude but consistent with newContactPrompt's own window.prompt
+            // approach above - a proper picker isn't worth building for a
+            // one-time-per-contact question. Blank/unrecognized answers skip
+            // silently; prompts fall back to neutral they/them framing for
+            // this contact until it's set (here, later, or never).
+            const genderAnswer = window.prompt(t("live.contactGenderPrompt"))?.trim().toLowerCase();
+            const gender = parseGenderAnswer(genderAnswer);
+            if (gender) void setContactGender(id, gender);
           }}
           className="interactive flex flex-none items-center rounded-full border border-dashed border-hairline bg-glass px-3.5 py-1 text-[11px] font-bold text-ink3"
         >

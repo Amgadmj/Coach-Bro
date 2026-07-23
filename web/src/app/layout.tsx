@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 
+import { IdentitySheet } from "@/components/IdentitySheet";
 import { ModeSync } from "@/components/ModeSync";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { WelcomeModal } from "@/components/WelcomeModal";
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ModeSync />
         <ServiceWorkerRegister />
         <WelcomeModal />
+        <IdentitySheet />
         <div className="app-shell mx-auto flex min-h-dvh w-full max-w-md flex-col px-5">
           {children}
         </div>

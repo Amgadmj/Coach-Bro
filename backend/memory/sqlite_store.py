@@ -24,6 +24,7 @@ create table if not exists contacts (
   persona text,
   read_count integer not null default 0,
   last_interaction_at text,
+  match_gender text,
   primary key (device_id, id)
 );
 create table if not exists reads (
@@ -51,6 +52,7 @@ class SQLiteMemoryStore:
         with self._connect() as conn:
             self._migrate_pre_device_scoping_schema(conn)
             conn.executescript(_SCHEMA)
+            self._migrate_add_match_gender_column(conn)
 
     @staticmethod
     def _migrate_pre_device_scoping_schema(conn: sqlite3.Connection) -> None:
@@ -75,6 +77,18 @@ class SQLiteMemoryStore:
             columns = {row[1] for row in conn.execute(f"pragma table_info({table})").fetchall()}
             if "device_id" not in columns:
                 conn.execute(f"drop table {table}")
+
+    @staticmethod
+    def _migrate_add_match_gender_column(conn: sqlite3.Connection) -> None:
+        """Additive follow-up to the device-scoping migration above - unlike
+        that one, real per-device contact data now exists in deployed
+        databases (device scoping already shipped), so this must not drop
+        anything. `_SCHEMA`'s `create table if not exists` never alters an
+        already-existing table, so a plain `alter table add column` is needed
+        for any database that predates this column."""
+        columns = {row[1] for row in conn.execute("pragma table_info(contacts)").fetchall()}
+        if "match_gender" not in columns:
+            conn.execute("alter table contacts add column match_gender text")
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self._db_path)
@@ -151,6 +165,17 @@ class SQLiteMemoryStore:
 
         await asyncio.to_thread(work)
 
+    async def upsert_match_gender(self, device_id: str, contact_id: str, match_gender: str | None) -> None:
+        def work() -> None:
+            with self._connect() as conn:
+                self._ensure_contact(conn, device_id, contact_id)
+                conn.execute(
+                    "update contacts set match_gender = ? where device_id = ? and id = ?",
+                    (match_gender, device_id, contact_id),
+                )
+
+        await asyncio.to_thread(work)
+
     async def get_read_count(self, device_id: str, contact_id: str) -> int:
         def work() -> int:
             with self._connect() as conn:
@@ -187,7 +212,7 @@ class SQLiteMemoryStore:
         def work() -> list[ContactSummary]:
             with self._connect() as conn:
                 rows = conn.execute(
-                    "select id, display_name, read_count, last_interaction_at from contacts "
+                    "select id, display_name, read_count, last_interaction_at, match_gender from contacts "
                     "where device_id = ? order by last_interaction_at desc",
                     (device_id,),
                 ).fetchall()
@@ -201,6 +226,7 @@ class SQLiteMemoryStore:
                         if row["last_interaction_at"]
                         else None
                     ),
+                    match_gender=row["match_gender"],
                 )
                 for row in rows
             ]

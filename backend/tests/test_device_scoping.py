@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import uuid
 
 os.environ.setdefault("LLM_MODE", "mock")
 
@@ -9,8 +10,17 @@ from fastapi.testclient import TestClient
 
 import main
 
-client_a = TestClient(main.app, headers={"X-Device-Id": "device-a"})
-client_b = TestClient(main.app, headers={"X-Device-Id": "device-b"})
+# Unique per test-suite run, not a fixed string - these tests hit whatever
+# real store get_memory_store() resolves to (Postgres if SUPABASE_DB_URL is
+# set locally), which persists across runs unlike the SQLite tmp_path tests
+# elsewhere. A fixed device id would accumulate contacts across repeated
+# local runs and eventually fail on stale data from a previous run, not a
+# real bug.
+_DEVICE_A = f"test-device-a-{uuid.uuid4()}"
+_DEVICE_B = f"test-device-b-{uuid.uuid4()}"
+
+client_a = TestClient(main.app, headers={"X-Device-Id": _DEVICE_A})
+client_b = TestClient(main.app, headers={"X-Device-Id": _DEVICE_B})
 client_no_header = TestClient(main.app)
 
 

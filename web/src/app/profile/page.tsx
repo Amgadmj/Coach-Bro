@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Coachmark, type CoachmarkStep } from "@/components/Coachmark";
 import { GlassCard } from "@/components/GlassCard";
+import { IdentityPicker } from "@/components/IdentityPicker";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { TabBar } from "@/components/TabBar";
 import { useT } from "@/lib/i18n";
@@ -34,7 +35,11 @@ export default function ProfileScreen() {
         <p className="mt-1 text-[12.5px] leading-relaxed text-ink2">{t("profile.emptyBody")}</p>
       </GlassCard>
 
-      <div data-tutorial="profile-language" className="mt-5">
+      <div className="mt-5">
+        <IdentityPicker />
+      </div>
+
+      <div data-tutorial="profile-language" className="mt-3.5">
         <LanguagePicker />
       </div>
 

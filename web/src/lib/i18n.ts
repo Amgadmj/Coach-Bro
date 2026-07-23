@@ -70,9 +70,32 @@ export interface Dict {
     startRead: string;
   };
   vibe: { eyebrow: string; title: string; subtitle: string; lockIn: string };
+  /** Copy for the once-ever IdentitySheet (onboarding) and IdentityPicker
+   * (Profile, editable anytime) - see components/IdentitySheet.tsx and
+   * IdentityPicker.tsx. genderLabel/interestedInLabel are shared by both;
+   * the rest split sheet-only vs. picker-only, same pattern as vibe.*
+   * (sheet) vs. dashboard.tonightsMode (label) for Social Mode. */
+  identity: {
+    eyebrow: string;
+    sheetTitle: string;
+    sheetSubtitle: string;
+    continueCta: string;
+    pickerTitle: string;
+    pickerSubtitle: string;
+    genderLabel: string;
+    interestedInLabel: string;
+    updated: string;
+  };
+  genders: { male: string; female: string; nonBinary: string };
+  interests: { men: string; women: string; everyone: string };
   live: {
     yourReads: string;
     newContactPrompt: string;
+    /** Asked right after naming a new contact - see app/live/page.tsx's
+     * "+ New" flow and lib/api.ts::setContactGender. A free-text prompt
+     * (matching the existing newContactPrompt's own crude-but-working
+     * window.prompt pattern), parsed loosely rather than a proper picker. */
+    contactGenderPrompt: string;
     newChip: string;
     scenarioLabel: string;
     scenarioPlaceholder: string;
@@ -231,9 +254,23 @@ const en: Dict = {
     subtitle: "Pick one — it tints the whole night. Change it anytime.",
     lockIn: "Lock in {mode}",
   },
+  identity: {
+    eyebrow: "One quick thing",
+    sheetTitle: "Tell us about you",
+    sheetSubtitle: "This tunes pronouns and coaching to fit your situation — change it anytime in Profile.",
+    continueCta: "Continue",
+    pickerTitle: "About you",
+    pickerSubtitle: "Tunes pronouns and coaching to fit your situation.",
+    genderLabel: "You are",
+    interestedInLabel: "Interested in",
+    updated: "Updated",
+  },
+  genders: { male: "Male", female: "Female", nonBinary: "Non-binary" },
+  interests: { men: "Men", women: "Women", everyone: "Everyone" },
   live: {
     yourReads: "Your reads",
     newContactPrompt: "Who are you talking to? (first name is fine)",
+    contactGenderPrompt: "Are they a man, woman, or non-binary? (leave blank to skip)",
     newChip: "＋ New",
     scenarioLabel: "Scenario",
     scenarioPlaceholder: 'Describe the situation… e.g. "At a coffee shop, she\'s reading my favorite book."',
@@ -410,9 +447,23 @@ const es: Dict = {
     subtitle: "Elige uno — define el tono de toda la noche. Puedes cambiarlo cuando quieras.",
     lockIn: "Confirmar {mode}",
   },
+  identity: {
+    eyebrow: "Antes de empezar",
+    sheetTitle: "Cuéntanos sobre ti",
+    sheetSubtitle: "Esto ajusta los pronombres y el coaching a tu situación — puedes cambiarlo cuando quieras en tu perfil.",
+    continueCta: "Continuar",
+    pickerTitle: "Sobre ti",
+    pickerSubtitle: "Ajusta los pronombres y el coaching a tu situación.",
+    genderLabel: "Eres",
+    interestedInLabel: "Te interesan",
+    updated: "Actualizado",
+  },
+  genders: { male: "Hombre", female: "Mujer", nonBinary: "No binario" },
+  interests: { men: "Hombres", women: "Mujeres", everyone: "Todos" },
   live: {
     yourReads: "Tus lecturas",
     newContactPrompt: "¿Con quién estás hablando? (con el nombre basta)",
+    contactGenderPrompt: "¿Es hombre, mujer o no binario? (déjalo en blanco para omitir)",
     newChip: "＋ Nuevo",
     scenarioLabel: "Escenario",
     scenarioPlaceholder: 'Describe la situación… ej. "En una cafetería, ella está leyendo mi libro favorito."',
@@ -589,9 +640,23 @@ const fr: Dict = {
     subtitle: "Choisis-en un — il colore toute la soirée. Modifiable à tout moment.",
     lockIn: "Valider {mode}",
   },
+  identity: {
+    eyebrow: "Avant de commencer",
+    sheetTitle: "Parle-nous de toi",
+    sheetSubtitle: "Ça ajuste les pronoms et le coaching à ta situation — modifiable à tout moment dans ton profil.",
+    continueCta: "Continuer",
+    pickerTitle: "À propos de toi",
+    pickerSubtitle: "Ajuste les pronoms et le coaching à ta situation.",
+    genderLabel: "Tu es",
+    interestedInLabel: "Intéressé(e) par",
+    updated: "Mis à jour",
+  },
+  genders: { male: "Homme", female: "Femme", nonBinary: "Non-binaire" },
+  interests: { men: "Hommes", women: "Femmes", everyone: "Tout le monde" },
   live: {
     yourReads: "Tes lectures",
     newContactPrompt: "À qui parles-tu ? (le prénom suffit)",
+    contactGenderPrompt: "C'est un homme, une femme, ou non-binaire ? (laisse vide pour passer)",
     newChip: "＋ Nouveau",
     scenarioLabel: "Scénario",
     scenarioPlaceholder: 'Décris la situation… ex. "Dans un café, elle lit mon livre préféré."',
@@ -769,9 +834,23 @@ const pt: Dict = {
     subtitle: "Escolha um — ele define o tom da noite toda. Pode mudar quando quiser.",
     lockIn: "Confirmar {mode}",
   },
+  identity: {
+    eyebrow: "Antes de começar",
+    sheetTitle: "Conte um pouco sobre você",
+    sheetSubtitle: "Isso ajusta os pronomes e o coaching pra sua situação — dá pra mudar quando quiser no seu perfil.",
+    continueCta: "Continuar",
+    pickerTitle: "Sobre você",
+    pickerSubtitle: "Ajusta os pronomes e o coaching pra sua situação.",
+    genderLabel: "Você é",
+    interestedInLabel: "Interessado em",
+    updated: "Atualizado",
+  },
+  genders: { male: "Homem", female: "Mulher", nonBinary: "Não binário" },
+  interests: { men: "Homens", women: "Mulheres", everyone: "Todos" },
   live: {
     yourReads: "Suas leituras",
     newContactPrompt: "Com quem você está falando? (o primeiro nome já basta)",
+    contactGenderPrompt: "É homem, mulher ou não binário? (deixe em branco pra pular)",
     newChip: "＋ Novo",
     scenarioLabel: "Cenário",
     scenarioPlaceholder: 'Descreva a situação… ex. "Numa cafeteria, ela está lendo meu livro favorito."',
@@ -948,9 +1027,23 @@ const hi: Dict = {
     subtitle: "एक चुनें — यह पूरी रात का रंग तय करेगा। कभी भी बदल सकते हैं।",
     lockIn: "{mode} लॉक करें",
   },
+  identity: {
+    eyebrow: "बस एक और बात",
+    sheetTitle: "अपने बारे में बताएं",
+    sheetSubtitle: "इससे प्रोनाउन और कोचिंग आपकी स्थिति के हिसाब से सेट होंगे — इसे कभी भी प्रोफ़ाइल में बदल सकते हैं।",
+    continueCta: "आगे बढ़ें",
+    pickerTitle: "आपके बारे में",
+    pickerSubtitle: "प्रोनाउन और कोचिंग आपकी स्थिति के हिसाब से सेट करता है।",
+    genderLabel: "आप हैं",
+    interestedInLabel: "किसमें दिलचस्पी है",
+    updated: "अपडेट हो गया",
+  },
+  genders: { male: "पुरुष", female: "महिला", nonBinary: "नॉन-बाइनरी" },
+  interests: { men: "पुरुष", women: "महिलाएं", everyone: "सभी" },
   live: {
     yourReads: "आपकी रीड्स",
     newContactPrompt: "आप किससे बात कर रहे हैं? (सिर्फ़ पहला नाम काफ़ी है)",
+    contactGenderPrompt: "क्या वो पुरुष हैं, महिला हैं, या नॉन-बाइनरी? (छोड़ने के लिए खाली रहने दें)",
     newChip: "＋ नया",
     scenarioLabel: "सिचुएशन",
     scenarioPlaceholder: 'स्थिति बताएं… जैसे "कॉफ़ी शॉप में, वो मेरी पसंदीदा किताब पढ़ रही है।"',
@@ -1124,9 +1217,23 @@ const ar: Dict = {
     subtitle: "اختر واحداً — سيحدد طابع الليلة كلها. يمكنك تغييره في أي وقت.",
     lockIn: "تثبيت {mode}",
   },
+  identity: {
+    eyebrow: "قبل أن نبدأ",
+    sheetTitle: "أخبرنا عن نفسك",
+    sheetSubtitle: "هذا يضبط الضمائر والتوجيه بما يناسب موقفك — يمكنك تغييره في أي وقت من ملفك الشخصي.",
+    continueCta: "متابعة",
+    pickerTitle: "عنك",
+    pickerSubtitle: "يضبط الضمائر والتوجيه بما يناسب موقفك.",
+    genderLabel: "أنت",
+    interestedInLabel: "مهتم بـ",
+    updated: "تم التحديث",
+  },
+  genders: { male: "ذكر", female: "أنثى", nonBinary: "غير ثنائي" },
+  interests: { men: "الرجال", women: "النساء", everyone: "الجميع" },
   live: {
     yourReads: "قراءاتك",
     newContactPrompt: "مع من تتحدث؟ (يكفي الاسم الأول)",
+    contactGenderPrompt: "هل هو رجل أم امرأة أم غير ثنائي؟ (اتركه فارغاً للتخطي)",
     newChip: "＋ جديد",
     scenarioLabel: "الموقف",
     scenarioPlaceholder: "صف الموقف… مثلاً: \"في مقهى، وهي تقرأ كتابي المفضل.\"",

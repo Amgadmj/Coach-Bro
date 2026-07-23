@@ -5,6 +5,12 @@
 
 export type AgentName = "arthur" | "clara" | "leo";
 export type SocialMode = "hype" | "chill" | "romantic" | "direct";
+// See backend/models/schemas.py::Gender - the app user's own gender and,
+// separately, a specific contact's gender (ContactSummary.match_gender
+// below). Mobile has no onboarding/session-store surface to set or use
+// these yet (see mobile/README.md's known gaps) - kept in sync per
+// CLAUDE.md's mirroring rule for when that lands.
+export type Gender = "male" | "female" | "non_binary";
 // "auto" = match whatever language the screenshot/scenario is actually in;
 // see backend/models/schemas.py::SupportedLanguage.
 export type SupportedLanguage = "auto" | "en" | "es" | "ar" | "fr" | "pt" | "hi";
@@ -112,4 +118,5 @@ export interface ContactSummary {
   display_name: string;
   session_count: number;
   last_interaction_at?: string | null;
+  match_gender?: Gender | null;
 }

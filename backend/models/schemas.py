@@ -178,6 +178,16 @@ class ExtractResponse(BaseModel):
 
 SocialMode = Literal["hype", "chill", "romantic", "direct"]
 
+# The app user's own gender identity (set once at onboarding, editable in
+# Profile - see web/src/components/IdentitySheet.tsx / IdentityPicker.tsx)
+# and, separately, a specific contact's gender (set per-contact, since a
+# single user may be dating people of more than one gender - see
+# ContactSummary.match_gender below). Same three-way vocabulary for both
+# roles; "auto"/unset (None) means the app doesn't know and prompts fall back
+# to neutral they/them framing rather than guessing - see
+# agents/prompts.py::_pronoun_set.
+Gender = Literal["male", "female", "non_binary"]
+
 # Product-facing mission chips in the UI ("Opener" / "Icebreaker" / "Vibe Shift" /
 # "Exit Strategy") - each maps to distinct instructions in
 # agents/prompts.py::_SUGGEST_CATEGORY_INSTRUCTIONS.
@@ -235,3 +245,10 @@ class ContactSummary(BaseModel):
     display_name: str
     session_count: int
     last_interaction_at: datetime | None = None
+    # None until the user sets it (see PATCH /contacts/{contact_id} in main.py) -
+    # prompts fall back to neutral they/them framing for this contact until then.
+    match_gender: Gender | None = None
+
+
+class SetMatchGenderRequest(BaseModel):
+    match_gender: Gender | None = None

@@ -5,6 +5,16 @@
 
 export type AgentName = "arthur" | "clara" | "leo";
 export type SocialMode = "hype" | "chill" | "romantic" | "direct";
+// The app user's own gender identity (set once at onboarding, editable in
+// Profile - see components/IdentitySheet.tsx / IdentityPicker.tsx) and,
+// separately, a specific contact's gender (set per-contact, since one user
+// may be dating people of more than one gender - see ContactSummary.match_gender).
+// null/unset means the app doesn't know and falls back to neutral they/them
+// framing rather than guessing - see backend/agents/prompts.py::_pronoun_set.
+export type Gender = "male" | "female" | "non_binary";
+// A durable preference, not an identity - who the user is generally dating,
+// used as the default match_gender for a contact until overridden per-contact.
+export type InterestedIn = "men" | "women" | "everyone";
 // "auto" = match whatever language the screenshot/scenario is actually in;
 // see backend/models/schemas.py::SupportedLanguage and lib/i18n.ts::LanguageCode
 // (the same set - i18n.ts re-declares it since it also needs UI-dictionary keys).
@@ -108,4 +118,6 @@ export interface ContactSummary {
   display_name: string;
   session_count: number;
   last_interaction_at?: string | null;
+  // null until set via PATCH /contacts/{contact_id} (see lib/api.ts::setContactGender).
+  match_gender?: Gender | null;
 }
