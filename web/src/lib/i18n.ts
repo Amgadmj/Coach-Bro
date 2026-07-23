@@ -49,9 +49,6 @@ export interface Dict {
     seeAll: string;
     /** Friendly copy shown instead of a raw fetch/network exception string. */
     offlineMessage: string;
-    installTitle: string;
-    installAction: string;
-    installDismiss: string;
   };
   tabs: { home: string; playbook: string; live: string; profile: string };
   modes: Record<SocialMode, { name: string; desc: string }>;
@@ -147,8 +144,24 @@ export interface Dict {
     shareCopied: string;
   };
   playbook: { subtitle: string };
-  profile: { emptyTitle: string; emptyBody: string };
+  profile: { emptyTitle: string; emptyBody: string; installApp: string };
   language: { title: string; subtitle: string; autoNote: string; updated: string };
+  /** The milestone-timed "add to home screen" ask - see components/
+   * InstallMoment.tsx and InstallSheet.tsx. Shown once the user has actually
+   * seen a read's worth of value (the Attraction Gauge reveal), not on cold
+   * page load, and reused verbatim for Profile's manual "Install app" row. */
+  installMoment: {
+    title: string;
+    body: string;
+    benefit1: string;
+    benefit2: string;
+    benefit3: string;
+    androidCta: string;
+    iosStep1: string;
+    iosStep2: string;
+    maybeLater: string;
+    gotIt: string;
+  };
   /** Copy for the first-run WelcomeModal and every screen's <Coachmark>
    * sequence - see lib/tutorial.ts and components/Coachmark.tsx. */
   tutorial: {
@@ -199,9 +212,6 @@ const en: Dict = {
     back: "Back",
     seeAll: "See all",
     offlineMessage: "No connection - check your network and try again.",
-    installTitle: "Install Bro Coach for quick access",
-    installAction: "Install",
-    installDismiss: "Not now",
   },
   tabs: { home: "Home", playbook: "Playbook", live: "Live", profile: "Profile" },
   modes: {
@@ -312,12 +322,25 @@ const en: Dict = {
   profile: {
     emptyTitle: "No stats yet",
     emptyBody: "Complete your first read tonight and your streak starts here.",
+    installApp: "Install app",
   },
   language: {
     title: "Language",
     subtitle: "Choose the language for the app and for your reads.",
     autoNote: "Auto detects the conversation's language from the screenshot automatically.",
     updated: "Language updated",
+  },
+  installMoment: {
+    title: "Keep your wingman one tap away",
+    body: "Install Bro Coach to your home screen - it opens instantly, full-screen, right when a reply lands and you need a read fast.",
+    benefit1: "One tap open — no digging through browser tabs when she replies",
+    benefit2: "Full-screen, no browser bar eating your screen",
+    benefit3: "Your reads and Relationship Memory are always right there",
+    androidCta: "Add to Home Screen",
+    iosStep1: "Tap the Share icon in Safari",
+    iosStep2: 'Scroll down and tap "Add to Home Screen"',
+    maybeLater: "Maybe later",
+    gotIt: "Got it",
   },
   tutorial: {
     welcomeTitle: "Meet your wingman",
@@ -378,9 +401,6 @@ const es: Dict = {
     back: "Atrás",
     seeAll: "Ver todo",
     offlineMessage: "Sin conexión - revisa tu red e inténtalo de nuevo.",
-    installTitle: "Instala Bro Coach para acceso rápido",
-    installAction: "Instalar",
-    installDismiss: "Ahora no",
   },
   tabs: { home: "Inicio", playbook: "Jugadas", live: "En vivo", profile: "Perfil" },
   modes: {
@@ -491,12 +511,25 @@ const es: Dict = {
   profile: {
     emptyTitle: "Aún no hay estadísticas",
     emptyBody: "Completa tu primera lectura esta noche y tu racha empieza aquí.",
+    installApp: "Instalar app",
   },
   language: {
     title: "Idioma",
     subtitle: "Elige el idioma de la app y de tus lecturas.",
     autoNote: "Auto detecta el idioma de la conversación directamente desde la captura.",
     updated: "Idioma actualizado",
+  },
+  installMoment: {
+    title: "Ten a tu wingman a un toque de distancia",
+    body: "Instala Bro Coach en tu pantalla de inicio - se abre al instante, a pantalla completa, justo cuando llega una respuesta y necesitas una lectura rápida.",
+    benefit1: "Se abre con un toque — sin buscar entre pestañas del navegador cuando ella responde",
+    benefit2: "Pantalla completa, sin la barra del navegador estorbando",
+    benefit3: "Tus lecturas y tu Memoria de Relación siempre están ahí",
+    androidCta: "Añadir a pantalla de inicio",
+    iosStep1: "Toca el ícono de Compartir en Safari",
+    iosStep2: 'Desplázate y toca "Añadir a pantalla de inicio"',
+    maybeLater: "Ahora no",
+    gotIt: "Entendido",
   },
   tutorial: {
     welcomeTitle: "Conoce a tu wingman",
@@ -557,9 +590,6 @@ const fr: Dict = {
     back: "Retour",
     seeAll: "Tout voir",
     offlineMessage: "Pas de connexion - vérifie ton réseau et réessaie.",
-    installTitle: "Installe Bro Coach pour un accès rapide",
-    installAction: "Installer",
-    installDismiss: "Pas maintenant",
   },
   tabs: { home: "Accueil", playbook: "Playbook", live: "En direct", profile: "Profil" },
   modes: {
@@ -670,12 +700,25 @@ const fr: Dict = {
   profile: {
     emptyTitle: "Pas encore de stats",
     emptyBody: "Termine ta première lecture ce soir et ta série commence ici.",
+    installApp: "Installer l'app",
   },
   language: {
     title: "Langue",
     subtitle: "Choisis la langue de l'application et de tes lectures.",
     autoNote: "Auto détecte automatiquement la langue de la conversation depuis la capture.",
     updated: "Langue mise à jour",
+  },
+  installMoment: {
+    title: "Garde ton wingman à portée de main",
+    body: "Installe Bro Coach sur ton écran d'accueil - il s'ouvre instantanément, en plein écran, pile quand une réponse arrive et que tu as besoin d'une lecture rapide.",
+    benefit1: "Ouverture en un tap — plus besoin de fouiller les onglets quand elle répond",
+    benefit2: "Plein écran, sans la barre du navigateur qui prend de la place",
+    benefit3: "Tes lectures et ta Mémoire de relation sont toujours là",
+    androidCta: "Ajouter à l'écran d'accueil",
+    iosStep1: "Touche l'icône Partager dans Safari",
+    iosStep2: "Fais défiler et touche « Sur l'écran d'accueil »",
+    maybeLater: "Plus tard",
+    gotIt: "Compris",
   },
   tutorial: {
     welcomeTitle: "Découvre ton wingman",
@@ -737,9 +780,6 @@ const pt: Dict = {
     back: "Voltar",
     seeAll: "Ver tudo",
     offlineMessage: "Sem conexão - verifique sua rede e tente novamente.",
-    installTitle: "Instale o Bro Coach para acesso rápido",
-    installAction: "Instalar",
-    installDismiss: "Agora não",
   },
   tabs: { home: "Início", playbook: "Playbook", live: "Ao vivo", profile: "Perfil" },
   modes: {
@@ -850,12 +890,25 @@ const pt: Dict = {
   profile: {
     emptyTitle: "Ainda sem estatísticas",
     emptyBody: "Complete sua primeira leitura hoje à noite e sua sequência começa aqui.",
+    installApp: "Instalar app",
   },
   language: {
     title: "Idioma",
     subtitle: "Escolha o idioma do app e das suas leituras.",
     autoNote: "Auto detecta automaticamente o idioma da conversa a partir do print.",
     updated: "Idioma atualizado",
+  },
+  installMoment: {
+    title: "Mantenha seu wingman a um toque de distância",
+    body: "Instale o Bro Coach na tela inicial - ele abre na hora, em tela cheia, bem quando a resposta chega e você precisa de uma leitura rápida.",
+    benefit1: "Abre com um toque — sem procurar entre abas do navegador quando ela responder",
+    benefit2: "Tela cheia, sem a barra do navegador atrapalhando",
+    benefit3: "Suas leituras e a Memória de Relacionamento sempre à mão",
+    androidCta: "Adicionar à tela inicial",
+    iosStep1: "Toque no ícone de Compartilhar no Safari",
+    iosStep2: 'Role para baixo e toque em "Adicionar à Tela de Início"',
+    maybeLater: "Agora não",
+    gotIt: "Entendi",
   },
   tutorial: {
     welcomeTitle: "Conheça seu wingman",
@@ -916,9 +969,6 @@ const hi: Dict = {
     back: "वापस",
     seeAll: "सभी देखें",
     offlineMessage: "कोई कनेक्शन नहीं - अपना नेटवर्क जांचें और फिर कोशिश करें।",
-    installTitle: "जल्दी एक्सेस के लिए Bro Coach इंस्टॉल करें",
-    installAction: "इंस्टॉल करें",
-    installDismiss: "अभी नहीं",
   },
   tabs: { home: "होम", playbook: "प्लेबुक", live: "लाइव", profile: "प्रोफ़ाइल" },
   modes: {
@@ -1029,12 +1079,25 @@ const hi: Dict = {
   profile: {
     emptyTitle: "अभी कोई स्टैट्स नहीं",
     emptyBody: "आज रात अपनी पहली रीड पूरी करें और यहीं से आपकी स्ट्रीक शुरू होगी।",
+    installApp: "ऐप इंस्टॉल करें",
   },
   language: {
     title: "भाषा",
     subtitle: "ऐप और अपनी रीड्स के लिए भाषा चुनें।",
     autoNote: "ऑटो स्क्रीनशॉट से बातचीत की भाषा खुद पहचान लेता है।",
     updated: "भाषा अपडेट हो गई",
+  },
+  installMoment: {
+    title: "अपने विंगमैन को एक टैप दूर रखें",
+    body: "Bro Coach को होम स्क्रीन पर इंस्टॉल करें - यह तुरंत, फ़ुल-स्क्रीन में खुलता है, ठीक तब जब जवाब आए और आपको फटाफट रीड चाहिए।",
+    benefit1: "एक टैप में खुले — जवाब आने पर ब्राउज़र टैब्स में ढूंढना नहीं पड़ेगा",
+    benefit2: "फ़ुल-स्क्रीन, ब्राउज़र बार की झंझट नहीं",
+    benefit3: "आपकी रीड्स और रिलेशनशिप मेमोरी हमेशा वहीं मौजूद",
+    androidCta: "होम स्क्रीन पर जोड़ें",
+    iosStep1: "Safari में Share आइकन पर टैप करें",
+    iosStep2: 'नीचे स्क्रॉल करें और "Add to Home Screen" पर टैप करें',
+    maybeLater: "अभी नहीं",
+    gotIt: "समझ गया",
   },
   tutorial: {
     welcomeTitle: "अपने विंगमैन से मिलें",
@@ -1092,9 +1155,6 @@ const ar: Dict = {
     back: "رجوع",
     seeAll: "عرض الكل",
     offlineMessage: "لا يوجد اتصال - تحقق من شبكتك وحاول مرة أخرى.",
-    installTitle: "ثبّت Bro Coach للوصول السريع",
-    installAction: "تثبيت",
-    installDismiss: "ليس الآن",
   },
   tabs: { home: "الرئيسية", playbook: "الخطط", live: "مباشر", profile: "الملف الشخصي" },
   modes: {
@@ -1205,12 +1265,25 @@ const ar: Dict = {
   profile: {
     emptyTitle: "لا توجد إحصائيات بعد",
     emptyBody: "أكمل قراءتك الأولى الليلة ومن هنا تبدأ سلسلتك.",
+    installApp: "تثبيت التطبيق",
   },
   language: {
     title: "اللغة",
     subtitle: "اختر لغة التطبيق ولغة قراءاتك.",
     autoNote: "يكتشف \"تلقائي\" لغة المحادثة من لقطة الشاشة تلقائياً.",
     updated: "تم تحديث اللغة",
+  },
+  installMoment: {
+    title: "أبقِ مساعدك على بُعد لمسة واحدة",
+    body: "ثبّت Bro Coach على شاشتك الرئيسية - يفتح فوراً بملء الشاشة، تماماً في اللحظة التي يصل فيها الرد وتحتاج لقراءة سريعة.",
+    benefit1: "يفتح بلمسة واحدة — بدون البحث بين تبويبات المتصفح عندما ترد",
+    benefit2: "شاشة كاملة، بدون شريط المتصفح المزعج",
+    benefit3: "قراءاتك وذاكرة العلاقة دائماً في متناول يدك",
+    androidCta: "إضافة إلى الشاشة الرئيسية",
+    iosStep1: "اضغط على أيقونة المشاركة في Safari",
+    iosStep2: "مرر للأسفل واضغط على \"إضافة إلى الشاشة الرئيسية\"",
+    maybeLater: "ليس الآن",
+    gotIt: "فهمت",
   },
   tutorial: {
     welcomeTitle: "تعرّف على مساعدك",

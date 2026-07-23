@@ -9,6 +9,7 @@ import { Coachmark, type CoachmarkStep } from "@/components/Coachmark";
 import { ExpandChevron, useExpandable } from "@/components/ExpandHint";
 import { Gauge } from "@/components/Gauge";
 import { GlassCard } from "@/components/GlassCard";
+import { InstallMoment } from "@/components/InstallMoment";
 import { TopBar } from "@/components/TopBar";
 import { useAnalysis } from "@/lib/analysis";
 import { useT } from "@/lib/i18n";
@@ -66,6 +67,9 @@ export default function ResultScreen() {
   const [shared, setShared] = useState(false);
   const welcomeSeen = useTutorial((s) => s.welcomeSeen);
   const startPage = useTutorial((s) => s.startPage);
+  // Waits out this page's own coachmark sequence (if any) so the install ask
+  // never overlaps the tutorial spotlight - see InstallMoment.
+  const resultTourActive = useTutorial((s) => s.activePage === "result");
 
   useEffect(() => {
     if (!result) router.replace("/live");
@@ -206,6 +210,7 @@ export default function ResultScreen() {
       )}
 
       <Coachmark page="result" steps={RESULT_STEPS} />
+      <InstallMoment ready={Boolean(result) && !resultTourActive} />
     </main>
   );
 }
