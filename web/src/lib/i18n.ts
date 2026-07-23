@@ -44,7 +44,15 @@ export function languageDir(code: LanguageCode): "ltr" | "rtl" {
 }
 
 export interface Dict {
-  common: { back: string; seeAll: string };
+  common: {
+    back: string;
+    seeAll: string;
+    /** Friendly copy shown instead of a raw fetch/network exception string. */
+    offlineMessage: string;
+    installTitle: string;
+    installAction: string;
+    installDismiss: string;
+  };
   tabs: { home: string; playbook: string; live: string; profile: string };
   modes: Record<SocialMode, { name: string; desc: string }>;
   missions: Record<
@@ -96,6 +104,7 @@ export interface Dict {
     typing: string;
     showMore: string;
     showLess: string;
+    tryAgain: string;
     agentRoles: { arthur: string; clara: string; leo: string };
   };
   result: {
@@ -134,7 +143,14 @@ export interface Dict {
 }
 
 const en: Dict = {
-  common: { back: "Back", seeAll: "See all" },
+  common: {
+    back: "Back",
+    seeAll: "See all",
+    offlineMessage: "No connection - check your network and try again.",
+    installTitle: "Install Bro Coach for quick access",
+    installAction: "Install",
+    installDismiss: "Not now",
+  },
   tabs: { home: "Home", playbook: "Playbook", live: "Live", profile: "Profile" },
   modes: {
     hype: { name: "Hype", desc: "Big energy, loud room." },
@@ -197,6 +213,7 @@ const en: Dict = {
     typing: "typing",
     showMore: "Tap to see why",
     showLess: "Hide",
+    tryAgain: "Try again",
     agentRoles: { arthur: "Frame expert", clara: "Psychology", leo: "The charmer" },
   },
   result: {
@@ -250,7 +267,14 @@ const en: Dict = {
 };
 
 const es: Dict = {
-  common: { back: "Atrás", seeAll: "Ver todo" },
+  common: {
+    back: "Atrás",
+    seeAll: "Ver todo",
+    offlineMessage: "Sin conexión - revisa tu red e inténtalo de nuevo.",
+    installTitle: "Instala Bro Coach para acceso rápido",
+    installAction: "Instalar",
+    installDismiss: "Ahora no",
+  },
   tabs: { home: "Inicio", playbook: "Jugadas", live: "En vivo", profile: "Perfil" },
   modes: {
     hype: { name: "Hype", desc: "Mucha energía, ambiente fuerte." },
@@ -313,6 +337,7 @@ const es: Dict = {
     typing: "escribiendo",
     showMore: "Toca para ver por qué",
     showLess: "Ocultar",
+    tryAgain: "Intentar de nuevo",
     agentRoles: { arthur: "Experto en actitud", clara: "Psicología", leo: "El encantador" },
   },
   result: {
@@ -366,7 +391,14 @@ const es: Dict = {
 };
 
 const fr: Dict = {
-  common: { back: "Retour", seeAll: "Tout voir" },
+  common: {
+    back: "Retour",
+    seeAll: "Tout voir",
+    offlineMessage: "Pas de connexion - vérifie ton réseau et réessaie.",
+    installTitle: "Installe Bro Coach pour un accès rapide",
+    installAction: "Installer",
+    installDismiss: "Pas maintenant",
+  },
   tabs: { home: "Accueil", playbook: "Playbook", live: "En direct", profile: "Profil" },
   modes: {
     hype: { name: "Hype", desc: "Grosse énergie, ambiance intense." },
@@ -429,6 +461,7 @@ const fr: Dict = {
     typing: "en train d'écrire",
     showMore: "Touche pour voir pourquoi",
     showLess: "Masquer",
+    tryAgain: "Réessayer",
     agentRoles: { arthur: "Expert en posture", clara: "Psychologie", leo: "Le charmeur" },
   },
   result: {
@@ -482,7 +515,14 @@ const fr: Dict = {
 };
 
 const pt: Dict = {
-  common: { back: "Voltar", seeAll: "Ver tudo" },
+  common: {
+    back: "Voltar",
+    seeAll: "Ver tudo",
+    offlineMessage: "Sem conexão - verifique sua rede e tente novamente.",
+    installTitle: "Instale o Bro Coach para acesso rápido",
+    installAction: "Instalar",
+    installDismiss: "Agora não",
+  },
   tabs: { home: "Início", playbook: "Playbook", live: "Ao vivo", profile: "Perfil" },
   modes: {
     hype: { name: "Hype", desc: "Muita energia, ambiente agitado." },
@@ -545,6 +585,7 @@ const pt: Dict = {
     typing: "digitando",
     showMore: "Toque para ver o porquê",
     showLess: "Ocultar",
+    tryAgain: "Tentar de novo",
     agentRoles: { arthur: "Especialista em postura", clara: "Psicologia", leo: "O charmoso" },
   },
   result: {
@@ -598,7 +639,14 @@ const pt: Dict = {
 };
 
 const hi: Dict = {
-  common: { back: "वापस", seeAll: "सभी देखें" },
+  common: {
+    back: "वापस",
+    seeAll: "सभी देखें",
+    offlineMessage: "कोई कनेक्शन नहीं - अपना नेटवर्क जांचें और फिर कोशिश करें।",
+    installTitle: "जल्दी एक्सेस के लिए Bro Coach इंस्टॉल करें",
+    installAction: "इंस्टॉल करें",
+    installDismiss: "अभी नहीं",
+  },
   tabs: { home: "होम", playbook: "प्लेबुक", live: "लाइव", profile: "प्रोफ़ाइल" },
   modes: {
     hype: { name: "हाइप", desc: "पूरा जोश, तेज़ माहौल।" },
@@ -661,6 +709,7 @@ const hi: Dict = {
     typing: "टाइप कर रहे हैं",
     showMore: "वजह देखने के लिए टैप करें",
     showLess: "छुपाएं",
+    tryAgain: "फिर कोशिश करें",
     agentRoles: { arthur: "फ़्रेम एक्सपर्ट", clara: "साइकोलॉजी", leo: "चार्मर" },
   },
   result: {
@@ -714,7 +763,14 @@ const hi: Dict = {
 };
 
 const ar: Dict = {
-  common: { back: "رجوع", seeAll: "عرض الكل" },
+  common: {
+    back: "رجوع",
+    seeAll: "عرض الكل",
+    offlineMessage: "لا يوجد اتصال - تحقق من شبكتك وحاول مرة أخرى.",
+    installTitle: "ثبّت Bro Coach للوصول السريع",
+    installAction: "تثبيت",
+    installDismiss: "ليس الآن",
+  },
   tabs: { home: "الرئيسية", playbook: "الخطط", live: "مباشر", profile: "الملف الشخصي" },
   modes: {
     hype: { name: "حماس", desc: "طاقة عالية، أجواء صاخبة." },
@@ -777,6 +833,7 @@ const ar: Dict = {
     typing: "يكتب",
     showMore: "اضغط لمعرفة السبب",
     showLess: "إخفاء",
+    tryAgain: "حاول مجدداً",
     agentRoles: { arthur: "خبير الهيبة", clara: "عِلم النفس", leo: "الساحر" },
   },
   result: {

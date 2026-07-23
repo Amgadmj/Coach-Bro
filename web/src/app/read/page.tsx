@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { ClayButton } from "@/components/ClayButton";
+import { ClayButton, GhostButton } from "@/components/ClayButton";
 import { AgentAvatar, DebateBubble } from "@/components/DebateBubble";
 import { GlassCard } from "@/components/GlassCard";
 import { TopBar } from "@/components/TopBar";
@@ -14,6 +14,25 @@ import type { AgentName } from "@/lib/types";
 import { clsx } from "@/lib/clsx";
 
 const AGENT_ORDER: AgentName[] = ["arthur", "clara", "leo"];
+
+/** True when the surfaced error looks like a network failure rather than a
+ * server-side one - covers the raw exception strings `fetch` throws across
+ * browsers (`TypeError: Failed to fetch` in Chrome, `NetworkError when
+ * attempting to fetch resource.` in Firefox, `Load failed` in Safari) plus the
+ * offline signal itself, so we can swap them for friendly copy instead of
+ * showing a raw exception to the user. */
+function isNetworkErrorMessage(message: string | null): boolean {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+  if (!message) return false;
+  const m = message.toLowerCase();
+  return (
+    m.includes("failed to fetch") ||
+    m.includes("networkerror") ||
+    m.includes("network request failed") ||
+    m.includes("load failed") ||
+    m.includes("network connection was lost")
+  );
+}
 
 function TypingRow({ agent, side }: { agent: AgentName; side: "left" | "right" }) {
   return (
@@ -35,9 +54,14 @@ function TypingRow({ agent, side }: { agent: AgentName; side: "left" | "right" }
 
 export default function DebateRoom() {
   const router = useRouter();
-  const { status, agentStatus, messages, error, imageCount, hasText } = useAnalysis();
+  const { status, agentStatus, messages, error, imageCount, hasText, reset } = useAnalysis();
   const endRef = useRef<HTMLDivElement>(null);
   const t = useT();
+
+  function retry() {
+    reset();
+    router.push("/live");
+  }
 
   useEffect(() => {
     if (status === "idle") router.replace("/live");
@@ -104,7 +128,14 @@ export default function DebateRoom() {
       </div>
 
       {status === "error" && (
-        <p className="mt-4 text-center text-sm text-accent-deep">{error}</p>
+        <div className="mx-auto mt-4 max-w-[280px]">
+          <p className="text-center text-sm text-accent-deep">
+            {isNetworkErrorMessage(error) ? t("common.offlineMessage") : error}
+          </p>
+          <GhostButton className="mt-3" onClick={retry}>
+            {t("read.tryAgain")}
+          </GhostButton>
+        </div>
       )}
 
       {status === "running" && (
