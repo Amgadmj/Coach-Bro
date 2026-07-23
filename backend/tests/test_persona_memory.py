@@ -25,30 +25,30 @@ def test_persona_builds_and_compounds_across_reads(tmp_path: Path) -> None:
         )
         return [
             e.type
-            async for e in orchestrator.run_pipeline(IMAGES, contact_id="sarah")
+            async for e in orchestrator.run_pipeline(IMAGES, contact_id="sarah", device_id="test-device")
         ]
 
     events_first = asyncio.run(run_once())
     assert events_first[-1] == "memory_updated"
 
-    persona_after_first = asyncio.run(store.get_persona("sarah"))
+    persona_after_first = asyncio.run(store.get_persona("test-device", "sarah"))
     assert persona_after_first and "Tests:" in persona_after_first
-    assert asyncio.run(store.get_read_count("sarah")) == 1
+    assert asyncio.run(store.get_read_count("test-device", "sarah")) == 1
 
     events_second = asyncio.run(run_once())
     assert events_second[-1] == "memory_updated"
-    assert asyncio.run(store.get_read_count("sarah")) == 2
+    assert asyncio.run(store.get_read_count("test-device", "sarah")) == 2
 
     # the mock marks whether it saw a prior persona, proving the old document
     # was fed back into the update prompt
-    persona_after_second = asyncio.run(store.get_persona("sarah"))
+    persona_after_second = asyncio.run(store.get_persona("test-device", "sarah"))
     assert persona_after_second and "2 read(s)" in persona_after_second
 
     # history accumulates one summary per read
-    history = asyncio.run(store.get_contact_history("sarah"))
+    history = asyncio.run(store.get_contact_history("test-device", "sarah"))
     assert len(history) == 2
 
-    contacts = asyncio.run(store.list_contacts())
+    contacts = asyncio.run(store.list_contacts("test-device"))
     assert [c.display_name for c in contacts] == ["sarah"]
     assert contacts[0].session_count == 2
 
@@ -64,10 +64,10 @@ def test_no_memory_events_without_contact(tmp_path: Path) -> None:
         )
         return [
             e.type
-            async for e in orchestrator.run_pipeline(IMAGES, contact_id=None)
+            async for e in orchestrator.run_pipeline(IMAGES, contact_id=None, device_id="test-device")
         ]
 
     events = asyncio.run(run())
     assert "memory_updated" not in events
     assert events[-1] == "synthesis_done"
-    assert asyncio.run(store.list_contacts()) == []
+    assert asyncio.run(store.list_contacts("test-device")) == []

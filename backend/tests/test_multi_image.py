@@ -28,7 +28,7 @@ def test_run_pipeline_passes_every_attached_image_to_vision_extract() -> None:
             debate_client=MockLLMClient(),
             memory_store=NoOpMemoryStore(),
         )
-        async for _ in orchestrator.run_pipeline(images, contact_id=None):
+        async for _ in orchestrator.run_pipeline(images, contact_id=None, device_id="test-device"):
             pass
 
     asyncio.run(run())

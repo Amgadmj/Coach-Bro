@@ -25,19 +25,19 @@ def test_user_style_is_global_and_compounds_without_needing_a_contact(tmp_path: 
         )
         return [
             e.type
-            async for e in orchestrator.run_pipeline(IMAGES, contact_id=None)
+            async for e in orchestrator.run_pipeline(IMAGES, contact_id=None, device_id="test-device")
         ]
 
     events = asyncio.run(run_once())
     assert "memory_updated" not in events  # no contact -> no per-contact memory event
     assert events[-1] == "synthesis_done"
 
-    style_after_first = asyncio.run(store.get_user_style())
+    style_after_first = asyncio.run(store.get_user_style("test-device"))
     assert style_after_first is not None
     assert "Casual and warm" in style_after_first
 
     asyncio.run(run_once())
-    style_after_second = asyncio.run(store.get_user_style())
+    style_after_second = asyncio.run(store.get_user_style("test-device"))
     assert "confirmed across multiple reads" in style_after_second
 
 
@@ -45,7 +45,7 @@ def test_no_user_authored_messages_skips_the_style_update_entirely(tmp_path: Pat
     """Nothing to learn from a screenshot with no 'user'-sender messages - must
     not spend an LLM call, and must not overwrite the existing profile."""
     store = SQLiteMemoryStore(tmp_path / "memory.db")
-    asyncio.run(store.upsert_user_style("existing profile, should not change"))
+    asyncio.run(store.upsert_user_style("test-device", "existing profile, should not change"))
 
     calls: list[str] = []
 
@@ -62,17 +62,17 @@ def test_no_user_authored_messages_skips_the_style_update_entirely(tmp_path: Pat
         extracted_at=datetime.now(timezone.utc),
     )
 
-    asyncio.run(orchestrator._update_user_style(context))
+    asyncio.run(orchestrator._update_user_style("test-device", context))
 
     assert not any("Previous voice profile:" in c for c in calls)
-    assert asyncio.run(store.get_user_style()) == "existing profile, should not change"
+    assert asyncio.run(store.get_user_style("test-device")) == "existing profile, should not change"
 
 
 def test_user_style_is_threaded_into_debate_and_synthesis_prompts(tmp_path: Path) -> None:
     """Once a style profile exists, it must actually reach the agents (so Leo can
     draft in the user's voice) and the synthesizer (so coaching_lesson matches it)."""
     store = SQLiteMemoryStore(tmp_path / "memory.db")
-    asyncio.run(store.upsert_user_style("dry, one-word replies, never uses emoji"))
+    asyncio.run(store.upsert_user_style("test-device", "dry, one-word replies, never uses emoji"))
 
     debate_prompts: list[str] = []
 
@@ -87,7 +87,7 @@ def test_user_style_is_threaded_into_debate_and_synthesis_prompts(tmp_path: Path
             debate_client=RecordingDebateClient(),
             memory_store=store,
         )
-        async for _ in orchestrator.run_pipeline(IMAGES, contact_id=None):
+        async for _ in orchestrator.run_pipeline(IMAGES, contact_id=None, device_id="test-device"):
             pass
 
     asyncio.run(run())

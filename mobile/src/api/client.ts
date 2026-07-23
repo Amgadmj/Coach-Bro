@@ -1,6 +1,7 @@
 import * as FileSystem from "expo-file-system";
 
 import type { ContactSummary, DebateEvent, MemoryRecord } from "@/types/schemas";
+import { getDeviceId } from "../deviceId";
 import { parseDebateEvents } from "./sseStream";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -32,12 +33,14 @@ export interface AnalyzeParams {
  * debate-reveal UX instead of dumping the whole result on screen instantly.
  */
 export async function analyzeScreenshot(params: AnalyzeParams): Promise<DebateEvent[]> {
+  const deviceId = await getDeviceId();
   const result = await FileSystem.uploadAsync(`${API_BASE_URL}/analyze`, params.imageUri, {
     httpMethod: "POST",
     uploadType: FileSystem.FileSystemUploadType.MULTIPART,
     fieldName: "images",
     mimeType: params.mimeType,
     parameters: params.contactId ? { contact_id: params.contactId } : {},
+    headers: { "X-Device-Id": deviceId },
   });
 
   if (result.status < 200 || result.status >= 300) {
@@ -48,13 +51,17 @@ export async function analyzeScreenshot(params: AnalyzeParams): Promise<DebateEv
 }
 
 export async function fetchContacts(): Promise<ContactSummary[]> {
-  const response = await fetch(`${API_BASE_URL}/contacts`);
+  const deviceId = await getDeviceId();
+  const response = await fetch(`${API_BASE_URL}/contacts`, { headers: { "X-Device-Id": deviceId } });
   if (!response.ok) throw new Error(`/contacts failed: ${response.status}`);
   return response.json();
 }
 
 export async function fetchContactHistory(contactId: string): Promise<MemoryRecord[]> {
-  const response = await fetch(`${API_BASE_URL}/contacts/${contactId}/history`);
+  const deviceId = await getDeviceId();
+  const response = await fetch(`${API_BASE_URL}/contacts/${contactId}/history`, {
+    headers: { "X-Device-Id": deviceId },
+  });
   if (!response.ok) throw new Error(`/contacts/${contactId}/history failed: ${response.status}`);
   return response.json();
 }

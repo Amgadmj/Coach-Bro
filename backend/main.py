@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 load_dotenv()  # backend/.env - keys and mode; must run before any os.environ reads
 
 import pillow_heif
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from PIL import Image, UnidentifiedImageError
@@ -181,6 +181,31 @@ async def _prepare_images(images: list[UploadFile]) -> list[tuple[bytes, str]]:
     return image_data
 
 
+async def get_device_id(x_device_id: str | None = Header(default=None)) -> str:
+    """This app has no auth system - `contacts`/`reads`/`user_style` used to be
+    global tables with zero per-user scoping, so a `contact_id` (a plain
+    client-chosen string, e.g. a lowercased name) could collide across
+    completely different people, and `GET /contacts` returned every contact
+    ever created by anyone. Confirmed live: different users were seeing each
+    other's reads.
+
+    The fix is a client-generated, localStorage-persisted device ID (see
+    web/src/lib/deviceId.ts / mobile/src/deviceId.ts) sent on every request
+    that touches memory, used to scope every contact/read/style row to the
+    device that created it. Deliberately NOT the request's IP address - IP is
+    shared behind NAT/CGNAT (would leak across unrelated people on the same
+    network) and changes across networks (would make a single real user's own
+    data seem to disappear) - IP keeps its existing, unrelated job of
+    rate-limiting only (see RateLimiter in rate_limit.py).
+
+    Required, not optional: a missing header is rejected outright rather than
+    falling back to some shared default, which would just reintroduce the bug
+    for anyone whose client failed to send it."""
+    if not x_device_id or not x_device_id.strip():
+        raise HTTPException(status_code=400, detail="Missing X-Device-Id header.")
+    return x_device_id.strip()
+
+
 def _build_llm_clients() -> tuple[LLMClient, LLMClient]:
     mode = os.environ.get("LLM_MODE", "mock")
     if mode == "mock":
@@ -224,6 +249,7 @@ async def analyze(
     contact_id: str | None = Form(default=None),
     language: SupportedLanguage = Form(default="auto"),
     mode: SocialMode = Form(default="hype"),
+    device_id: str = Depends(get_device_id),
 ) -> StreamingResponse:
     text_content = text_content.strip() if text_content else None
 
@@ -241,7 +267,7 @@ async def analyze(
 
     async def event_stream():
         async for event in orchestrator.run_pipeline(
-            image_data or None, contact_id, language, mode, text_content=text_content
+            image_data or None, contact_id, device_id, language, mode, text_content=text_content
         ):
             yield f"data: {event.model_dump_json()}\n\n"
 
@@ -268,7 +294,7 @@ async def extract(images: list[UploadFile] = File(...)) -> ExtractResponse:
 
 
 @app.post("/suggest", dependencies=[Depends(suggest_limiter)])
-async def suggest(request: SuggestRequest) -> SuggestResponse:
+async def suggest(request: SuggestRequest, device_id: str = Depends(get_device_id)) -> SuggestResponse:
     """Text-only scenario -> three suggested openers. No debate, no memory write -
     the lighter sibling of /analyze for when there's no screenshot yet."""
     # No screenshot to detect a language from. "auto" sends no directive at all
@@ -276,7 +302,7 @@ async def suggest(request: SuggestRequest) -> SuggestResponse:
     # on its own - live-testing showed a self-referential "detect and match the
     # language below" instruction is unreliable and can misfire to a third language.
     response_language = None if request.language == "auto" else LANGUAGE_NAMES[request.language]
-    user_style = await get_memory_store().get_user_style()
+    user_style = await get_memory_store().get_user_style(device_id)
 
     vision_client, _ = _build_llm_clients()
     data = await vision_client.complete_json(
@@ -290,15 +316,17 @@ async def suggest(request: SuggestRequest) -> SuggestResponse:
 
 
 @app.get("/contacts")
-async def list_contacts() -> list[ContactSummary]:
+async def list_contacts(device_id: str = Depends(get_device_id)) -> list[ContactSummary]:
     store = get_memory_store()
-    return await store.list_contacts()
+    return await store.list_contacts(device_id)
 
 
 @app.get("/contacts/{contact_id}/history")
-async def contact_history(contact_id: str) -> list[MemoryRecord]:
+async def contact_history(
+    contact_id: str, device_id: str = Depends(get_device_id)
+) -> list[MemoryRecord]:
     store = get_memory_store()
-    return await store.get_contact_history(contact_id)
+    return await store.get_contact_history(device_id, contact_id)
 
 
 @app.get("/health")

@@ -15,7 +15,7 @@ from memory.store import NoOpMemoryStore
 from models.schemas import SynthesisResult
 from swarm_orchestrator import SwarmOrchestrator
 
-client = TestClient(main.app)
+client = TestClient(main.app, headers={"X-Device-Id": "test-device"})
 
 IMAGE_BYTES = b"<fake-screenshot-bytes>"
 MIME_TYPE = "image/png"
@@ -44,7 +44,7 @@ def test_pipeline_runs_full_debate_from_text_content_alone() -> None:
         event_types: list[str] = []
         final_result: SynthesisResult | None = None
         async for event in orchestrator.run_pipeline(
-            images=None, contact_id=None, text_content=PASTED_TEXT
+            images=None, contact_id=None, device_id="test-device", text_content=PASTED_TEXT
         ):
             event_types.append(event.type)
             if event.type == "synthesis_done" and event.payload:
@@ -68,7 +68,9 @@ def test_pipeline_rejects_neither_images_nor_text() -> None:
         )
         return [
             e.type
-            async for e in orchestrator.run_pipeline(images=None, contact_id=None, text_content=None)
+            async for e in orchestrator.run_pipeline(
+                images=None, contact_id=None, device_id="test-device", text_content=None
+            )
         ]
 
     event_types = asyncio.run(run())
@@ -83,7 +85,10 @@ def test_pipeline_attaches_text_content_as_scenario_notes_when_images_also_given
             memory_store=NoOpMemoryStore(),
         )
         async for event in orchestrator.run_pipeline(
-            images=IMAGES, contact_id=None, text_content="she's been slow to reply all week"
+            images=IMAGES,
+            contact_id=None,
+            device_id="test-device",
+            text_content="she's been slow to reply all week",
         ):
             if event.type == "extraction_done" and event.payload:
                 return event.payload.get("scenario_notes")

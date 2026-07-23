@@ -11,7 +11,7 @@ from PIL import Image
 
 import main
 
-client = TestClient(main.app)
+client = TestClient(main.app, headers={"X-Device-Id": "test-device"})
 
 
 def _image_file(name: str = "shot.png") -> tuple[str, tuple[str, io.BytesIO, str]]:

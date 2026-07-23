@@ -1,3 +1,4 @@
+import { getDeviceId } from "./deviceId";
 import { compressImage, ensureImageMimeType } from "./image";
 import type {
   ContactSummary,
@@ -76,7 +77,11 @@ export async function* analyzeInput(
   form.append("language", language);
   form.append("mode", mode);
 
-  const response = await fetch(`${API_BASE_URL}/analyze`, { method: "POST", body: form });
+  const response = await fetch(`${API_BASE_URL}/analyze`, {
+    method: "POST",
+    headers: { "X-Device-Id": getDeviceId() },
+    body: form,
+  });
   if (!response.ok || !response.body) {
     throw new Error(await describeAnalyzeError(response));
   }
@@ -143,7 +148,7 @@ export async function suggestOpeners(
 ): Promise<SuggestResponse> {
   const response = await fetch(`${API_BASE_URL}/suggest`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-Device-Id": getDeviceId() },
     body: JSON.stringify({ scenario, mode, language, category, seed }),
   });
   if (!response.ok) throw new Error(`/suggest failed: ${response.status} ${await response.text()}`);
@@ -151,13 +156,17 @@ export async function suggestOpeners(
 }
 
 export async function fetchContacts(): Promise<ContactSummary[]> {
-  const response = await fetch(`${API_BASE_URL}/contacts`);
+  const response = await fetch(`${API_BASE_URL}/contacts`, {
+    headers: { "X-Device-Id": getDeviceId() },
+  });
   if (!response.ok) throw new Error(`/contacts failed: ${response.status}`);
   return response.json();
 }
 
 export async function fetchContactHistory(contactId: string): Promise<MemoryRecord[]> {
-  const response = await fetch(`${API_BASE_URL}/contacts/${contactId}/history`);
+  const response = await fetch(`${API_BASE_URL}/contacts/${contactId}/history`, {
+    headers: { "X-Device-Id": getDeviceId() },
+  });
   if (!response.ok) throw new Error(`history failed: ${response.status}`);
   return response.json();
 }

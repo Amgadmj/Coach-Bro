@@ -56,23 +56,31 @@ _SENTINEL = object()
 
 
 class MemoryStoreProtocol(Protocol):
-    """Structural type for the memory dependency - see memory/store.py."""
+    """Structural type for the memory dependency - see memory/store.py.
 
-    async def get_contact_history(self, contact_id: str) -> list[MemoryRecord]: ...
+    Every method takes `device_id` first - a client-generated, persisted
+    identifier (see main.py::get_device_id) that scopes all memory to the
+    device that created it, since this app has no auth system. Without it,
+    two different people's contacts/history/style collide into the same
+    global rows - see main.py's docstring on get_device_id for the incident
+    this fixes."""
 
-    async def upsert_interaction(self, contact_id: str, result: SynthesisResult) -> None: ...
+    async def get_contact_history(self, device_id: str, contact_id: str) -> list[MemoryRecord]: ...
 
-    async def get_persona(self, contact_id: str) -> str | None: ...
+    async def upsert_interaction(self, device_id: str, contact_id: str, result: SynthesisResult) -> None: ...
 
-    async def upsert_persona(self, contact_id: str, persona: str) -> None: ...
+    async def get_persona(self, device_id: str, contact_id: str) -> str | None: ...
 
-    async def get_read_count(self, contact_id: str) -> int: ...
+    async def upsert_persona(self, device_id: str, contact_id: str, persona: str) -> None: ...
 
-    # Global (not per-contact): the app's own user's texting voice, learned from
-    # his "user"-sender messages across every read regardless of which contact.
-    async def get_user_style(self) -> str | None: ...
+    async def get_read_count(self, device_id: str, contact_id: str) -> int: ...
 
-    async def upsert_user_style(self, style: str) -> None: ...
+    # Per-device (not per-contact): the app's own user's texting voice, learned
+    # from his "user"-sender messages across every read regardless of which
+    # contact - but still scoped to the device, not global across all users.
+    async def get_user_style(self, device_id: str) -> str | None: ...
+
+    async def upsert_user_style(self, device_id: str, style: str) -> None: ...
 
 
 class SwarmOrchestrator:
@@ -90,6 +98,7 @@ class SwarmOrchestrator:
         self,
         images: list[tuple[bytes, str]] | None,
         contact_id: str | None,
+        device_id: str,
         language: SupportedLanguage = "auto",
         mode: SocialMode = "hype",
         text_content: str | None = None,
@@ -105,6 +114,10 @@ class SwarmOrchestrator:
         alongside images, it's treated as the user's own free-text commentary on
         top of the screenshot(s) and attached as ConversationContext.scenario_notes
         instead of being parsed as dialogue.
+
+        `device_id` scopes every memory read/write below to the device that
+        sent the request (see main.py::get_device_id) - required, not optional,
+        since this app has no auth and memory would otherwise leak across users.
 
         Yields DebateEvents for each stage; any failure anywhere in the pipeline
         (provider timeout, rate limit, bad key) is caught and turned into one final
@@ -125,13 +138,13 @@ class SwarmOrchestrator:
             memory: list[MemoryRecord] = []
             persona: str | None = None
             if contact_id:
-                memory = await self._memory_store.get_contact_history(contact_id)
-                persona = await self._memory_store.get_persona(contact_id)
+                memory = await self._memory_store.get_contact_history(device_id, contact_id)
+                persona = await self._memory_store.get_persona(device_id, contact_id)
 
-            # Global, independent of contact_id: how the app's own user actually
-            # talks, so drafted replies sound like him and the coaching lesson
-            # lands in his own register instead of generic coaching-speak.
-            user_style = await self._memory_store.get_user_style()
+            # Per-device, independent of contact_id: how the app's own user
+            # actually talks, so drafted replies sound like him and the coaching
+            # lesson lands in his own register instead of generic coaching-speak.
+            user_style = await self._memory_store.get_user_style(device_id)
 
             opinions: list[AgentOpinion] = []
             async for event, opinion in self._run_debate_agents(
@@ -157,12 +170,12 @@ class SwarmOrchestrator:
             # screenshot - unconditional on contact_id, since this is about him,
             # not about any particular match. Skips the LLM call entirely if this
             # screenshot had no "user"-sender messages (nothing new to learn).
-            await self._update_user_style(context)
+            await self._update_user_style(device_id, context)
 
             if contact_id:
-                await self._memory_store.upsert_interaction(contact_id, result)
-                updated_persona = await self._update_persona(contact_id, persona, context, result)
-                read_count = await self._memory_store.get_read_count(contact_id)
+                await self._memory_store.upsert_interaction(device_id, contact_id, result)
+                updated_persona = await self._update_persona(device_id, contact_id, persona, context, result)
+                read_count = await self._memory_store.get_read_count(device_id, contact_id)
                 yield DebateEvent(
                     type="memory_updated",
                     payload={
@@ -307,6 +320,7 @@ class SwarmOrchestrator:
 
     async def _update_persona(
         self,
+        device_id: str,
         contact_id: str,
         old_persona: str | None,
         context: ConversationContext,
@@ -325,10 +339,10 @@ class SwarmOrchestrator:
             PERSONA_SYSTEM_PROMPT,
             build_persona_user_prompt(old_persona, context, result_summary),
         )
-        await self._memory_store.upsert_persona(contact_id, persona)
+        await self._memory_store.upsert_persona(device_id, contact_id, persona)
         return persona
 
-    async def _update_user_style(self, context: ConversationContext) -> None:
+    async def _update_user_style(self, device_id: str, context: ConversationContext) -> None:
         """Distills the user's own texting voice from his "user"-sender messages
         in this screenshot, merged with whatever was already known. Global, not
         per-contact - the same profile is used no matter which match this was.
@@ -343,9 +357,9 @@ class SwarmOrchestrator:
         if not user_lines:
             return  # nothing new to learn from this screenshot
 
-        old_style = await self._memory_store.get_user_style()
+        old_style = await self._memory_store.get_user_style(device_id)
         updated_style = await self._vision_client.complete_text(
             USER_STYLE_SYSTEM_PROMPT,
             build_user_style_user_prompt(old_style, user_lines),
         )
-        await self._memory_store.upsert_user_style(updated_style)
+        await self._memory_store.upsert_user_style(device_id, updated_style)

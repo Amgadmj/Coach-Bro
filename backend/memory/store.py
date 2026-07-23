@@ -19,28 +19,28 @@ from models.schemas import ContactSummary, MemoryRecord, SynthesisResult
 class NoOpMemoryStore:
     """In-memory-nothing store for tests. Never persists anything."""
 
-    async def get_contact_history(self, contact_id: str) -> list[MemoryRecord]:
+    async def get_contact_history(self, device_id: str, contact_id: str) -> list[MemoryRecord]:
         return []
 
-    async def upsert_interaction(self, contact_id: str, result: SynthesisResult) -> None:
+    async def upsert_interaction(self, device_id: str, contact_id: str, result: SynthesisResult) -> None:
         return None
 
-    async def get_persona(self, contact_id: str) -> str | None:
+    async def get_persona(self, device_id: str, contact_id: str) -> str | None:
         return None
 
-    async def upsert_persona(self, contact_id: str, persona: str) -> None:
+    async def upsert_persona(self, device_id: str, contact_id: str, persona: str) -> None:
         return None
 
-    async def get_read_count(self, contact_id: str) -> int:
+    async def get_read_count(self, device_id: str, contact_id: str) -> int:
         return 0
 
-    async def get_user_style(self) -> str | None:
+    async def get_user_style(self, device_id: str) -> str | None:
         return None
 
-    async def upsert_user_style(self, style: str) -> None:
+    async def upsert_user_style(self, device_id: str, style: str) -> None:
         return None
 
-    async def list_contacts(self) -> list[ContactSummary]:
+    async def list_contacts(self, device_id: str) -> list[ContactSummary]:
         return []
 
 
@@ -51,18 +51,22 @@ class MemoryStore:
         self._db_url = db_url
 
     @staticmethod
-    async def _ensure_contact(conn, contact_id: str) -> None:
+    async def _ensure_contact(conn, device_id: str, contact_id: str) -> None:
         """No auth/users system exists yet (see docs/deployment.md "Not covered
         yet") - contact_id is a plain client-generated string (see
         web/src/app/live/page.tsx), not created ahead of time via any signup
-        flow. Auto-create the row on first use, same as SQLiteMemoryStore's
-        _ensure_contact, instead of assuming one already exists."""
+        flow. `device_id` (see main.py::get_device_id) scopes it to the device
+        that created it, so two devices naming a contact the same thing don't
+        collide into one shared row. Auto-create the row on first use, same as
+        SQLiteMemoryStore's _ensure_contact, instead of assuming one exists."""
         await conn.execute(
-            "insert into contacts (id, display_name) values ($1, $1) on conflict (id) do nothing",
+            "insert into contacts (device_id, id, display_name) values ($1, $2, $2) "
+            "on conflict (device_id, id) do nothing",
+            device_id,
             contact_id,
         )
 
-    async def get_contact_history(self, contact_id: str, limit: int = 5) -> list[MemoryRecord]:
+    async def get_contact_history(self, device_id: str, contact_id: str, limit: int = 5) -> list[MemoryRecord]:
         import asyncpg  # local import: keeps asyncpg an optional dependency for mock-only runs
 
         conn = await asyncpg.connect(self._db_url)
@@ -71,10 +75,11 @@ class MemoryStore:
                 """
                 select contact_id, session_id, summary, created_at
                 from memory_embeddings
-                where contact_id = $1
+                where device_id = $1 and contact_id = $2
                 order by created_at desc
-                limit $2
+                limit $3
                 """,
+                device_id,
                 contact_id,
                 limit,
             )
@@ -91,7 +96,7 @@ class MemoryStore:
             for row in rows
         ]
 
-    async def upsert_interaction(self, contact_id: str, result: SynthesisResult) -> None:
+    async def upsert_interaction(self, device_id: str, contact_id: str, result: SynthesisResult) -> None:
         import asyncpg
 
         summary = f"[{result.attraction_level}/10] {result.dynamic_analysis} -> {result.coaching_lesson}"
@@ -106,83 +111,93 @@ class MemoryStore:
         conn = await asyncpg.connect(self._db_url)
         try:
             async with conn.transaction():
-                await self._ensure_contact(conn, contact_id)
+                await self._ensure_contact(conn, device_id, contact_id)
                 await conn.execute(
                     """
-                    insert into memory_embeddings (contact_id, summary, embedding, created_at)
-                    values ($1, $2, $3::vector, $4)
+                    insert into memory_embeddings (device_id, contact_id, summary, embedding, created_at)
+                    values ($1, $2, $3, $4::vector, $5)
                     """,
+                    device_id,
                     contact_id,
                     summary,
                     embedding_literal,
                     datetime.now(timezone.utc),
                 )
                 await conn.execute(
-                    "update contacts set last_interaction_at = $2 where id = $1",
+                    "update contacts set last_interaction_at = $3 where device_id = $1 and id = $2",
+                    device_id,
                     contact_id,
                     datetime.now(timezone.utc),
                 )
         finally:
             await conn.close()
 
-    async def get_persona(self, contact_id: str) -> str | None:
+    async def get_persona(self, device_id: str, contact_id: str) -> str | None:
         import asyncpg
 
         conn = await asyncpg.connect(self._db_url)
         try:
-            return await conn.fetchval("select persona from contacts where id = $1", contact_id)
-        finally:
-            await conn.close()
-
-    async def upsert_persona(self, contact_id: str, persona: str) -> None:
-        import asyncpg
-
-        conn = await asyncpg.connect(self._db_url)
-        try:
-            await self._ensure_contact(conn, contact_id)
-            await conn.execute(
-                "update contacts set persona = $2 where id = $1", contact_id, persona
+            return await conn.fetchval(
+                "select persona from contacts where device_id = $1 and id = $2", device_id, contact_id
             )
         finally:
             await conn.close()
 
-    async def get_read_count(self, contact_id: str) -> int:
+    async def upsert_persona(self, device_id: str, contact_id: str, persona: str) -> None:
+        import asyncpg
+
+        conn = await asyncpg.connect(self._db_url)
+        try:
+            await self._ensure_contact(conn, device_id, contact_id)
+            await conn.execute(
+                "update contacts set persona = $3 where device_id = $1 and id = $2",
+                device_id,
+                contact_id,
+                persona,
+            )
+        finally:
+            await conn.close()
+
+    async def get_read_count(self, device_id: str, contact_id: str) -> int:
         import asyncpg
 
         conn = await asyncpg.connect(self._db_url)
         try:
             return (
                 await conn.fetchval(
-                    "select count(*) from memory_embeddings where contact_id = $1", contact_id
+                    "select count(*) from memory_embeddings where device_id = $1 and contact_id = $2",
+                    device_id,
+                    contact_id,
                 )
                 or 0
             )
         finally:
             await conn.close()
 
-    async def get_user_style(self) -> str | None:
+    async def get_user_style(self, device_id: str) -> str | None:
         import asyncpg
 
         conn = await asyncpg.connect(self._db_url)
         try:
-            return await conn.fetchval("select style from user_style where id = 1")
+            return await conn.fetchval("select style from user_style where device_id = $1", device_id)
         finally:
             await conn.close()
 
-    async def upsert_user_style(self, style: str) -> None:
+    async def upsert_user_style(self, device_id: str, style: str) -> None:
         import asyncpg
 
         conn = await asyncpg.connect(self._db_url)
         try:
             await conn.execute(
-                "insert into user_style (id, style) values (1, $1) "
-                "on conflict (id) do update set style = excluded.style",
+                "insert into user_style (device_id, style) values ($1, $2) "
+                "on conflict (device_id) do update set style = excluded.style",
+                device_id,
                 style,
             )
         finally:
             await conn.close()
 
-    async def list_contacts(self) -> list[ContactSummary]:
+    async def list_contacts(self, device_id: str) -> list[ContactSummary]:
         import asyncpg
 
         conn = await asyncpg.connect(self._db_url)
@@ -191,10 +206,12 @@ class MemoryStore:
                 """
                 select c.id, c.display_name, c.last_interaction_at, count(m.id) as session_count
                 from contacts c
-                left join memory_embeddings m on m.contact_id = c.id
-                group by c.id
+                left join memory_embeddings m on m.device_id = c.device_id and m.contact_id = c.id
+                where c.device_id = $1
+                group by c.id, c.device_id
                 order by c.last_interaction_at desc nulls last
-                """
+                """,
+                device_id,
             )
         finally:
             await conn.close()

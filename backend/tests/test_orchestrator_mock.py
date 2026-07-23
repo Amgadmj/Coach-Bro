@@ -34,7 +34,7 @@ def test_provider_failure_yields_clean_error_event_not_a_crash() -> None:
         )
         return [
             e.type
-            async for e in orchestrator.run_pipeline(IMAGES, contact_id=None)
+            async for e in orchestrator.run_pipeline(IMAGES, contact_id=None, device_id="test-device")
         ]
 
     event_types = asyncio.run(run())
@@ -52,7 +52,7 @@ def test_pipeline_produces_valid_result() -> None:
         )
         event_types: list[str] = []
         final_result: SynthesisResult | None = None
-        async for event in orchestrator.run_pipeline(IMAGES, contact_id=None):
+        async for event in orchestrator.run_pipeline(IMAGES, contact_id=None, device_id="test-device"):
             event_types.append(event.type)
             if event.type == "synthesis_done" and event.payload:
                 final_result = SynthesisResult.model_validate(event.payload)
@@ -94,7 +94,7 @@ def test_debate_agents_run_concurrently() -> None:
         )
         start = time.monotonic()
         done_count = 0
-        async for event in orchestrator.run_pipeline(IMAGES, contact_id=None):
+        async for event in orchestrator.run_pipeline(IMAGES, contact_id=None, device_id="test-device"):
             if event.type == "agent_done":
                 done_count += 1
                 if done_count == 3:

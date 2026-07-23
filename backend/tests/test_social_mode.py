@@ -69,7 +69,7 @@ def test_pipeline_threads_a_social_mode_override_into_every_debate_stage_prompt(
             debate_client=RecordingDebateClient(),
             memory_store=NoOpMemoryStore(),
         )
-        async for _ in orchestrator.run_pipeline(IMAGES, contact_id=None, mode="direct"):
+        async for _ in orchestrator.run_pipeline(IMAGES, contact_id=None, device_id="test-device", mode="direct"):
             pass
 
     asyncio.run(run())
