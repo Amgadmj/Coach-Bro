@@ -1,6 +1,6 @@
-# Bro Coach web
+# Bro Code web
 
-Next.js frontend built from the Claude Design handoff (`Bro Coach - Unified MVP Screens`), on the Dusk v2.1 design system (`../docs/design/design.md`). Tailwind for tokens/styling, Framer Motion for the debate reveal and clay-button motion, Zustand for session + analysis state.
+Next.js frontend built from the Claude Design handoff (`Bro Code - Unified MVP Screens`), on the Dusk v2.1 design system (`../docs/design/design.md`). Tailwind for tokens/styling, Framer Motion for the debate reveal and clay-button motion, Zustand for session + analysis state.
 
 ## Run it
 

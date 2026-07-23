@@ -49,10 +49,10 @@ export default function RecapScreen() {
     const text =
       `${t("recap.nightEnergy", { mode: t(`modes.${mode}.name`) })}\n` +
       `${t("recap.bestLineDropped")}: ${t("recap.demoQuote")}\n` +
-      `— Bro Coach`;
+      `— Bro Code`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: `${t("recap.title")} — Bro Coach`, text });
+        await navigator.share({ title: `${t("recap.title")} — Bro Code`, text });
       } else {
         await navigator.clipboard.writeText(text);
         setShared(true);

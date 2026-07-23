@@ -92,10 +92,10 @@ export default function ResultScreen() {
     const text =
       `${t("result.attractionGauge")}: ${result.attraction_level * 10}/100\n` +
       `${t("result.lesson")}: ${result.coaching_lesson}\n` +
-      `— Bro Coach`;
+      `— Bro Code`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: `${t("result.title")} — Bro Coach`, text });
+        await navigator.share({ title: `${t("result.title")} — Bro Code`, text });
       } else {
         await navigator.clipboard.writeText(text);
         setShared(true);

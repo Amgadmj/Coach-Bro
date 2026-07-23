@@ -199,7 +199,7 @@ const en: Dict = {
     back: "Back",
     seeAll: "See all",
     offlineMessage: "No connection - check your network and try again.",
-    installTitle: "Install Bro Coach for quick access",
+    installTitle: "Install Bro Code for quick access",
     installAction: "Install",
     installDismiss: "Not now",
   },
@@ -321,7 +321,7 @@ const en: Dict = {
   },
   tutorial: {
     welcomeTitle: "Meet your wingman",
-    welcomeBody: "Bro Coach reads the room for you and turns it into one clear next move.",
+    welcomeBody: "Bro Code reads the room for you and turns it into one clear next move.",
     welcomePoint1: "Paste a screenshot or describe the situation - three AI coaches debate it live.",
     welcomePoint2:
       "Arthur (frame), Clara (psychology), and Leo (charm) argue it out, then one Synthesizer gives you a single best response - never negging, never games.",
@@ -378,7 +378,7 @@ const es: Dict = {
     back: "Atrás",
     seeAll: "Ver todo",
     offlineMessage: "Sin conexión - revisa tu red e inténtalo de nuevo.",
-    installTitle: "Instala Bro Coach para acceso rápido",
+    installTitle: "Instala Bro Code para acceso rápido",
     installAction: "Instalar",
     installDismiss: "Ahora no",
   },
@@ -500,7 +500,7 @@ const es: Dict = {
   },
   tutorial: {
     welcomeTitle: "Conoce a tu wingman",
-    welcomeBody: "Bro Coach lee el ambiente por ti y lo convierte en un solo paso claro.",
+    welcomeBody: "Bro Code lee el ambiente por ti y lo convierte en un solo paso claro.",
     welcomePoint1: "Pega una captura o describe la situación - tres coaches de IA la debaten en vivo.",
     welcomePoint2:
       "Arthur (actitud), Clara (psicología) y Leo (encanto) discuten, y luego un Sintetizador te da una sola mejor respuesta - sin negs, sin juegos.",
@@ -557,7 +557,7 @@ const fr: Dict = {
     back: "Retour",
     seeAll: "Tout voir",
     offlineMessage: "Pas de connexion - vérifie ton réseau et réessaie.",
-    installTitle: "Installe Bro Coach pour un accès rapide",
+    installTitle: "Installe Bro Code pour un accès rapide",
     installAction: "Installer",
     installDismiss: "Pas maintenant",
   },
@@ -679,7 +679,7 @@ const fr: Dict = {
   },
   tutorial: {
     welcomeTitle: "Découvre ton wingman",
-    welcomeBody: "Bro Coach lit l'ambiance pour toi et la transforme en une action claire.",
+    welcomeBody: "Bro Code lit l'ambiance pour toi et la transforme en une action claire.",
     welcomePoint1: "Colle une capture ou décris la situation - trois coachs IA en débattent en direct.",
     welcomePoint2:
       "Arthur (posture), Clara (psychologie) et Leo (charme) débattent, puis un Synthétiseur te donne une seule meilleure réponse - jamais de neg, jamais de manipulation.",
@@ -737,7 +737,7 @@ const pt: Dict = {
     back: "Voltar",
     seeAll: "Ver tudo",
     offlineMessage: "Sem conexão - verifique sua rede e tente novamente.",
-    installTitle: "Instale o Bro Coach para acesso rápido",
+    installTitle: "Instale o Bro Code para acesso rápido",
     installAction: "Instalar",
     installDismiss: "Agora não",
   },
@@ -859,7 +859,7 @@ const pt: Dict = {
   },
   tutorial: {
     welcomeTitle: "Conheça seu wingman",
-    welcomeBody: "O Bro Coach lê o ambiente por você e transforma isso em um próximo passo claro.",
+    welcomeBody: "O Bro Code lê o ambiente por você e transforma isso em um próximo passo claro.",
     welcomePoint1: "Cole um print ou descreva a situação - três coaches de IA debatem em tempo real.",
     welcomePoint2:
       "Arthur (postura), Clara (psicologia) e Leo (charme) discutem, e então um Sintetizador te dá uma única melhor resposta - sem climão, sem joguinho.",
@@ -916,7 +916,7 @@ const hi: Dict = {
     back: "वापस",
     seeAll: "सभी देखें",
     offlineMessage: "कोई कनेक्शन नहीं - अपना नेटवर्क जांचें और फिर कोशिश करें।",
-    installTitle: "जल्दी एक्सेस के लिए Bro Coach इंस्टॉल करें",
+    installTitle: "जल्दी एक्सेस के लिए Bro Code इंस्टॉल करें",
     installAction: "इंस्टॉल करें",
     installDismiss: "अभी नहीं",
   },
@@ -1038,7 +1038,7 @@ const hi: Dict = {
   },
   tutorial: {
     welcomeTitle: "अपने विंगमैन से मिलें",
-    welcomeBody: "Bro Coach माहौल पढ़ता है और उसे एक साफ़ अगले कदम में बदल देता है।",
+    welcomeBody: "Bro Code माहौल पढ़ता है और उसे एक साफ़ अगले कदम में बदल देता है।",
     welcomePoint1: "स्क्रीनशॉट पेस्ट करें या स्थिति बताएं - तीन AI कोच लाइव बहस करते हैं।",
     welcomePoint2:
       "आर्थर (फ़्रेम), क्लारा (साइकोलॉजी) और लियो (चार्म) बहस करते हैं, फिर एक सिंथेसाइज़र आपको एक बेस्ट जवाब देता है - कभी नेगिंग नहीं, कभी गेम्स नहीं।",
@@ -1092,7 +1092,7 @@ const ar: Dict = {
     back: "رجوع",
     seeAll: "عرض الكل",
     offlineMessage: "لا يوجد اتصال - تحقق من شبكتك وحاول مرة أخرى.",
-    installTitle: "ثبّت Bro Coach للوصول السريع",
+    installTitle: "ثبّت Bro Code للوصول السريع",
     installAction: "تثبيت",
     installDismiss: "ليس الآن",
   },
@@ -1214,7 +1214,7 @@ const ar: Dict = {
   },
   tutorial: {
     welcomeTitle: "تعرّف على مساعدك",
-    welcomeBody: "Bro Coach يقرأ الموقف بدلاً منك ويحوّله إلى خطوة واحدة واضحة.",
+    welcomeBody: "Bro Code يقرأ الموقف بدلاً منك ويحوّله إلى خطوة واحدة واضحة.",
     welcomePoint1: "أرفق لقطة شاشة أو صف الموقف - ثلاثة مدربين بالذكاء الاصطناعي يتناقشون مباشرة.",
     welcomePoint2:
       "آرثر (الهيبة) وكلارا (علم النفس) وليو (السحر) يتجادلون، ثم يعطيك المُلخِّص رداً واحداً أفضل - بدون تحقير وبدون ألاعيب أبداً.",

@@ -5,8 +5,8 @@ import type { MetadataRoute } from "next";
 // without browser chrome - the core of the "feels like a native app" ask.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Bro Coach",
-    short_name: "Bro Coach",
+    name: "Bro Code",
+    short_name: "Bro Code",
     description: "Your digital wingman - three AI takes, one calibrated answer.",
     start_url: "/",
     display: "standalone",
