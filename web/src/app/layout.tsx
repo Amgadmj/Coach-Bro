@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans text-ink">
         <ModeSync />
         <ServiceWorkerRegister />
-        <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-28 pt-4">
+        <div className="app-shell mx-auto flex min-h-dvh w-full max-w-md flex-col px-5">
           {children}
         </div>
         <Analytics />

@@ -31,8 +31,7 @@ const TABS = [
     key: "live",
     icon: (
       <svg width="18" height="18" viewBox="0 0 18 18" className="mx-auto mb-0.5 block">
-        <circle cx="9" cy="9" r="6" fill="none" stroke="currentColor" strokeWidth="2" />
-        <circle cx="9" cy="9" r="2.4" fill="currentColor" />
+        <circle cx="9" cy="9" r="6" fill="currentColor" />
       </svg>
     ),
   },
@@ -53,7 +52,10 @@ export function TabBar() {
   const pathname = usePathname();
   const t = useT();
   return (
-    <nav className="fixed inset-x-0 bottom-5 z-40 mx-auto flex w-[min(92%,26rem)] justify-around rounded-full border border-glass-line bg-glass-strong px-2 py-2.5 shadow-tab backdrop-blur-xl">
+    <nav
+      className="fixed inset-x-0 bottom-5 z-40 mx-auto flex w-[min(92%,26rem)] justify-around rounded-full border border-glass-line bg-glass-strong px-2 py-2.5 shadow-tab backdrop-blur-xl"
+      style={{ paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom, 0px))" }}
+    >
       {TABS.map((tab) => {
         const active = pathname === tab.href;
         return (
