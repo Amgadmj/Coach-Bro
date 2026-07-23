@@ -32,7 +32,24 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() => caches.match(request).then((cached) => cached || caches.match("/"))),
+      fetch(request).catch(() =>
+        caches
+          .match(request)
+          .then((cached) => cached || caches.match("/"))
+          // Belt-and-suspenders: if the precache itself is unavailable (e.g. the
+          // install step never completed, or storage was evicted), fall back to
+          // a real Response instead of resolving undefined - an undefined
+          // respondWith() value surfaces the browser's own offline error page,
+          // which is the opposite of a controlled fallback.
+          .then(
+            (cached) =>
+              cached ||
+              new Response("You're offline and no cached page is available.", {
+                status: 503,
+                headers: { "Content-Type": "text/plain" },
+              }),
+          ),
+      ),
     );
     return;
   }
