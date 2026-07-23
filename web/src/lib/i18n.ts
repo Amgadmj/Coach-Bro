@@ -120,11 +120,15 @@ export interface Dict {
     bestLineDropped: string;
     demoQuote: string;
     shareRecap: string;
+    shareConfirmTitle: string;
     shareDisclaimer: string;
+    shareConfirm: string;
+    shareCancel: string;
+    shareCopied: string;
   };
   playbook: { before: string; homeLink: string; after: string };
-  profile: { before: string; recapLink: string; after: string };
-  language: { title: string; subtitle: string; autoNote: string };
+  profile: { emptyTitle: string; emptyBody: string };
+  language: { title: string; subtitle: string; autoNote: string; updated: string };
 }
 
 const en: Dict = {
@@ -220,7 +224,11 @@ const en: Dict = {
     bestLineDropped: "Best line dropped",
     demoQuote: "“Careful, if you keep quoting my favorite book at me I'm going to have to buy you a coffee.”",
     shareRecap: "Share recap",
+    shareConfirmTitle: "Before you share",
     shareDisclaimer: "Shares as a watermarked story card — the summary, never the raw conversation.",
+    shareConfirm: "Share",
+    shareCancel: "Cancel",
+    shareCopied: "Copied a shareable summary — paste it anywhere.",
   },
   playbook: {
     before: "Mission library coming soon. For now, start from a mission on ",
@@ -228,14 +236,14 @@ const en: Dict = {
     after: " or jump into a live read.",
   },
   profile: {
-    before: "Stats, streaks, and settings land here. Tonight's ",
-    recapLink: "recap",
-    after: " has the demo of where this is headed.",
+    emptyTitle: "No stats yet",
+    emptyBody: "Complete your first read tonight and your streak starts here.",
   },
   language: {
     title: "Language",
     subtitle: "Choose the language for the app and for your reads.",
     autoNote: "Auto detects the conversation's language from the screenshot automatically.",
+    updated: "Language updated",
   },
 };
 
@@ -332,7 +340,11 @@ const es: Dict = {
     bestLineDropped: "Mejor frase de la noche",
     demoQuote: "“Cuidado, si sigues citando mi libro favorito voy a tener que invitarte un café.”",
     shareRecap: "Compartir resumen",
+    shareConfirmTitle: "Antes de compartir",
     shareDisclaimer: "Se comparte como una tarjeta con marca de agua — solo el resumen, nunca la conversación real.",
+    shareConfirm: "Compartir",
+    shareCancel: "Cancelar",
+    shareCopied: "Se copió un resumen para compartir — pégalo donde quieras.",
   },
   playbook: {
     before: "La biblioteca de misiones llega pronto. Por ahora, empieza una misión en ",
@@ -340,14 +352,14 @@ const es: Dict = {
     after: " o entra a una lectura en vivo.",
   },
   profile: {
-    before: "Aquí irán tus estadísticas, rachas y ajustes. El ",
-    recapLink: "resumen",
-    after: " de esta noche muestra hacia dónde va esto.",
+    emptyTitle: "Aún no hay estadísticas",
+    emptyBody: "Completa tu primera lectura esta noche y tu racha empieza aquí.",
   },
   language: {
     title: "Idioma",
     subtitle: "Elige el idioma de la app y de tus lecturas.",
     autoNote: "Auto detecta el idioma de la conversación directamente desde la captura.",
+    updated: "Idioma actualizado",
   },
 };
 
@@ -444,7 +456,11 @@ const fr: Dict = {
     bestLineDropped: "Meilleure phrase de la soirée",
     demoQuote: "«Attention, si tu continues à citer mon livre préféré, je vais devoir t'offrir un café.»",
     shareRecap: "Partager le récap",
+    shareConfirmTitle: "Avant de partager",
     shareDisclaimer: "Partagé comme une carte avec filigrane — juste le résumé, jamais la conversation réelle.",
+    shareConfirm: "Partager",
+    shareCancel: "Annuler",
+    shareCopied: "Résumé partageable copié — colle-le où tu veux.",
   },
   playbook: {
     before: "La bibliothèque de missions arrive bientôt. En attendant, lance une mission depuis ",
@@ -452,14 +468,14 @@ const fr: Dict = {
     after: " ou passe à une lecture en direct.",
   },
   profile: {
-    before: "Tes stats, séries et réglages arriveront ici. Le ",
-    recapLink: "récap",
-    after: " de ce soir montre déjà où ça va.",
+    emptyTitle: "Pas encore de stats",
+    emptyBody: "Termine ta première lecture ce soir et ta série commence ici.",
   },
   language: {
     title: "Langue",
     subtitle: "Choisis la langue de l'application et de tes lectures.",
     autoNote: "Auto détecte automatiquement la langue de la conversation depuis la capture.",
+    updated: "Langue mise à jour",
   },
 };
 
@@ -556,7 +572,11 @@ const pt: Dict = {
     bestLineDropped: "Melhor frase da noite",
     demoQuote: "“Cuidado, se continuar citando meu livro favorito vou ter que te pagar um café.”",
     shareRecap: "Compartilhar resumo",
+    shareConfirmTitle: "Antes de compartilhar",
     shareDisclaimer: "Compartilhado como um card com marca d'água — só o resumo, nunca a conversa real.",
+    shareConfirm: "Compartilhar",
+    shareCancel: "Cancelar",
+    shareCopied: "Resumo compartilhável copiado — cole onde quiser.",
   },
   playbook: {
     before: "A biblioteca de missões chega em breve. Por enquanto, comece uma missão em ",
@@ -564,14 +584,14 @@ const pt: Dict = {
     after: " ou vá direto para uma leitura ao vivo.",
   },
   profile: {
-    before: "Estatísticas, sequências e ajustes vão aparecer aqui. O ",
-    recapLink: "resumo",
-    after: " de hoje já mostra pra onde isso vai.",
+    emptyTitle: "Ainda sem estatísticas",
+    emptyBody: "Complete sua primeira leitura hoje à noite e sua sequência começa aqui.",
   },
   language: {
     title: "Idioma",
     subtitle: "Escolha o idioma do app e das suas leituras.",
     autoNote: "Auto detecta automaticamente o idioma da conversa a partir do print.",
+    updated: "Idioma atualizado",
   },
 };
 
@@ -668,7 +688,11 @@ const hi: Dict = {
     bestLineDropped: "रात की सबसे अच्छी लाइन",
     demoQuote: "“संभल जाओ, मेरी पसंदीदा किताब का ज़िक्र करती रहोगी तो कॉफ़ी पिलानी पड़ेगी।”",
     shareRecap: "रीकैप शेयर करें",
+    shareConfirmTitle: "शेयर करने से पहले",
     shareDisclaimer: "यह वॉटरमार्क वाले कार्ड की तरह शेयर होता है — सिर्फ़ समरी, असली बातचीत कभी नहीं।",
+    shareConfirm: "शेयर करें",
+    shareCancel: "रद्द करें",
+    shareCopied: "शेयर करने लायक समरी कॉपी हो गई — कहीं भी पेस्ट करें।",
   },
   playbook: {
     before: "मिशन लाइब्रेरी जल्द आ रही है। फ़िलहाल, ",
@@ -676,14 +700,14 @@ const hi: Dict = {
     after: " पर किसी मिशन से शुरू करें या लाइव रीड आज़माएं।",
   },
   profile: {
-    before: "स्टैट्स, स्ट्रीक्स और सेटिंग्स यहां आएंगी। आज रात का ",
-    recapLink: "रीकैप",
-    after: " दिखाता है कि यह किस ओर जा रहा है।",
+    emptyTitle: "अभी कोई स्टैट्स नहीं",
+    emptyBody: "आज रात अपनी पहली रीड पूरी करें और यहीं से आपकी स्ट्रीक शुरू होगी।",
   },
   language: {
     title: "भाषा",
     subtitle: "ऐप और अपनी रीड्स के लिए भाषा चुनें।",
     autoNote: "ऑटो स्क्रीनशॉट से बातचीत की भाषा खुद पहचान लेता है।",
+    updated: "भाषा अपडेट हो गई",
   },
 };
 
@@ -780,7 +804,11 @@ const ar: Dict = {
     bestLineDropped: "أفضل جملة الليلة",
     demoQuote: "“انتبه، إذا استمريت تقتبس من كتابي المفضل سأضطر لأدعوك لقهوة.”",
     shareRecap: "مشاركة الملخص",
+    shareConfirmTitle: "قبل المشاركة",
     shareDisclaimer: "تتم المشاركة كبطاقة تحمل علامة مائية — الملخص فقط، وليس المحادثة الفعلية أبداً.",
+    shareConfirm: "مشاركة",
+    shareCancel: "إلغاء",
+    shareCopied: "تم نسخ ملخص قابل للمشاركة — الصقه في أي مكان.",
   },
   playbook: {
     before: "مكتبة المهام قريباً. في الوقت الحالي، ابدأ مهمة من ",
@@ -788,14 +816,14 @@ const ar: Dict = {
     after: " أو جرّب قراءة مباشرة.",
   },
   profile: {
-    before: "الإحصائيات والسلاسل والإعدادات ستظهر هنا. ",
-    recapLink: "ملخص",
-    after: " الليلة يوضح إلى أين يتجه هذا.",
+    emptyTitle: "لا توجد إحصائيات بعد",
+    emptyBody: "أكمل قراءتك الأولى الليلة ومن هنا تبدأ سلسلتك.",
   },
   language: {
     title: "اللغة",
     subtitle: "اختر لغة التطبيق ولغة قراءاتك.",
     autoNote: "يكتشف \"تلقائي\" لغة المحادثة من لقطة الشاشة تلقائياً.",
+    updated: "تم تحديث اللغة",
   },
 };
 
