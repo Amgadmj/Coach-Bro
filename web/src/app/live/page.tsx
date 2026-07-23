@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { GlassCard } from "@/components/GlassCard";
 import { TabBar } from "@/components/TabBar";
@@ -11,11 +11,14 @@ import { useT } from "@/lib/i18n";
 import type { ContactSummary, SuggestCategory } from "@/lib/types";
 import { clsx } from "@/lib/clsx";
 
+// Kept only as the lookup table for the `?mission=` URL param (see the
+// `useEffect` below) - the on-page mission chip row that used to render from
+// this list has moved to Home/Playbook per the nav-model remediation (R3).
 const MISSION_KEYS = [
-  { key: "icebreaker", category: "icebreaker", bg: "var(--hype-soft)", color: "var(--hype)" },
-  { key: "vibeShift", category: "vibe_shift", bg: "var(--chill-soft)", color: "var(--chill)" },
-  { key: "exitStrategy", category: "exit_strategy", bg: "var(--direct-soft)", color: "var(--direct)" },
-] as const satisfies readonly { key: string; category: SuggestCategory; bg: string; color: string }[];
+  { key: "icebreaker", category: "icebreaker" },
+  { key: "vibeShift", category: "vibe_shift" },
+  { key: "exitStrategy", category: "exit_strategy" },
+] as const satisfies readonly { key: string; category: SuggestCategory }[];
 
 /** Mirrors backend/main.py's MAX_IMAGES_PER_ANALYZE default - catching this
  * client-side gives an immediate, friendly message instead of a failed
@@ -28,8 +31,9 @@ function fileKey(f: File): string {
   return `${f.name}:${f.size}:${f.lastModified}`;
 }
 
-export default function LiveScenarioInput() {
+function LiveScenarioInput() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const runAnalysis = useAnalysis((s) => s.run);
   const t = useT();
   const [scenario, setScenario] = useState("");
@@ -37,17 +41,31 @@ export default function LiveScenarioInput() {
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
   const [screenshots, setScreenshots] = useState<File[]>([]);
   const [attachError, setAttachError] = useState<string | null>(null);
-  // Set by tapping a mission chip; cleared the moment the user hand-edits the
-  // scenario text afterward (see the textarea's onChange below) so an edited
-  // message reverts to the default full-debate send instead of silently still
-  // routing to the lightweight /say suggestions.
+  // Set by the ?mission= deep link on mount (see effect below), or (formerly)
+  // by tapping a mission chip on this page; cleared the moment the user
+  // hand-edits the scenario text afterward (see the textarea's onChange
+  // below) so an edited message reverts to the default full-debate send
+  // instead of silently still routing to the lightweight /say suggestions.
   const [missionCategory, setMissionCategory] = useState<SuggestCategory | null>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [readsExpanded, setReadsExpanded] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchContacts().then(setContacts).catch(() => setContacts([]));
   }, []);
+
+  // R3: Home and Playbook link here via `/live?mission=<key>` instead of this
+  // page hosting its own mission-picker chips. Reproduce exactly what tapping
+  // the old chip used to do, once, on load.
+  useEffect(() => {
+    const missionParam = searchParams.get("mission");
+    const chip = MISSION_KEYS.find((m) => m.key === missionParam);
+    if (!chip) return;
+    setMissionCategory(chip.category);
+    setScenario(`${t(`missions.${chip.key}.title`)}: `);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   function addFiles(files: FileList | null) {
     if (!files) return;
@@ -92,30 +110,52 @@ export default function LiveScenarioInput() {
 
   return (
     <main>
-      <div className="flex items-center justify-between">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--romantic),var(--direct))] font-display text-xs font-bold text-white">
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          aria-label="Open profile" /* [inline-copy] no existing i18n key fits this aria-label */
+          onClick={() => router.push("/profile")}
+          className="interactive tap-expand flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--romantic),var(--direct))] font-display text-xs font-bold text-white"
+        >
           A
-        </div>
-        <h1 className="font-display text-base font-extrabold">Bro Coach</h1>
-        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-glass-line bg-glass font-extrabold text-ink2">
-          ⋯
-        </div>
+        </button>
+        <h1 className="min-w-0 flex-1 truncate text-center font-display text-base font-extrabold">
+          Bro Coach
+        </h1>
+        {/* R4: the `⋯` overflow control had no defined destination anywhere in
+            the app (no report/block/mute/settings menu exists for Live) - per
+            the ship rule, removed rather than shipped as a no-op. This empty
+            spacer keeps the title visually centered, mirroring TopBar's
+            `<div className="w-9" />` no-action spacer. */}
+        <div className="h-8 w-8 flex-none" />
       </div>
 
       <div className="mt-4 flex items-baseline justify-between">
         <h2 className="font-display text-[15px] font-extrabold">{t("live.yourReads")}</h2>
-        <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-accent-deep">
-          {t("common.seeAll")}
-        </span>
+        <button
+          type="button"
+          onClick={() => setReadsExpanded((v) => !v)}
+          className="interactive tap-expand text-[10px] font-bold uppercase tracking-[0.08em] text-accent-deep"
+        >
+          {/* [inline-copy] "SHOW LESS" has no existing i18n key; common.seeAll covers the other state */}
+          {readsExpanded ? "SHOW LESS" : t("common.seeAll")}
+        </button>
       </div>
-      <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [-webkit-mask-image:linear-gradient(90deg,#000_88%,transparent)]">
+      <div
+        className={clsx(
+          "mt-2 flex gap-2 pb-1",
+          readsExpanded
+            ? "flex-wrap"
+            : "overflow-x-auto [-webkit-mask-image:linear-gradient(90deg,#000_88%,transparent)]",
+        )}
+      >
         {contacts.map((c) => (
           <button
             key={c.id}
             type="button"
             onClick={() => setSelectedContact(selectedContact === c.id ? null : c.id)}
             className={clsx(
-              "flex flex-none items-center gap-1.5 rounded-full border bg-glass py-1 pl-1 pr-3",
+              "interactive flex flex-none items-center gap-1.5 rounded-full border bg-glass py-1 pl-1 pr-3",
               selectedContact === c.id ? "border-accent" : "border-glass-line",
             )}
           >
@@ -145,7 +185,7 @@ export default function LiveScenarioInput() {
             );
             setSelectedContact(id);
           }}
-          className="flex flex-none items-center rounded-full border border-dashed border-hairline bg-glass px-3.5 py-1 text-[11px] font-bold text-ink3"
+          className="interactive flex flex-none items-center rounded-full border border-dashed border-hairline bg-glass px-3.5 py-1 text-[11px] font-bold text-ink3"
         >
           {t("live.newChip")}
         </button>
@@ -192,7 +232,7 @@ export default function LiveScenarioInput() {
                     type="button"
                     aria-label={t("live.removeScreenshot")}
                     onClick={() => removeFile(i)}
-                    className="flex h-4 w-4 items-center justify-center rounded-full text-[11px] leading-none text-accent-deep hover:bg-white/40"
+                    className="interactive flex h-4 w-4 items-center justify-center rounded-full text-[11px] leading-none text-accent-deep hover:bg-white/40"
                   >
                     ×
                   </button>
@@ -226,7 +266,7 @@ export default function LiveScenarioInput() {
               type="button"
               onClick={() => fileRef.current?.click()}
               className={clsx(
-                "whitespace-nowrap rounded-full border px-3.5 py-2 font-display text-[10.5px] font-bold",
+                "interactive whitespace-nowrap rounded-full border px-3.5 py-2 font-display text-[10.5px] font-bold",
                 screenshots.length > 0 ? "border-accent text-accent-deep" : "border-hairline bg-glass text-ink2",
               )}
             >
@@ -239,7 +279,7 @@ export default function LiveScenarioInput() {
               aria-label={t("live.send")}
               onClick={submit}
               disabled={screenshots.length === 0 && !scenario.trim()}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(160deg,var(--mode),var(--mode-deep))] shadow-clay transition-transform active:translate-y-0.5 disabled:opacity-40"
+              className="interactive flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(160deg,var(--mode),var(--mode-deep))] shadow-clay transition-transform active:translate-y-0.5 disabled:opacity-40"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" className="rtl:-scale-x-100">
                 <path d="M3 2 L11 7 L3 12 Z" fill="#fff" />
@@ -252,28 +292,15 @@ export default function LiveScenarioInput() {
         {attachError ?? t("live.screenshotHint")}
       </p>
 
-      <h2 className="mt-4 font-display text-[15px] font-extrabold">{t("live.orMission")}</h2>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {MISSION_KEYS.map((chip) => (
-          <button
-            key={chip.key}
-            type="button"
-            onClick={() => {
-              setMissionCategory(chip.category);
-              setScenario(`${t(`missions.${chip.key}.title`)}: `);
-            }}
-            className={clsx(
-              "rounded-full px-3.5 py-2 font-display text-[11px] font-bold",
-              missionCategory === chip.category && "ring-2 ring-offset-1",
-            )}
-            style={{ background: chip.bg, color: chip.color }}
-          >
-            {t(`missions.${chip.key}.title`)}
-          </button>
-        ))}
-      </div>
-
       <TabBar />
     </main>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <LiveScenarioInput />
+    </Suspense>
   );
 }
