@@ -62,6 +62,16 @@ export const useSession = create<SessionState>()(
   ),
 );
 
+/** The default assumed gender for a contact whose own match_gender hasn't
+ * been set yet (see lib/api.ts::setContactGender) - null for "everyone" or
+ * unset, since guessing would be worse than the neutral they/them fallback
+ * backend/agents/prompts.py::_pronoun_set already applies for null. */
+export function defaultMatchGenderFrom(interestedIn: InterestedIn | null): Gender | null {
+  if (interestedIn === "men") return "male";
+  if (interestedIn === "women") return "female";
+  return null;
+}
+
 /** Stamps the session's Social Mode tint onto :root (--mode/--mode-soft/--mode-deep). */
 export function applyModeVars(mode: SocialMode) {
   const root = document.documentElement;

@@ -22,7 +22,7 @@ from models.schemas import ConversationContext
 
 DEFAULT_VISION_MODEL = "claude-sonnet-5"
 # Seen live: synthesis has 6 free-text/array fields (dynamic_analysis,
-# what_she_is_thinking, best_response, alternative_responses, coaching_lesson...)
+# what_they_are_thinking, best_response, alternative_responses, coaching_lesson...)
 # and the model occasionally overwrites one of the earlier ones well past its
 # instructed length (the exact reason those fields already have defensive
 # post-hoc truncation - see models/schemas.py) - it still burns real output
@@ -87,7 +87,7 @@ def _recover_self_nested_messages(raw: dict[str, Any]) -> dict[str, Any]:
     actual array - e.g. {"messages": "{\\"messages\\": [...], \\"detected_language\\": ...}"}.
     Not tied to one specific prompt wording (reproduced with two different prompt
     phrasings), so a prompt tweak can't reliably prevent it - unwrap defensively
-    instead of crashing the whole read, same rationale as the what_she_is_thinking
+    instead of crashing the whole read, same rationale as the what_they_are_thinking
     single-string coercion in models/schemas.py."""
     messages_value = raw.get("messages")
     if isinstance(messages_value, str):

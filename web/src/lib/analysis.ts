@@ -4,7 +4,7 @@ import { create } from "zustand";
 
 import { analyzeInput } from "./api";
 import { useSession } from "./session";
-import type { AgentName, DebateEvent, MemoryUpdate, SynthesisResult } from "./types";
+import type { AgentName, DebateEvent, Gender, MemoryUpdate, SynthesisResult } from "./types";
 
 export type AgentStatus = "pending" | "active" | "done";
 
@@ -45,6 +45,12 @@ interface AnalysisState {
     images?: File[];
     textContent?: string | null;
     contactId?: string | null;
+    /** Resolved by the caller - the selected contact's own match_gender
+     * override if set, else the session's interestedIn default (see
+     * lib/session.ts::defaultMatchGenderFrom). The user's own gender doesn't
+     * need to be passed in - read directly from the session below, same as
+     * language/mode. */
+    matchGender?: Gender | null;
   }) => Promise<void>;
   reset: () => void;
 }
@@ -71,7 +77,7 @@ export const useAnalysis = create<AnalysisState>((set, get) => ({
 
   reset: () => set({ ...INITIAL, agentStatus: { ...INITIAL.agentStatus }, messages: [] }),
 
-  run: async ({ images = [], textContent = null, contactId = null }) => {
+  run: async ({ images = [], textContent = null, contactId = null, matchGender = null }) => {
     const trimmedText = textContent?.trim() || null;
     set({
       ...INITIAL,
@@ -132,8 +138,16 @@ export const useAnalysis = create<AnalysisState>((set, get) => ({
     }
 
     try {
-      const { language, mode } = useSession.getState();
-      for await (const event of analyzeInput(images, trimmedText ?? undefined, contactId, language, mode)) {
+      const { language, mode, gender } = useSession.getState();
+      for await (const event of analyzeInput(
+        images,
+        trimmedText ?? undefined,
+        contactId,
+        language,
+        mode,
+        gender,
+        matchGender,
+      )) {
         await applyEvent(event);
       }
       // stream ended without a synthesis_done (backend crash mid-run, dropped

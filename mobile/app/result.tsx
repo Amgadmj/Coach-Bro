@@ -28,8 +28,8 @@ export default function ResultScreen() {
           <Text style={styles.body}>{result.dynamic_analysis}</Text>
         </Section>
 
-        <Section title="What she's likely thinking">
-          {result.what_she_is_thinking.map((thought, i) => (
+        <Section title="What they're likely thinking">
+          {result.what_they_are_thinking.map((thought, i) => (
             <Text key={i} style={styles.bullet}>
               • {thought}
             </Text>

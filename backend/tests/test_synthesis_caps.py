@@ -8,7 +8,7 @@ def _make(**overrides: object) -> SynthesisResult:
         attraction_level=6,
         dynamic_summary="fine",
         dynamic_analysis="fine",
-        what_she_is_thinking=["a thought"],
+        what_they_are_thinking=["a thought"],
         best_response="text",
         alternative_responses=AlternativeResponses(playful="p", direct="d"),
         coaching_lesson="fine",
@@ -46,17 +46,17 @@ def test_very_long_headline_is_hard_truncated_by_char_count() -> None:
     assert result.dynamic_summary.endswith("…")
 
 
-def test_what_she_is_thinking_splits_tagged_values_collapsed_into_one_string() -> None:
+def test_what_they_are_thinking_splits_tagged_values_collapsed_into_one_string() -> None:
     # Seen live: forced tool-use collapsed the array into one string that still
     # tried to represent multiple thoughts via "<value>...</value>" wrapping.
     blob = "\n<value>Is he confident or just eager?</value>\n<value>I like this</value>\n"
-    result = _make(what_she_is_thinking=blob)
-    assert result.what_she_is_thinking == [
+    result = _make(what_they_are_thinking=blob)
+    assert result.what_they_are_thinking == [
         "Is he confident or just eager?",
         "I like this",
     ]
 
 
-def test_what_she_is_thinking_wraps_plain_collapsed_string_as_single_item() -> None:
-    result = _make(what_she_is_thinking="just one plain thought")
-    assert result.what_she_is_thinking == ["just one plain thought"]
+def test_what_they_are_thinking_wraps_plain_collapsed_string_as_single_item() -> None:
+    result = _make(what_they_are_thinking="just one plain thought")
+    assert result.what_they_are_thinking == ["just one plain thought"]

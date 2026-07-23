@@ -118,7 +118,7 @@ export default function ResultScreen() {
       <GlassCard className="mt-3 rounded-[20px] p-3.5">
         <div className="font-display text-[13px] font-extrabold">{t("result.thinkingHeading")}</div>
         <ul className="mt-1 text-[11.5px] leading-relaxed text-ink2">
-          {result.what_she_is_thinking.map((thought, i) => (
+          {result.what_they_are_thinking.map((thought, i) => (
             <li key={i}>· {thought}</li>
           ))}
         </ul>

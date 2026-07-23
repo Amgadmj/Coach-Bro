@@ -7,7 +7,7 @@ Every analysis run is a single HTTP request (`POST /analyze`) that stays open as
 1. **Context Extraction (Vision)** — a multimodal LLM call parses the uploaded screenshot into structured messages: text, sender (`user` vs `match`), bubble color, timestamp, and response lag.
 2. **Parallel Swarm Debate** — the extracted context (plus any Relationship Memory for this contact) is broadcast concurrently to three persona agents. They run via `asyncio.gather`, not sequential turns — nothing about this step is a "conversation" between the agents, it's fan-out/fan-in.
    - **Arthur** — High-Value Frame Expert.
-   - **Clara** — Female Psychology Specialist.
+   - **Clara** — Psychology Specialist.
    - **Leo** — Flirty Confident Boy.
 3. **Synthesizer Node** — a single "judge" LLM call reads all three opinions, resolves contradictions, and returns the final answer as strict JSON (schema in §3). Arthur dictates boundaries, Clara dictates empathy, Leo dictates final vocabulary.
 4. **Memory Write** — the synthesized result is embedded and upserted into `memory_embeddings` for the contact, so the next screenshot of the same person carries history into stage 2.
@@ -44,8 +44,8 @@ The Synthesizer must return exactly this shape (see `backend/models/schemas.py::
 ```json
 {
   "attraction_level": 7,
-  "dynamic_analysis": "She is throwing a compliance test. Do not validate immediately.",
-  "what_she_is_thinking": ["Testing his frame", "Wants to see if he's needy"],
+  "dynamic_analysis": "They are throwing a compliance test. Do not validate immediately.",
+  "what_they_are_thinking": ["Testing their frame", "Wants to see if the user is needy"],
   "best_response": "The calibrated flirty response...",
   "alternative_responses": {
     "playful": "...",

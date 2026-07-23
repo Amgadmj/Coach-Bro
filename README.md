@@ -13,7 +13,7 @@ Every read gets extracted by vision, then debated by three personas in parallel 
 | | Persona | Job |
 |---|---|---|
 | ♟️ | **Arthur** | High-value frame expert. Calls out neediness, over-investing, and transactional traps. Tells you when to hold your ground. |
-| 🔍 | **Clara** | Female psychology specialist. Decodes the subtext — the push-pull, the compliance test, whether she's testing you or genuinely pulling back. |
+| 🔍 | **Clara** | Psychology specialist. Decodes the subtext — the push-pull, the compliance test, whether they're testing you or genuinely pulling back. |
 | 😏 | **Leo** | The charming one. Turns the analysis into a warm, confident, funny reply. Never negging, never a pickup-artist line. |
 
 A **synthesizer** settles the debate and hands you back:

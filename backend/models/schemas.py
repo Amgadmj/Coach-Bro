@@ -97,7 +97,7 @@ class SynthesisResult(BaseModel):
         description="2-3 sentences of supporting detail, shown only if the user taps to "
         "expand - do not repeat dynamic_summary verbatim."
     )
-    what_she_is_thinking: list[str]
+    what_they_are_thinking: list[str]
     best_response: str
     alternative_responses: AlternativeResponses
     coaching_lesson: str = Field(
@@ -105,7 +105,7 @@ class SynthesisResult(BaseModel):
         "the user voice profile in the prompt, if provided) - not generic coaching-speak."
     )
 
-    @field_validator("what_she_is_thinking", mode="before")
+    @field_validator("what_they_are_thinking", mode="before")
     @classmethod
     def _coerce_single_string_to_list(cls, v: object) -> object:
         # Forced tool-use models occasionally collapse a short list field into a

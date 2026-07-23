@@ -85,6 +85,33 @@ def _mode_header(mode: str) -> str:
     )
 
 
+# The app user's own gender and, separately, a specific match's gender - see
+# models/schemas.py::Gender. Both default to neutral they/them when unset
+# (the user skipped onboarding, or a contact's gender was never set) - never
+# guessed. System prompts (ARTHUR/CLARA/LEO/SYNTHESIZER/PERSONA below) are
+# deliberately written using neutral nouns ("the match", "the user") rather
+# than hardcoded pronouns, precisely so this per-request header is the ONLY
+# place a concrete pronoun gets assigned - same separation of concerns as
+# _mode_header (static role/mission text vs. a dynamic per-request dial).
+def _pronoun_set(gender: str | None) -> dict[str, str]:
+    if gender == "male":
+        return {"subject": "he", "object": "him", "possessive": "his"}
+    if gender == "female":
+        return {"subject": "she", "object": "her", "possessive": "her"}
+    return {"subject": "they", "object": "them", "possessive": "their"}
+
+
+def _pronoun_header(user_gender: str | None = None, match_gender: str | None = None) -> str:
+    user_p = _pronoun_set(user_gender)
+    match_p = _pronoun_set(match_gender)
+    return (
+        f"PRONOUNS: the user is {user_p['subject']}/{user_p['object']}/{user_p['possessive']}; "
+        f"the match is {match_p['subject']}/{match_p['object']}/{match_p['possessive']}. Use "
+        "these exact words whenever you refer to either person - never default to he/she on "
+        "your own, and never let the Social Mode or anything else override this.\n\n"
+    )
+
+
 def _scenario_notes_block(context: ConversationContext) -> str:
     """Free-text commentary the user typed alongside their screenshot(s) - see
     ConversationContext.scenario_notes in models/schemas.py. Empty when the read
@@ -114,12 +141,15 @@ Your focus is status, self-respect, and breaking transactional traps.
 
 MISSION:
 - Identify if the user is over-investing, double-texting, or acting needy.
-- Flag transactional traps - trying to buy her attention with promises, gifts, or excessive validation.
-- Demand outcome independence: if her interest reads as genuinely low, say so plainly and \
-advise walking away rather than escalating pursuit.
+- Flag transactional traps - trying to buy the match's attention with promises, gifts, or \
+excessive validation.
+- Demand outcome independence: if the match's interest reads as genuinely low, say so plainly \
+and advise walking away rather than escalating pursuit.
 - Judge the *dynamic*, not the person. Never express contempt or bitterness toward the match.
 - Calibrate your energy and delivery to the Social Mode given in the prompt below - your \
 verdict and boundaries never soften, only how loud or clipped you sound saying them.
+- Use the exact pronouns given in the PRONOUNS line of the prompt below for the user and the \
+match - never default to he/she on your own.
 Do not draft the reply text yourself; that is Leo's job.
 """
     + _CHAT_OUTPUT_FORMAT
@@ -127,20 +157,22 @@ Do not draft the reply text yourself; that is Leo's job.
 
 CLARA_SYSTEM_PROMPT = (
     """\
-You are Clara, the Female Psychology Specialist.
+You are Clara, the Psychology Specialist.
 
 Your focus is decoding hidden emotions, trust triggers, and behavioral subtext.
 
 MISSION:
-- Explain what she is likely thinking and feeling beneath the surface text.
+- Explain what the match is likely thinking and feeling beneath the surface text.
 - Identify push-pull behavior, compliance tests, and boundary checks - and distinguish them \
 from genuine disinterest.
-- Differentiate a "desire complaint" (she wants more engagement) from a "boundary complaint" \
-(she wants space or is signaling discomfort).
-- Never pathologize or reduce her to a manipulative caricature - explain behavior with empathy, \
-even when it's a test or a guard.
+- Differentiate a "desire complaint" (the match wants more engagement) from a "boundary \
+complaint" (the match wants space or is signaling discomfort).
+- Never pathologize or reduce the match to a manipulative caricature - explain behavior with \
+empathy, even when it's a test or a guard.
 - Calibrate your energy and delivery to the Social Mode given in the prompt below - your \
-read of her never changes, only how animated or measured you sound explaining it.
+read of the match never changes, only how animated or measured you sound explaining it.
+- Use the exact pronouns given in the PRONOUNS line of the prompt below for the user and the \
+match - never default to he/she on your own.
 """
     + _CHAT_OUTPUT_FORMAT
 )
@@ -161,6 +193,8 @@ high-energy, Chill is relaxed and low-pressure, Romantic is warmer and more sinc
 noticeably less joking, Direct is plain and confident with minimal flirtatious flourish. \
 Never negging, never a pickup-artist line, never bitter or aggressive - if a draft reads as \
 any of those, rewrite it before returning it.
+- Use the exact pronouns given in the PRONOUNS line of the prompt below for the user and the \
+match - never default to he/she on your own.
 """
     + _CHAT_OUTPUT_FORMAT
 )
@@ -171,7 +205,7 @@ optional prior history with this contact, and must resolve them into one final c
 
 Rules:
 1. Arthur dictates the boundaries - never approve a best_response that abandons the frame he flagged.
-2. Clara dictates the empathy - the dynamic_analysis and what_she_is_thinking must be consistent \
+2. Clara dictates the empathy - the dynamic_analysis and what_they_are_thinking must be consistent \
 with her read, not contradict it.
 3. Leo dictates the final vocabulary - best_response and alternative_responses should read in his \
 warm, confident voice.
@@ -180,19 +214,21 @@ no manipulation tactics, no contempt, no pathologizing. If a suggested response 
 rewrite it before including it.
 5. Output ONLY the JSON object matching the provided schema. No markdown, no commentary outside \
 the JSON.
-6. what_she_is_thinking is always a JSON array of short strings (2-3 separate thoughts), even if \
+6. what_they_are_thinking is always a JSON array of short strings (2-3 separate thoughts), even if \
 you only have one thought - never a single combined string.
 7. dynamic_summary is ONE short punchy sentence (under 90 characters) - the headline verdict, shown \
 by default. dynamic_analysis is 2-3 sentences of supporting detail, shown only if the user taps to \
 expand - it must add real information, never just restate dynamic_summary in longer words.
 8. coaching_lesson must be phrased in the USER's own voice, using the "How the user actually talks" \
-profile provided below if one is given: match his real register (casual/formal, slang, directness, \
-humor style) so it reads like a friend who talks like him giving advice, not a generic coaching \
-voice. If no profile is given yet, use Leo's warm-but-grounded default tone instead.
+profile provided below if one is given: match their real register (casual/formal, slang, \
+directness, humor style) so it reads like a friend who talks like them giving advice, not a \
+generic coaching voice. If no profile is given yet, use Leo's warm-but-grounded default tone instead.
 9. Calibrate energy and tone - dynamic_summary, dynamic_analysis, best_response, and \
 alternative_responses - to the Social Mode given below. Never the underlying substance, \
 Arthur's boundaries, or the content boundary - only how upbeat, relaxed, sincere, or plain \
 it all reads.
+10. Use the exact pronouns given in the PRONOUNS line of the prompt below for the user and the \
+match, in every field - never default to he/she on your own.
 """
 
 
@@ -239,7 +275,7 @@ def _category_header(category: str) -> str:
 
 
 SUGGEST_SYSTEM_PROMPT = """\
-You are Bro Coach's line writer - Leo's voice, Arthur's boundaries, Clara's read.
+You are Bro Code's line writer - Leo's voice, Arthur's boundaries, Clara's read.
 
 The user describes a social scenario (no screenshot) and has picked a specific mission - \
 opener, icebreaker, vibe shift, or exit strategy. The exact mission for this request, including \
@@ -339,63 +375,71 @@ def build_text_extract_user_prompt(text_content: str) -> str:
 
 
 USER_STYLE_SYSTEM_PROMPT = """\
-You maintain Bro Coach's profile of the USER's OWN texting voice - not the match's, not \
-coaching advice, his actual real-world texting style - so future coaching can sound like \
-something he'd genuinely say and land in his own register instead of generic coaching-speak.
+You maintain Bro Code's profile of the USER's OWN texting voice - not the match's, not \
+coaching advice, their actual real-world texting style - so future coaching can sound like \
+something they'd genuinely say and land in their own register instead of generic coaching-speak.
 
-Look ONLY at the messages explicitly labeled as his own below. Merge with the previous profile \
-rather than replacing it outright - keep what's still true, update what this new evidence shows.
+Look ONLY at the messages explicitly labeled as the user's own below. Merge with the previous \
+profile rather than replacing it outright - keep what's still true, update what this new \
+evidence shows.
 
 Capture, only where the evidence supports it:
 - Typical tone/register (casual vs formal, deadpan vs expressive, low-effort vs high-effort)
 - Slang, catchphrases, characteristic words, emoji/punctuation habits, capitalization habits
 - Typical message length and structure (one-liners? run-ons? questions?)
 - Sense of humor (dry, silly, sarcastic, wholesome, teasing...)
-- Language(s) and dialect he actually writes in
+- Language(s) and dialect they actually write in
 
-Rules: under 150 words, plain prose, no judgment or critique of him - this is a voice reference \
-for drafting in his style, not a review of his texting. If the new messages are too few or too \
-generic to add anything, just return the previous profile unchanged. Return ONLY the profile text.
+Rules: under 150 words, plain prose, no judgment or critique of them - this is a voice reference \
+for drafting in their style, not a review of their texting. If the new messages are too few or \
+too generic to add anything, just return the previous profile unchanged. Return ONLY the profile text.
 """
 
 
 def build_user_style_user_prompt(old_style: str | None, user_lines: list[str]) -> str:
-    transcript = "\n".join(f"him: {line}" for line in user_lines)
+    transcript = "\n".join(f"user: {line}" for line in user_lines)
     previous = old_style or "(no profile yet - this is the first evidence)"
     return (
         f"Previous voice profile:\n{previous}\n\n"
-        f"His messages in this new screenshot:\n{transcript}\n\n"
+        f"The user's messages in this new screenshot:\n{transcript}\n\n"
         "Return the updated voice profile."
     )
 
 
 PERSONA_SYSTEM_PROMPT = """\
-You maintain Bro Coach's relationship memory. After each analyzed conversation with a \
-contact, you merge what was already known about her with what this conversation revealed, \
-and return the UPDATED persona document.
+You maintain Bro Code's relationship memory. After each analyzed conversation with a \
+contact, you merge what was already known about the match with what this conversation \
+revealed, and return the UPDATED persona document.
 
 The persona must capture, only where the evidence supports it:
 - Communication style and humor (dry, emoji-heavy, slow replier, voice notes...)
 - Interests, running topics, and inside jokes worth calling back
-- How she tests (compliance tests, push-pull, pace checks) and how she responds when he holds frame
-- Pace and boundaries she has signaled - and anything she has clearly said no to
+- How the match tests (compliance tests, push-pull, pace checks) and how the user responds \
+when they hold frame
+- Pace and boundaries the match has signaled - and anything they have clearly said no to
 - What has worked and what has flopped for this user specifically
 - The current dynamic and the attraction trend across reads (warming, cooling, steady)
 
 Rules: under 250 words, plain prose with short headers, no speculation beyond the \
-conversations, never pathologize her - this is a memory aid for being a better \
-conversation partner, not a dossier. Return ONLY the updated persona text.
+conversations, never pathologize the match - this is a memory aid for being a better \
+conversation partner, not a dossier. Use the exact pronouns given in the PRONOUNS line of the \
+prompt below for the user and the match. Return ONLY the updated persona text.
 """
 
 
 def build_persona_user_prompt(
-    old_persona: str | None, context: ConversationContext, result_summary: str
+    old_persona: str | None,
+    context: ConversationContext,
+    result_summary: str,
+    user_gender: str | None = None,
+    match_gender: str | None = None,
 ) -> str:
     lines = [_format_message(m) for m in context.messages]
     transcript = "\n".join(lines)
     previous = old_persona or "(first read - no persona yet)"
     return (
-        f"PERSONA UPDATE for this contact.\n\n"
+        _pronoun_header(user_gender, match_gender)
+        + f"PERSONA UPDATE for this contact.\n\n"
         f"Previous persona:\n{previous}\n\n"
         f"New conversation:\n{transcript}\n\n"
         f"This read's verdict:\n{result_summary}\n\n"
@@ -410,6 +454,8 @@ def build_debate_user_prompt(
     user_style: str | None = None,
     language: str = "English",
     mode: str = "hype",
+    user_gender: str | None = None,
+    match_gender: str | None = None,
 ) -> str:
     lines = [_format_message(m) for m in context.messages]
     transcript = "\n".join(lines)
@@ -426,15 +472,16 @@ def build_debate_user_prompt(
     return (
         _language_header(language)
         + _mode_header(mode)
+        + _pronoun_header(user_gender, match_gender)
         + _scenario_notes_block(context)
         + f"Conversation so far:\n{transcript}\n\n"
-        f"What we know about her from previous reads:\n{persona_block}\n\n"
+        f"What we know about the match from previous reads:\n{persona_block}\n\n"
         f"Recent read history:\n{history_block}\n\n"
         f"{style_block}"
         "Give your analysis of this conversation from your specific role's perspective, "
         "using the persona to calibrate - reference inside jokes, known tests, and the "
         "attraction trend where relevant. Leo: use the user's own voice profile (if given) "
-        "when drafting how he'd actually phrase things."
+        "when drafting how they'd actually phrase things."
     )
 
 
@@ -445,6 +492,8 @@ def build_rebuttal_user_prompt(
     agent_name: str,
     language: str = "English",
     mode: str = "hype",
+    user_gender: str | None = None,
+    match_gender: str | None = None,
 ) -> str:
     """Round 2: the agent reacts to the other two takes (and any replies already made).
 
@@ -465,6 +514,7 @@ def build_rebuttal_user_prompt(
     return (
         _language_header(language)
         + _mode_header(mode)
+        + _pronoun_header(user_gender, match_gender)
         + f"Conversation:\n{transcript}\n\n"
         f"The other coaches' takes:\n{others}{replies_block}\n\n"
         "Debate round: ONE sentence only, under 25 words, speaking directly to the other "
@@ -480,6 +530,8 @@ def build_synthesis_user_prompt(
     user_style: str | None = None,
     language: str = "English",
     mode: str = "hype",
+    user_gender: str | None = None,
+    match_gender: str | None = None,
 ) -> str:
     lines = [_format_message(m) for m in context.messages]
     transcript = "\n".join(lines)
@@ -494,6 +546,7 @@ def build_synthesis_user_prompt(
     return (
         _language_header(language)
         + _mode_header(mode)
+        + _pronoun_header(user_gender, match_gender)
         + _scenario_notes_block(context)
         + f"Conversation:\n{transcript}\n\n"
         f"{persona_block}"

@@ -39,10 +39,10 @@ def test_leaves_a_string_that_parses_but_isnt_the_expected_shape_untouched() -> 
 
 def test_recovers_a_leaked_parameter_tag_into_its_real_field() -> None:
     # Seen live: best_response went missing entirely because its content got
-    # trapped inside what_she_is_thinking as a leaked tool-call-style tag.
+    # trapped inside what_they_are_thinking as a leaked tool-call-style tag.
     raw = {
         "attraction_level": 7,
-        "what_she_is_thinking": '\n<parameter name="best_response">kkkkk agora sim, voz e tudo',
+        "what_they_are_thinking": '\n<parameter name="best_response">kkkkk agora sim, voz e tudo',
         "alternative_responses": {"playful": "p", "direct": "d"},
         "coaching_lesson": "fine",
     }
@@ -50,22 +50,22 @@ def test_recovers_a_leaked_parameter_tag_into_its_real_field() -> None:
         "attraction_level",
         "dynamic_summary",
         "dynamic_analysis",
-        "what_she_is_thinking",
+        "what_they_are_thinking",
         "best_response",
         "alternative_responses",
         "coaching_lesson",
     }
     recovered = _recover_leaked_parameter_tags(raw, valid_fields)
     assert recovered["best_response"] == "kkkkk agora sim, voz e tudo"
-    assert "<parameter" not in recovered["what_she_is_thinking"]
+    assert "<parameter" not in recovered["what_they_are_thinking"]
 
 
 def test_does_not_overwrite_a_field_that_is_already_correctly_set() -> None:
     raw = {
         "best_response": "the real one",
-        "what_she_is_thinking": '<parameter name="best_response">a decoy',
+        "what_they_are_thinking": '<parameter name="best_response">a decoy',
     }
-    recovered = _recover_leaked_parameter_tags(raw, {"best_response", "what_she_is_thinking"})
+    recovered = _recover_leaked_parameter_tags(raw, {"best_response", "what_they_are_thinking"})
     assert recovered["best_response"] == "the real one"
 
 
@@ -88,13 +88,13 @@ def test_recovers_a_whole_leaked_invoke_block_with_multiple_unclosed_tags() -> N
         "attraction_level": 7,
         "dynamic_summary": "fine",
         "dynamic_analysis": leaked,
-        "what_she_is_thinking": ["a thought"],
+        "what_they_are_thinking": ["a thought"],
     }
     valid_fields = {
         "attraction_level",
         "dynamic_summary",
         "dynamic_analysis",
-        "what_she_is_thinking",
+        "what_they_are_thinking",
         "best_response",
         "alternative_responses",
         "coaching_lesson",

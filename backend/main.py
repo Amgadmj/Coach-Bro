@@ -34,6 +34,7 @@ from models.schemas import (
     LANGUAGE_NAMES,
     ContactSummary,
     ExtractResponse,
+    Gender,
     MemoryRecord,
     SetMatchGenderRequest,
     SocialMode,
@@ -250,6 +251,13 @@ async def analyze(
     contact_id: str | None = Form(default=None),
     language: SupportedLanguage = Form(default="auto"),
     mode: SocialMode = Form(default="hype"),
+    # Resolved client-side before the request is sent (per-contact match_gender
+    # override, or the session's interestedIn default - see
+    # web/src/app/live/page.tsx's submit()) - the backend just uses whatever
+    # single value it's given, same precedent as language/mode. None for
+    # either falls back to neutral they/them framing, never guessed.
+    user_gender: Gender | None = Form(default=None),
+    match_gender: Gender | None = Form(default=None),
     device_id: str = Depends(get_device_id),
 ) -> StreamingResponse:
     text_content = text_content.strip() if text_content else None
@@ -268,7 +276,14 @@ async def analyze(
 
     async def event_stream():
         async for event in orchestrator.run_pipeline(
-            image_data or None, contact_id, device_id, language, mode, text_content=text_content
+            image_data or None,
+            contact_id,
+            device_id,
+            language,
+            mode,
+            text_content=text_content,
+            user_gender=user_gender,
+            match_gender=match_gender,
         ):
             yield f"data: {event.model_dump_json()}\n\n"
 

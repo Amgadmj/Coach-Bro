@@ -52,6 +52,12 @@ export async function* analyzeInput(
   contactId?: string | null,
   language: SupportedLanguage = "auto",
   mode: SocialMode = "hype",
+  // Resolved by the caller before this is invoked (contact override ?? the
+  // session's interestedIn default, or the session's own gender - see
+  // lib/session.ts::defaultMatchGenderFrom and app/live/page.tsx's submit()) -
+  // this function just forwards whatever it's given, same as language/mode.
+  userGender?: Gender | null,
+  matchGender?: Gender | null,
 ): AsyncGenerator<DebateEvent> {
   const trimmedText = textContent?.trim();
   if ((!images || images.length === 0) && !trimmedText) {
@@ -77,6 +83,8 @@ export async function* analyzeInput(
   if (contactId) form.append("contact_id", contactId);
   form.append("language", language);
   form.append("mode", mode);
+  if (userGender) form.append("user_gender", userGender);
+  if (matchGender) form.append("match_gender", matchGender);
 
   const response = await fetch(`${API_BASE_URL}/analyze`, {
     method: "POST",

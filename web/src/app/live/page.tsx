@@ -9,6 +9,7 @@ import { TabBar } from "@/components/TabBar";
 import { extractConversation, fetchContacts, setContactGender } from "@/lib/api";
 import { useAnalysis } from "@/lib/analysis";
 import { useT } from "@/lib/i18n";
+import { defaultMatchGenderFrom, useSession } from "@/lib/session";
 import { useTutorial } from "@/lib/tutorial";
 import type { ContactSummary, Gender, SuggestCategory } from "@/lib/types";
 import { clsx } from "@/lib/clsx";
@@ -58,6 +59,7 @@ function LiveScenarioInput() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const runAnalysis = useAnalysis((s) => s.run);
+  const interestedIn = useSession((s) => s.interestedIn);
   const t = useT();
   const [scenario, setScenario] = useState("");
   const [contacts, setContacts] = useState<ContactSummary[]>([]);
@@ -212,10 +214,19 @@ function LiveScenarioInput() {
         extractedBlockRef.current !== null &&
         scenario.includes(extractedBlockRef.current);
 
+      // Per-contact override wins if this contact's gender was ever set (see
+      // the "+ New" flow's contactGenderPrompt above); otherwise fall back to
+      // the session's general "interested in" default. Neither guessed - a
+      // contact with no override and interestedIn="everyone" (or unset)
+      // sends null, and prompts fall back to neutral they/them framing.
+      const selectedContactData = contacts.find((c) => c.id === selectedContact);
+      const matchGender = selectedContactData?.match_gender ?? defaultMatchGenderFrom(interestedIn);
+
       void runAnalysis({
         images: canSkipImages ? [] : screenshots,
         textContent: trimmed || null,
         contactId: selectedContact,
+        matchGender,
       });
       router.push("/read");
     }

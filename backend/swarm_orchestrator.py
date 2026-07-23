@@ -102,6 +102,8 @@ class SwarmOrchestrator:
         language: SupportedLanguage = "auto",
         mode: SocialMode = "hype",
         text_content: str | None = None,
+        user_gender: str | None = None,
+        match_gender: str | None = None,
     ) -> AsyncIterator[DebateEvent]:
         """`images` is one or more (image_bytes, mime_type) pairs - multiple
         screenshots of the same conversation (e.g. from scrolling) are merged
@@ -118,6 +120,10 @@ class SwarmOrchestrator:
         `device_id` scopes every memory read/write below to the device that
         sent the request (see main.py::get_device_id) - required, not optional,
         since this app has no auth and memory would otherwise leak across users.
+
+        `user_gender`/`match_gender` resolve which pronouns every stage's
+        prompt uses (see agents/prompts.py::_pronoun_header) - None for
+        either defaults to neutral they/them, never guessed.
 
         Yields DebateEvents for each stage; any failure anywhere in the pipeline
         (provider timeout, rate limit, bad key) is caught and turned into one final
@@ -148,7 +154,7 @@ class SwarmOrchestrator:
 
             opinions: list[AgentOpinion] = []
             async for event, opinion in self._run_debate_agents(
-                context, memory, persona, user_style, response_language, mode
+                context, memory, persona, user_style, response_language, mode, user_gender, match_gender
             ):
                 yield event
                 if opinion is not None:
@@ -157,12 +163,14 @@ class SwarmOrchestrator:
             # Round 2: each agent reacts to the other takes, sequentially, so later
             # speakers can reference earlier replies - this is the visible "debate"
             # the client renders as a conversation feed.
-            async for event in self._run_rebuttal_round(context, opinions, response_language, mode):
+            async for event in self._run_rebuttal_round(
+                context, opinions, response_language, mode, user_gender, match_gender
+            ):
                 yield event
 
             yield DebateEvent(type="synthesis_started")
             result = await self._synthesize(
-                context, opinions, persona, user_style, response_language, mode
+                context, opinions, persona, user_style, response_language, mode, user_gender, match_gender
             )
             yield DebateEvent(type="synthesis_done", payload=result.model_dump(mode="json"))
 
@@ -174,7 +182,9 @@ class SwarmOrchestrator:
 
             if contact_id:
                 await self._memory_store.upsert_interaction(device_id, contact_id, result)
-                updated_persona = await self._update_persona(device_id, contact_id, persona, context, result)
+                updated_persona = await self._update_persona(
+                    device_id, contact_id, persona, context, result, user_gender, match_gender
+                )
                 read_count = await self._memory_store.get_read_count(device_id, contact_id)
                 yield DebateEvent(
                     type="memory_updated",
@@ -234,6 +244,8 @@ class SwarmOrchestrator:
         user_style: str | None = None,
         response_language: str = "English",
         mode: SocialMode = "hype",
+        user_gender: str | None = None,
+        match_gender: str | None = None,
     ) -> AsyncIterator[tuple[DebateEvent, AgentOpinion | None]]:
         """Runs Arthur, Clara, and Leo concurrently, streaming progress events as they land.
 
@@ -247,7 +259,7 @@ class SwarmOrchestrator:
         async def run_one(agent_name: AgentName, system_prompt: str) -> AgentOpinion:
             await queue.put(DebateEvent(type="agent_started", agent=agent_name))
             user_prompt = build_debate_user_prompt(
-                context, memory, persona, user_style, response_language, mode
+                context, memory, persona, user_style, response_language, mode, user_gender, match_gender
             )
             raw = await self._debate_client.complete_text(system_prompt, user_prompt)
             headline, detail = split_headline_and_detail(raw)
@@ -291,11 +303,13 @@ class SwarmOrchestrator:
         opinions: list[AgentOpinion],
         response_language: str = "English",
         mode: SocialMode = "hype",
+        user_gender: str | None = None,
+        match_gender: str | None = None,
     ) -> AsyncIterator[DebateEvent]:
         prior_replies: list[tuple[str, str]] = []
         for agent_name, system_prompt in _DEBATE_AGENTS:
             user_prompt = build_rebuttal_user_prompt(
-                context, opinions, prior_replies, agent_name, response_language, mode
+                context, opinions, prior_replies, agent_name, response_language, mode, user_gender, match_gender
             )
             raw = await self._debate_client.complete_text(system_prompt, user_prompt)
             text = cap_sentences(raw, max_sentences=1, max_chars=220)
@@ -310,9 +324,11 @@ class SwarmOrchestrator:
         user_style: str | None = None,
         response_language: str = "English",
         mode: SocialMode = "hype",
+        user_gender: str | None = None,
+        match_gender: str | None = None,
     ) -> SynthesisResult:
         user_prompt = build_synthesis_user_prompt(
-            context, opinions, persona, user_style, response_language, mode
+            context, opinions, persona, user_style, response_language, mode, user_gender, match_gender
         )
         schema = SynthesisResult.model_json_schema()
         data = await self._vision_client.complete_json(SYNTHESIZER_SYSTEM_PROMPT, user_prompt, schema)
@@ -325,6 +341,8 @@ class SwarmOrchestrator:
         old_persona: str | None,
         context: ConversationContext,
         result: SynthesisResult,
+        user_gender: str | None = None,
+        match_gender: str | None = None,
     ) -> str:
         """Distills this read into the contact's evolving persona document.
 
@@ -337,7 +355,7 @@ class SwarmOrchestrator:
         )
         persona = await self._vision_client.complete_text(
             PERSONA_SYSTEM_PROMPT,
-            build_persona_user_prompt(old_persona, context, result_summary),
+            build_persona_user_prompt(old_persona, context, result_summary, user_gender, match_gender),
         )
         await self._memory_store.upsert_persona(device_id, contact_id, persona)
         return persona

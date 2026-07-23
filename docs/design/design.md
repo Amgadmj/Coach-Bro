@@ -49,7 +49,7 @@ A dusk palette — golden-hour warmth cooling into night — instead of v1's day
 | Agent | Light | Dark | Role |
 |---|---|---|---|
 | Arthur | `#3B6EA5` | `#7CA8DE` | High-value frame expert |
-| Clara | `#9C4F8F` | `#D98BCB` | Female psychology specialist |
+| Clara | `#9C4F8F` | `#D98BCB` | Psychology specialist |
 | Leo | `#D6592F` | `#EB8355` | Flirty confident boy |
 
 ### Type
