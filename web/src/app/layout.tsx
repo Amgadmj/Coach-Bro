@@ -7,7 +7,7 @@ import { WelcomeModal } from "@/components/WelcomeModal";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Bro Coach",
+  title: "Bro Code",
   description: "Your digital wingman - three AI takes, one calibrated answer.",
   manifest: "/manifest.webmanifest",
   icons: {
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Bro Coach",
+    title: "Bro Code",
   },
 };
 

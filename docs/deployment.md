@@ -1,4 +1,4 @@
-# Deploying Bro Coach
+# Deploying Bro Code
 
 Target setup: **backend on Render** (Docker, SSE-friendly, deploys straight from GitHub — no CLI needed) and **web on Vercel**. Both are click-through dashboard flows; total time ~20 minutes once API keys are valid.
 

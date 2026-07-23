@@ -223,7 +223,7 @@ function LiveScenarioInput() {
           A
         </button>
         <h1 className="min-w-0 flex-1 truncate text-center font-display text-base font-extrabold">
-          Bro Coach
+          Bro Code
         </h1>
         {/* R4: the `⋯` overflow control had no defined destination anywhere in
             the app (no report/block/mute/settings menu exists for Live) - per
