@@ -8,15 +8,23 @@ a single blocking response).
 
 from __future__ import annotations
 
+import io
 import os
 
 from dotenv import load_dotenv
 
 load_dotenv()  # backend/.env - keys and mode; must run before any os.environ reads
 
+import pillow_heif
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from PIL import Image, UnidentifiedImageError
+
+# Registers a PIL plugin so Image.open() transparently decodes HEIC/HEIF bytes
+# (iOS Photo Library / Files app default format) via libheif. Must run once at
+# import time, before any Image.open() call touches HEIC bytes.
+pillow_heif.register_heif_opener()
 
 from agents.prompts import SUGGEST_SYSTEM_PROMPT, build_suggest_user_prompt
 from llm_clients.base import LLMClient, MockLLMClient
@@ -58,20 +66,26 @@ suggest_limiter = RateLimiter(
 # cap belongs here regardless of what the UI allows. Raise via env if needed.
 MAX_IMAGES_PER_ANALYZE = int(os.environ.get("MAX_IMAGES_PER_ANALYZE", "20"))
 
-# Anthropic's vision API only decodes these four - anything else (HEIC/HEIF from
-# an iOS photo library pick, BMP/TIFF, or a browser sending no content-type at
-# all) used to sail straight through main.py's `content_type or "image/jpeg"`
-# fallback and fail deep inside the Anthropic call instead, surfacing as one
-# generic "something went wrong" error event for the whole read with no
-# indication of which file or why. Reject it here instead, before the SSE
-# stream (and the LLM spend) even starts.
+# Anthropic's vision API only decodes these four - anything else (BMP/TIFF, or
+# a browser sending no content-type at all) used to sail straight through
+# main.py's `content_type or "image/jpeg"` fallback and fail deep inside the
+# Anthropic call instead, surfacing as one generic "something went wrong"
+# error event for the whole read with no indication of which file or why.
+# Reject it here instead, before the SSE stream (and the LLM spend) even starts.
 ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+
+# HEIC/HEIF (the default format for iOS Photo Library / Files app picks) is not
+# one of Anthropic's four directly-decodable types, but unlike BMP/TIFF it's not
+# genuinely undecodable - pillow-heif lets us transcode it to JPEG in-memory
+# below before it ever reaches the vision client. Accepted as input, never
+# forwarded as-is.
+HEIC_CONTENT_TYPES = {"image/heic", "image/heif"}
 
 # Filename-extension fallback for uploads whose content-type is missing or
 # generic ("application/octet-stream") - seen live from browser clipboard
 # pastes and some multipart clients that never set a real image content-type
-# even though the bytes decode fine. A genuinely undecodable format (HEIC/HEIF,
-# BMP, TIFF) still gets rejected below regardless of extension, since Anthropic's
+# even though the bytes decode fine. A genuinely undecodable format (BMP,
+# TIFF) still gets rejected below regardless of extension, since Anthropic's
 # vision API can't decode those no matter what mime type we claim.
 _EXTENSION_TO_MIME = {
     "jpg": "image/jpeg",
@@ -79,6 +93,8 @@ _EXTENSION_TO_MIME = {
     "png": "image/png",
     "gif": "image/gif",
     "webp": "image/webp",
+    "heic": "image/heic",
+    "heif": "image/heif",
 }
 _GENERIC_CONTENT_TYPES = {None, "", "application/octet-stream"}
 
@@ -91,12 +107,28 @@ def _resolve_image_content_type(filename: str | None, content_type: str | None) 
     """Returns the content type to trust for this upload, or None if it should
     be rejected. Passes known-good types through as-is; for a missing/generic
     content type, falls back to sniffing the filename extension."""
-    if content_type in ALLOWED_IMAGE_CONTENT_TYPES:
+    if content_type in ALLOWED_IMAGE_CONTENT_TYPES or content_type in HEIC_CONTENT_TYPES:
         return content_type
     if content_type in _GENERIC_CONTENT_TYPES and filename and "." in filename:
         ext = filename.rsplit(".", 1)[-1].lower()
         return _EXTENSION_TO_MIME.get(ext)
     return None
+
+
+def _convert_heic_to_jpeg(data: bytes) -> bytes:
+    """Decodes HEIC/HEIF bytes (via the pillow-heif opener registered above)
+    and re-encodes as JPEG, entirely in memory - never touches disk, per
+    CLAUDE.md's "don't persist raw screenshots" privacy rule. Raises
+    ValueError with a user-facing message if the bytes don't actually decode
+    (e.g. a corrupt file that merely claims to be HEIC)."""
+    try:
+        with Image.open(io.BytesIO(data)) as image:
+            rgb_image = image.convert("RGB")
+            buffer = io.BytesIO()
+            rgb_image.save(buffer, format="JPEG")
+            return buffer.getvalue()
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ValueError(f"Could not decode HEIC/HEIF image: {exc}") from exc
 
 
 def _build_llm_clients() -> tuple[LLMClient, LLMClient]:
@@ -166,10 +198,26 @@ async def analyze(
                 status_code=422,
                 detail=(
                     f"Unsupported image type '{img.content_type or 'unknown'}' "
-                    f"({img.filename or 'unnamed file'}) - please upload JPEG, PNG, GIF, or WebP screenshots."
+                    f"({img.filename or 'unnamed file'}) - please upload JPEG, PNG, GIF, WebP, or HEIC/HEIF screenshots."
                 ),
             )
-        image_data.append((await img.read(), resolved_type))
+        raw_bytes = await img.read()
+        if resolved_type in HEIC_CONTENT_TYPES:
+            # Transcode to JPEG server-side so the vision client (and every
+            # downstream stage) only ever sees a format Anthropic can decode -
+            # never raw HEIC bytes. In-memory only; nothing touches disk.
+            try:
+                raw_bytes = _convert_heic_to_jpeg(raw_bytes)
+            except ValueError as exc:
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        f"Could not read '{img.filename or 'unnamed file'}' as a HEIC/HEIF image - "
+                        f"the file may be corrupt. ({exc})"
+                    ),
+                ) from exc
+            resolved_type = "image/jpeg"
+        image_data.append((raw_bytes, resolved_type))
 
     orchestrator = get_orchestrator()
 

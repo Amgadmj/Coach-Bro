@@ -15,8 +15,55 @@ const JPEG_QUALITY = 0.85;
 /** Below this, the size/quality tradeoff isn't worth the recompression pass. */
 const SKIP_IF_UNDER_BYTES = 600_000;
 
+const HEIC_BRANDS = new Set([
+  "heic",
+  "heix",
+  "heim",
+  "heis",
+  "hevc",
+  "hevx",
+  "mif1",
+  "msf1",
+]);
+
+/**
+ * iOS's default photo format (HEIC/HEIF) isn't rasterizable by every browser's
+ * canvas, and the backend only accepts it after server-side conversion - so it
+ * must always be routed through the re-encode path below regardless of size,
+ * never skipped by the SKIP_IF_UNDER_BYTES fast-path. Checked by declared type
+ * and filename extension first (cheap, synchronous); `compressImage` falls back
+ * to the magic-byte check (`isHeicByMagicBytes`) when neither is conclusive.
+ */
+function isHeicByTypeOrName(file: File): boolean {
+  const type = file.type.toLowerCase();
+  if (type === "image/heic" || type === "image/heif") return true;
+  const name = file.name?.toLowerCase() ?? "";
+  return name.endsWith(".heic") || name.endsWith(".heif");
+}
+
+/** Reads the ISO-BMFF 'ftyp' box (bytes 4-7 "ftyp", bytes 8-11 the brand) to
+ * detect HEIC/HEIF containers - the format iOS's Photo Library/Files picker
+ * hands back by default, which browsers otherwise report with an empty or
+ * generic `type`. */
+function isHeicByMagicBytes(head: Uint8Array): boolean {
+  if (head.length < 12) return false;
+  const ftyp = String.fromCharCode(head[4], head[5], head[6], head[7]);
+  if (ftyp !== "ftyp") return false;
+  const brand = String.fromCharCode(head[8], head[9], head[10], head[11]);
+  return HEIC_BRANDS.has(brand);
+}
+
 export async function compressImage(file: File): Promise<Blob> {
-  if (!file.type.startsWith("image/") || file.size < SKIP_IF_UNDER_BYTES) {
+  let isHeic = isHeicByTypeOrName(file);
+  if (!isHeic && (file.type.startsWith("image/") || file.type === "")) {
+    // Cheap magic-byte fallback for the case where iOS hands back an empty/
+    // generic `type` for a HEIC file (seen on some non-Safari mobile browsers)
+    // and the filename itself doesn't carry a .heic/.heif extension.
+    const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+    isHeic = isHeicByMagicBytes(head);
+  }
+
+  if (!isHeic && (!file.type.startsWith("image/") || file.size < SKIP_IF_UNDER_BYTES)) {
     return file;
   }
 
@@ -52,7 +99,8 @@ export async function compressImages(files: File[]): Promise<Blob[]> {
 }
 
 /** First few bytes of each format's file signature - enough to distinguish the
- * four types the backend accepts (see backend/main.py::ALLOWED_IMAGE_CONTENT_TYPES). */
+ * types the backend accepts (see backend/main.py::ALLOWED_IMAGE_CONTENT_TYPES),
+ * including HEIC/HEIF via the ISO-BMFF 'ftyp' box. */
 async function sniffImageMimeType(blob: Blob): Promise<string | null> {
   const head = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
   if (head[0] === 0xff && head[1] === 0xd8) return "image/jpeg";
@@ -61,6 +109,7 @@ async function sniffImageMimeType(blob: Blob): Promise<string | null> {
   const isRiff = head[0] === 0x52 && head[1] === 0x49 && head[2] === 0x46 && head[3] === 0x46;
   const isWebp = head[8] === 0x57 && head[9] === 0x45 && head[10] === 0x42 && head[11] === 0x50;
   if (isRiff && isWebp) return "image/webp";
+  if (isHeicByMagicBytes(head)) return "image/heic";
   return null;
 }
 
