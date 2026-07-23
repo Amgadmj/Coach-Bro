@@ -50,6 +50,18 @@ class MemoryStore:
     def __init__(self, db_url: str) -> None:
         self._db_url = db_url
 
+    @staticmethod
+    async def _ensure_contact(conn, contact_id: str) -> None:
+        """No auth/users system exists yet (see docs/deployment.md "Not covered
+        yet") - contact_id is a plain client-generated string (see
+        web/src/app/live/page.tsx), not created ahead of time via any signup
+        flow. Auto-create the row on first use, same as SQLiteMemoryStore's
+        _ensure_contact, instead of assuming one already exists."""
+        await conn.execute(
+            "insert into contacts (id, display_name) values ($1, $1) on conflict (id) do nothing",
+            contact_id,
+        )
+
     async def get_contact_history(self, contact_id: str, limit: int = 5) -> list[MemoryRecord]:
         import asyncpg  # local import: keeps asyncpg an optional dependency for mock-only runs
 
@@ -85,17 +97,24 @@ class MemoryStore:
         summary = f"[{result.attraction_level}/10] {result.dynamic_analysis} -> {result.coaching_lesson}"
         vector = await embed_summary(summary)
 
+        # asyncpg has no built-in codec for pgvector's `vector` type - hand it
+        # pgvector's own bracketed text format and cast explicitly so Postgres
+        # parses it via the extension's input function instead of asyncpg
+        # trying (and failing) to infer an encoding for an unknown OID.
+        embedding_literal = "[" + ",".join(repr(x) for x in vector) + "]" if vector is not None else None
+
         conn = await asyncpg.connect(self._db_url)
         try:
             async with conn.transaction():
+                await self._ensure_contact(conn, contact_id)
                 await conn.execute(
                     """
                     insert into memory_embeddings (contact_id, summary, embedding, created_at)
-                    values ($1, $2, $3, $4)
+                    values ($1, $2, $3::vector, $4)
                     """,
                     contact_id,
                     summary,
-                    vector,
+                    embedding_literal,
                     datetime.now(timezone.utc),
                 )
                 await conn.execute(
@@ -120,6 +139,7 @@ class MemoryStore:
 
         conn = await asyncpg.connect(self._db_url)
         try:
+            await self._ensure_contact(conn, contact_id)
             await conn.execute(
                 "update contacts set persona = $2 where id = $1", contact_id, persona
             )

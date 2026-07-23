@@ -1,44 +1,27 @@
 import type { DebateEvent } from "@/types/schemas";
 
 /**
- * Parses a `text/event-stream` fetch Response body into DebateEvents as they arrive.
+ * Parses a complete `text/event-stream`-formatted response body into DebateEvents.
  *
- * Requires a fetch implementation with a streamable ReadableStream body (Expo SDK 51+ /
- * RN 0.74+ on Hermes support this for same-origin-scheme http(s) requests). If the target
- * Expo SDK doesn't support streaming fetch bodies on device, swap this for `react-native-sse`
- * behind the same async-generator signature - callers don't need to change.
+ * Used to read incrementally via a fetch ReadableStream (response.body.getReader()),
+ * but React Native/Expo's fetch does not reliably support readable streaming
+ * response bodies on device - see api/client.ts, which now uploads via
+ * expo-file-system's uploadAsync and gets the complete SSE-formatted text back
+ * in one shot instead of a live stream. This parses that same wire format,
+ * just all at once rather than as it arrives.
  */
-export async function* streamDebateEvents(response: Response): AsyncGenerator<DebateEvent> {
-  if (!response.body) {
-    throw new Error("Response has no readable body - streaming fetch is not supported here.");
+export function parseDebateEvents(raw: string): DebateEvent[] {
+  const events: DebateEvent[] = [];
+
+  for (const rawEvent of raw.split("\n\n")) {
+    const dataLine = rawEvent.split("\n").find((line) => line.startsWith("data:"));
+    if (!dataLine) continue;
+
+    const json = dataLine.slice("data:".length).trim();
+    if (!json) continue;
+
+    events.push(JSON.parse(json) as DebateEvent);
   }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      let boundary = buffer.indexOf("\n\n");
-      while (boundary !== -1) {
-        const rawEvent = buffer.slice(0, boundary);
-        buffer = buffer.slice(boundary + 2);
-        boundary = buffer.indexOf("\n\n");
-
-        const dataLine = rawEvent.split("\n").find((line) => line.startsWith("data:"));
-        if (!dataLine) continue;
-
-        const json = dataLine.slice("data:".length).trim();
-        if (!json) continue;
-
-        yield JSON.parse(json) as DebateEvent;
-      }
-    }
-  } finally {
-    reader.releaseLock();
-  }
+  return events;
 }
