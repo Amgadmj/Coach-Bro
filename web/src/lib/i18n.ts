@@ -57,6 +57,8 @@ export interface Dict {
     tonightsMode: string;
     change: string;
     playbookTitle: string;
+    playbookSummaryTitle: string;
+    playbookSummaryDesc: string;
     startRead: string;
   };
   vibe: { eyebrow: string; title: string; subtitle: string; lockIn: string };
@@ -122,7 +124,7 @@ export interface Dict {
     shareRecap: string;
     shareDisclaimer: string;
   };
-  playbook: { before: string; homeLink: string; after: string };
+  playbook: { subtitle: string };
   profile: { before: string; recapLink: string; after: string };
   language: { title: string; subtitle: string; autoNote: string };
 }
@@ -147,6 +149,8 @@ const en: Dict = {
     tonightsMode: "Tonight's mode",
     change: "Change",
     playbookTitle: "Wingman Playbook",
+    playbookSummaryTitle: "3 missions ready",
+    playbookSummaryDesc: "Icebreakers, vibe shifts, exit lines — all in one place.",
     startRead: "Start a read",
   },
   vibe: {
@@ -223,9 +227,7 @@ const en: Dict = {
     shareDisclaimer: "Shares as a watermarked story card — the summary, never the raw conversation.",
   },
   playbook: {
-    before: "Mission library coming soon. For now, start from a mission on ",
-    homeLink: "Home",
-    after: " or jump into a live read.",
+    subtitle: "Every mission, ready whenever you need a script.",
   },
   profile: {
     before: "Stats, streaks, and settings land here. Tonight's ",
@@ -259,6 +261,8 @@ const es: Dict = {
     tonightsMode: "Modo de esta noche",
     change: "Cambiar",
     playbookTitle: "Jugadas del Wingman",
+    playbookSummaryTitle: "3 misiones listas",
+    playbookSummaryDesc: "Rompehielos, cambios de ambiente, salidas — todo en un solo lugar.",
     startRead: "Empezar una lectura",
   },
   vibe: {
@@ -335,9 +339,7 @@ const es: Dict = {
     shareDisclaimer: "Se comparte como una tarjeta con marca de agua — solo el resumen, nunca la conversación real.",
   },
   playbook: {
-    before: "La biblioteca de misiones llega pronto. Por ahora, empieza una misión en ",
-    homeLink: "Inicio",
-    after: " o entra a una lectura en vivo.",
+    subtitle: "Todas las misiones, listas cuando necesites un guion.",
   },
   profile: {
     before: "Aquí irán tus estadísticas, rachas y ajustes. El ",
@@ -371,6 +373,8 @@ const fr: Dict = {
     tonightsMode: "Mode de ce soir",
     change: "Changer",
     playbookTitle: "Playbook du Wingman",
+    playbookSummaryTitle: "3 missions prêtes",
+    playbookSummaryDesc: "Brise-glace, changements d'ambiance, sorties — tout au même endroit.",
     startRead: "Commencer une lecture",
   },
   vibe: {
@@ -447,9 +451,7 @@ const fr: Dict = {
     shareDisclaimer: "Partagé comme une carte avec filigrane — juste le résumé, jamais la conversation réelle.",
   },
   playbook: {
-    before: "La bibliothèque de missions arrive bientôt. En attendant, lance une mission depuis ",
-    homeLink: "Accueil",
-    after: " ou passe à une lecture en direct.",
+    subtitle: "Toutes les missions, prêtes dès que tu as besoin d'un texte.",
   },
   profile: {
     before: "Tes stats, séries et réglages arriveront ici. Le ",
@@ -483,6 +485,8 @@ const pt: Dict = {
     tonightsMode: "Modo de hoje",
     change: "Trocar",
     playbookTitle: "Playbook do Wingman",
+    playbookSummaryTitle: "3 missões prontas",
+    playbookSummaryDesc: "Quebra-gelo, mudanças de clima, saídas — tudo num só lugar.",
     startRead: "Começar uma leitura",
   },
   vibe: {
@@ -559,9 +563,7 @@ const pt: Dict = {
     shareDisclaimer: "Compartilhado como um card com marca d'água — só o resumo, nunca a conversa real.",
   },
   playbook: {
-    before: "A biblioteca de missões chega em breve. Por enquanto, comece uma missão em ",
-    homeLink: "Início",
-    after: " ou vá direto para uma leitura ao vivo.",
+    subtitle: "Todas as missões, prontas sempre que você precisar de um roteiro.",
   },
   profile: {
     before: "Estatísticas, sequências e ajustes vão aparecer aqui. O ",
@@ -595,6 +597,8 @@ const hi: Dict = {
     tonightsMode: "आज रात का मोड",
     change: "बदलें",
     playbookTitle: "विंगमैन प्लेबुक",
+    playbookSummaryTitle: "3 मिशन तैयार",
+    playbookSummaryDesc: "आइसब्रेकर, माहौल बदलना, एग्ज़िट — सब एक ही जगह।",
     startRead: "रीड शुरू करें",
   },
   vibe: {
@@ -671,9 +675,7 @@ const hi: Dict = {
     shareDisclaimer: "यह वॉटरमार्क वाले कार्ड की तरह शेयर होता है — सिर्फ़ समरी, असली बातचीत कभी नहीं।",
   },
   playbook: {
-    before: "मिशन लाइब्रेरी जल्द आ रही है। फ़िलहाल, ",
-    homeLink: "होम",
-    after: " पर किसी मिशन से शुरू करें या लाइव रीड आज़माएं।",
+    subtitle: "जब भी स्क्रिप्ट चाहिए, हर मिशन यहां तैयार है।",
   },
   profile: {
     before: "स्टैट्स, स्ट्रीक्स और सेटिंग्स यहां आएंगी। आज रात का ",
@@ -707,6 +709,8 @@ const ar: Dict = {
     tonightsMode: "وضع الليلة",
     change: "تغيير",
     playbookTitle: "خطط الونجمان",
+    playbookSummaryTitle: "3 مهام جاهزة",
+    playbookSummaryDesc: "كسر الجليد، تغيير الأجواء، خروج أنيق — كل ذلك في مكان واحد.",
     startRead: "ابدأ قراءة",
   },
   vibe: {
@@ -783,9 +787,7 @@ const ar: Dict = {
     shareDisclaimer: "تتم المشاركة كبطاقة تحمل علامة مائية — الملخص فقط، وليس المحادثة الفعلية أبداً.",
   },
   playbook: {
-    before: "مكتبة المهام قريباً. في الوقت الحالي، ابدأ مهمة من ",
-    homeLink: "الرئيسية",
-    after: " أو جرّب قراءة مباشرة.",
+    subtitle: "كل مهمة، جاهزة كلما احتجت إلى جملة جاهزة.",
   },
   profile: {
     before: "الإحصائيات والسلاسل والإعدادات ستظهر هنا. ",
