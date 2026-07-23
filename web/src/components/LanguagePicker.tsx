@@ -1,6 +1,8 @@
 "use client";
 
-import { LANGUAGES, useT } from "@/lib/i18n";
+import { useState } from "react";
+
+import { LANGUAGES, useT, type LanguageCode } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { GlassCard } from "./GlassCard";
 
@@ -10,6 +12,13 @@ import { GlassCard } from "./GlassCard";
 export function LanguagePicker() {
   const { language, setLanguage } = useSession();
   const t = useT();
+  const [justUpdated, setJustUpdated] = useState(false);
+
+  function pick(code: LanguageCode) {
+    setLanguage(code);
+    setJustUpdated(true);
+    setTimeout(() => setJustUpdated(false), 1500);
+  }
 
   return (
     <GlassCard className="p-4">
@@ -23,9 +32,9 @@ export function LanguagePicker() {
           <button
             key={lang.code}
             type="button"
-            onClick={() => setLanguage(lang.code)}
+            onClick={() => pick(lang.code)}
             aria-pressed={language === lang.code}
-            className="rounded-2xl border px-3 py-2.5 text-start font-display text-[13px] font-bold transition-colors"
+            className="interactive tap-expand rounded-2xl border px-3 py-2.5 text-start font-display text-[13px] font-bold transition-colors"
             style={{
               borderColor: language === lang.code ? "var(--accent)" : "var(--hairline)",
               background: language === lang.code ? "var(--accent-soft)" : "var(--glass)",
@@ -41,6 +50,12 @@ export function LanguagePicker() {
           </button>
         ))}
       </div>
+
+      {justUpdated && (
+        <p className="mt-2.5 text-center text-[11px] font-semibold text-accent-deep" role="status">
+          {t("language.updated")}
+        </p>
+      )}
 
       <p className="mt-3 text-[11px] text-ink3">{t("language.autoNote")}</p>
     </GlassCard>
