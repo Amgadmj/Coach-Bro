@@ -140,6 +140,49 @@ export interface Dict {
   playbook: { subtitle: string };
   profile: { emptyTitle: string; emptyBody: string };
   language: { title: string; subtitle: string; autoNote: string; updated: string };
+  /** Copy for the first-run WelcomeModal and every screen's <Coachmark>
+   * sequence - see lib/tutorial.ts and components/Coachmark.tsx. */
+  tutorial: {
+    welcomeTitle: string;
+    welcomeBody: string;
+    welcomePoint1: string;
+    welcomePoint2: string;
+    welcomePoint3: string;
+    showMeAround: string;
+    skipTour: string;
+    stepOf: string;
+    back: string;
+    next: string;
+    done: string;
+    skip: string;
+    replay: string;
+    home: {
+      modeTitle: string;
+      modeBody: string;
+      playbookTitle: string;
+      playbookBody: string;
+      ctaTitle: string;
+      ctaBody: string;
+    };
+    live: {
+      contactsTitle: string;
+      contactsBody: string;
+      scenarioTitle: string;
+      scenarioBody: string;
+      sendTitle: string;
+      sendBody: string;
+    };
+    read: { summaryTitle: string; summaryBody: string };
+    result: {
+      gaugeTitle: string;
+      gaugeBody: string;
+      bestTitle: string;
+      bestBody: string;
+      agentsTitle: string;
+      agentsBody: string;
+    };
+    profile: { languageTitle: string; languageBody: string };
+  };
 }
 
 const en: Dict = {
@@ -263,6 +306,58 @@ const en: Dict = {
     subtitle: "Choose the language for the app and for your reads.",
     autoNote: "Auto detects the conversation's language from the screenshot automatically.",
     updated: "Language updated",
+  },
+  tutorial: {
+    welcomeTitle: "Meet your wingman",
+    welcomeBody: "Bro Coach reads the room for you and turns it into one clear next move.",
+    welcomePoint1: "Paste a screenshot or describe the situation - three AI coaches debate it live.",
+    welcomePoint2:
+      "Arthur (frame), Clara (psychology), and Leo (charm) argue it out, then one Synthesizer gives you a single best response - never negging, never games.",
+    welcomePoint3:
+      "Screenshots are processed in memory and discarded - only the read itself gets saved, per contact.",
+    showMeAround: "Show me around",
+    skipTour: "Skip the tour",
+    stepOf: "Step {step} of {total}",
+    back: "Back",
+    next: "Next",
+    done: "Got it",
+    skip: "Skip",
+    replay: "Replay tutorial",
+    home: {
+      modeTitle: "Tonight's mode",
+      modeBody: "This tints suggestions across the whole app - hype, chill, romantic, or direct. Tap Change anytime.",
+      playbookTitle: "The Playbook",
+      playbookBody:
+        "Icebreaker, Vibe Shift, Exit Strategy - three ready-made scripts. They're peers, not a locked sequence, so jump to whichever fits.",
+      ctaTitle: "Start a read",
+      ctaBody: "The one button that starts everything - paste a screenshot or describe what's happening.",
+    },
+    live: {
+      contactsTitle: "Save it per person",
+      contactsBody: "Tag a read to a contact and your coach gets sharper about them with every read.",
+      scenarioTitle: "Screenshot or scenario",
+      scenarioBody: "Drop in a screenshot, or just type what's going on - both get the full three-coach debate.",
+      sendTitle: "Send it in",
+      sendBody: "Arthur, Clara, and Leo will debate this live, then one Synthesizer gives you the final call.",
+    },
+    read: {
+      summaryTitle: "The debate, live",
+      summaryBody: "Watch three independent takes come in, then see them hash it out before the verdict lands.",
+    },
+    result: {
+      gaugeTitle: "Attraction Gauge",
+      gaugeBody: "A 0-100 read on how into it they seem. Tap it to see the reasoning behind the number.",
+      bestTitle: "The best response",
+      bestBody:
+        "The Synthesizer's pick - always emotionally intelligent, never negging or manipulation, even if one coach argued for it.",
+      agentsTitle: "One verdict, three perspectives",
+      agentsBody: "Every answer here is the result of a real debate, arbitrated down to one call.",
+    },
+    profile: {
+      languageTitle: "Language",
+      languageBody:
+        "Switch the app and your AI responses anytime - Auto detects the conversation's language straight from the screenshot.",
+    },
   },
 };
 
@@ -388,6 +483,58 @@ const es: Dict = {
     autoNote: "Auto detecta el idioma de la conversación directamente desde la captura.",
     updated: "Idioma actualizado",
   },
+  tutorial: {
+    welcomeTitle: "Conoce a tu wingman",
+    welcomeBody: "Bro Coach lee el ambiente por ti y lo convierte en un solo paso claro.",
+    welcomePoint1: "Pega una captura o describe la situación - tres coaches de IA la debaten en vivo.",
+    welcomePoint2:
+      "Arthur (actitud), Clara (psicología) y Leo (encanto) discuten, y luego un Sintetizador te da una sola mejor respuesta - sin negs, sin juegos.",
+    welcomePoint3: "Las capturas se procesan en memoria y se descartan - solo se guarda la lectura, por contacto.",
+    showMeAround: "Muéstrame cómo funciona",
+    skipTour: "Saltar el recorrido",
+    stepOf: "Paso {step} de {total}",
+    back: "Atrás",
+    next: "Siguiente",
+    done: "Entendido",
+    skip: "Saltar",
+    replay: "Repetir el tutorial",
+    home: {
+      modeTitle: "Modo de esta noche",
+      modeBody: "Esto tiñe las sugerencias en toda la app - hype, relax, romántico o directo. Toca Cambiar cuando quieras.",
+      playbookTitle: "El Playbook",
+      playbookBody:
+        "Rompehielos, Cambio de ambiente, Salida elegante - tres guiones listos. Son opciones iguales, no una secuencia bloqueada, así que elige la que encaje.",
+      ctaTitle: "Empezar una lectura",
+      ctaBody: "El único botón que lo pone todo en marcha - pega una captura o describe qué está pasando.",
+    },
+    live: {
+      contactsTitle: "Guárdalo por persona",
+      contactsBody: "Etiqueta una lectura a un contacto y tu coach será más preciso con cada lectura.",
+      scenarioTitle: "Captura o situación",
+      scenarioBody:
+        "Sube una captura o simplemente escribe qué está pasando - ambas activan el debate completo de los tres coaches.",
+      sendTitle: "Envíalo",
+      sendBody: "Arthur, Clara y Leo lo debatirán en vivo, y luego un Sintetizador te da la decisión final.",
+    },
+    read: {
+      summaryTitle: "El debate, en vivo",
+      summaryBody: "Mira llegar tres lecturas independientes, y luego cómo las discuten antes de que llegue el veredicto.",
+    },
+    result: {
+      gaugeTitle: "Medidor de atracción",
+      gaugeBody: "Una lectura de 0 a 100 de cuánto le interesa. Tócalo para ver el razonamiento detrás del número.",
+      bestTitle: "La mejor respuesta",
+      bestBody:
+        "La elección del Sintetizador - siempre con inteligencia emocional, nunca negs ni manipulación, aunque un coach lo haya propuesto.",
+      agentsTitle: "Un veredicto, tres perspectivas",
+      agentsBody: "Cada respuesta aquí es el resultado de un debate real, resuelto en una sola decisión.",
+    },
+    profile: {
+      languageTitle: "Idioma",
+      languageBody:
+        "Cambia el idioma de la app y de tus lecturas de IA cuando quieras - Auto detecta el idioma de la conversación directamente desde la captura.",
+    },
+  },
 };
 
 const fr: Dict = {
@@ -511,6 +658,59 @@ const fr: Dict = {
     subtitle: "Choisis la langue de l'application et de tes lectures.",
     autoNote: "Auto détecte automatiquement la langue de la conversation depuis la capture.",
     updated: "Langue mise à jour",
+  },
+  tutorial: {
+    welcomeTitle: "Découvre ton wingman",
+    welcomeBody: "Bro Coach lit l'ambiance pour toi et la transforme en une action claire.",
+    welcomePoint1: "Colle une capture ou décris la situation - trois coachs IA en débattent en direct.",
+    welcomePoint2:
+      "Arthur (posture), Clara (psychologie) et Leo (charme) débattent, puis un Synthétiseur te donne une seule meilleure réponse - jamais de neg, jamais de manipulation.",
+    welcomePoint3:
+      "Les captures sont traitées en mémoire puis supprimées - seule la lecture elle-même est enregistrée, par contact.",
+    showMeAround: "Montre-moi comment ça marche",
+    skipTour: "Passer la visite",
+    stepOf: "Étape {step} sur {total}",
+    back: "Retour",
+    next: "Suivant",
+    done: "Compris",
+    skip: "Passer",
+    replay: "Revoir le tutoriel",
+    home: {
+      modeTitle: "Mode de ce soir",
+      modeBody: "Ça teinte les suggestions dans toute l'app - hype, chill, romantique ou direct. Touche Changer quand tu veux.",
+      playbookTitle: "Le Playbook",
+      playbookBody:
+        "Brise-glace, Changement d'ambiance, Sortie réussie - trois scripts prêts à l'emploi. Ce sont des égaux, pas une séquence verrouillée, choisis celui qui convient.",
+      ctaTitle: "Commencer une lecture",
+      ctaBody: "Le seul bouton qui lance tout - colle une capture ou décris ce qui se passe.",
+    },
+    live: {
+      contactsTitle: "Enregistre par personne",
+      contactsBody: "Associe une lecture à un contact et ton coach devient plus précis à chaque lecture.",
+      scenarioTitle: "Capture ou scénario",
+      scenarioBody:
+        "Ajoute une capture, ou décris simplement la situation - les deux déclenchent le débat complet des trois coachs.",
+      sendTitle: "Envoie",
+      sendBody: "Arthur, Clara et Leo en débattront en direct, puis un Synthétiseur te donne la décision finale.",
+    },
+    read: {
+      summaryTitle: "Le débat, en direct",
+      summaryBody: "Regarde trois avis indépendants arriver, puis les voir se confronter avant que le verdict tombe.",
+    },
+    result: {
+      gaugeTitle: "Jauge d'attraction",
+      gaugeBody: "Une note de 0 à 100 sur son intérêt. Touche-la pour voir le raisonnement derrière le chiffre.",
+      bestTitle: "La meilleure réponse",
+      bestBody:
+        "Le choix du Synthétiseur - toujours avec intelligence émotionnelle, jamais de neg ni de manipulation, même si un coach l'a proposé.",
+      agentsTitle: "Un verdict, trois points de vue",
+      agentsBody: "Chaque réponse ici est le résultat d'un vrai débat, arbitré en une seule décision.",
+    },
+    profile: {
+      languageTitle: "Langue",
+      languageBody:
+        "Change la langue de l'app et de tes réponses IA quand tu veux - Auto détecte la langue de la conversation directement depuis la capture.",
+    },
   },
 };
 
@@ -636,6 +836,58 @@ const pt: Dict = {
     autoNote: "Auto detecta automaticamente o idioma da conversa a partir do print.",
     updated: "Idioma atualizado",
   },
+  tutorial: {
+    welcomeTitle: "Conheça seu wingman",
+    welcomeBody: "O Bro Coach lê o ambiente por você e transforma isso em um próximo passo claro.",
+    welcomePoint1: "Cole um print ou descreva a situação - três coaches de IA debatem em tempo real.",
+    welcomePoint2:
+      "Arthur (postura), Clara (psicologia) e Leo (charme) discutem, e então um Sintetizador te dá uma única melhor resposta - sem climão, sem joguinho.",
+    welcomePoint3: "Os prints são processados na memória e descartados - só a leitura em si é salva, por contato.",
+    showMeAround: "Me mostra como funciona",
+    skipTour: "Pular o tour",
+    stepOf: "Passo {step} de {total}",
+    back: "Voltar",
+    next: "Próximo",
+    done: "Entendi",
+    skip: "Pular",
+    replay: "Repetir o tutorial",
+    home: {
+      modeTitle: "Modo de hoje",
+      modeBody: "Isso colore as sugestões em todo o app - hype, tranquilo, romântico ou direto. Toque em Trocar quando quiser.",
+      playbookTitle: "O Playbook",
+      playbookBody:
+        "Quebra-gelo, Mudar o clima, Saída elegante - três roteiros prontos. São opções iguais, não uma sequência travada, então vá para o que encaixar.",
+      ctaTitle: "Começar uma leitura",
+      ctaBody: "O único botão que começa tudo - cole um print ou descreva o que está acontecendo.",
+    },
+    live: {
+      contactsTitle: "Salve por pessoa",
+      contactsBody: "Marque uma leitura para um contato e seu coach fica mais afiado a cada leitura.",
+      scenarioTitle: "Print ou cenário",
+      scenarioBody:
+        "Anexe um print ou apenas digite o que está acontecendo - os dois ativam o debate completo dos três coaches.",
+      sendTitle: "Envie",
+      sendBody: "Arthur, Clara e Leo vão debater isso em tempo real, e então um Sintetizador te dá a decisão final.",
+    },
+    read: {
+      summaryTitle: "O debate, em tempo real",
+      summaryBody: "Veja três leituras independentes chegando, e depois o debate entre elas antes do veredito.",
+    },
+    result: {
+      gaugeTitle: "Medidor de atração",
+      gaugeBody: "Uma leitura de 0 a 100 de quanto ela está interessada. Toque para ver o raciocínio por trás do número.",
+      bestTitle: "A melhor resposta",
+      bestBody:
+        "A escolha do Sintetizador - sempre com inteligência emocional, nunca climão ou manipulação, mesmo que um coach tenha sugerido.",
+      agentsTitle: "Um veredito, três perspectivas",
+      agentsBody: "Cada resposta aqui é o resultado de um debate real, decidido em uma única resposta.",
+    },
+    profile: {
+      languageTitle: "Idioma",
+      languageBody:
+        "Troque o idioma do app e das suas leituras de IA quando quiser - o Auto detecta o idioma da conversa direto do print.",
+    },
+  },
 };
 
 const hi: Dict = {
@@ -760,6 +1012,55 @@ const hi: Dict = {
     autoNote: "ऑटो स्क्रीनशॉट से बातचीत की भाषा खुद पहचान लेता है।",
     updated: "भाषा अपडेट हो गई",
   },
+  tutorial: {
+    welcomeTitle: "अपने विंगमैन से मिलें",
+    welcomeBody: "Bro Coach माहौल पढ़ता है और उसे एक साफ़ अगले कदम में बदल देता है।",
+    welcomePoint1: "स्क्रीनशॉट पेस्ट करें या स्थिति बताएं - तीन AI कोच लाइव बहस करते हैं।",
+    welcomePoint2:
+      "आर्थर (फ़्रेम), क्लारा (साइकोलॉजी) और लियो (चार्म) बहस करते हैं, फिर एक सिंथेसाइज़र आपको एक बेस्ट जवाब देता है - कभी नेगिंग नहीं, कभी गेम्स नहीं।",
+    welcomePoint3: "स्क्रीनशॉट सिर्फ़ मेमोरी में प्रोसेस होते हैं और फिर डिलीट हो जाते हैं - सिर्फ़ रीड ही, हर कॉन्टैक्ट के लिए, सेव होती है।",
+    showMeAround: "मुझे घुमाकर दिखाएं",
+    skipTour: "टूर छोड़ें",
+    stepOf: "स्टेप {step} / {total}",
+    back: "पीछे",
+    next: "आगे",
+    done: "समझ गया",
+    skip: "स्किप करें",
+    replay: "ट्यूटोरियल फिर से देखें",
+    home: {
+      modeTitle: "आज रात का मोड",
+      modeBody: "यह पूरी ऐप में सुझावों का रंग तय करता है - हाइप, चिल, रोमांटिक या डायरेक्ट। कभी भी बदलें टैप करें।",
+      playbookTitle: "प्लेबुक",
+      playbookBody:
+        "आइसब्रेकर, माहौल बदलें, एग्ज़िट स्ट्रैटेजी - तीन तैयार स्क्रिप्ट। ये बराबर के विकल्प हैं, कोई लॉक्ड सीक्वेंस नहीं - जो सही लगे उस पर जाएं।",
+      ctaTitle: "रीड शुरू करें",
+      ctaBody: "यह एक बटन सब कुछ शुरू करता है - स्क्रीनशॉट पेस्ट करें या बताएं क्या हो रहा है।",
+    },
+    live: {
+      contactsTitle: "हर व्यक्ति के लिए सेव करें",
+      contactsBody: "किसी कॉन्टैक्ट को रीड टैग करें और हर रीड के साथ आपका कोच उसके बारे में और सटीक होता जाएगा।",
+      scenarioTitle: "स्क्रीनशॉट या सिचुएशन",
+      scenarioBody: "स्क्रीनशॉट डालें, या बस टाइप करें क्या हो रहा है - दोनों से तीनों कोच की पूरी बहस मिलती है।",
+      sendTitle: "भेज दें",
+      sendBody: "आर्थर, क्लारा और लियो इस पर लाइव बहस करेंगे, फिर एक सिंथेसाइज़र आपको आख़िरी फ़ैसला देता है।",
+    },
+    read: {
+      summaryTitle: "बहस, लाइव",
+      summaryBody: "तीन अलग-अलग राय आते देखें, फिर फ़ैसला आने से पहले उनकी बहस देखें।",
+    },
+    result: {
+      gaugeTitle: "अट्रैक्शन गेज",
+      gaugeBody: "0 से 100 का रीड कि वो कितनी इंटरेस्टेड लग रही है। नंबर के पीछे की वजह देखने के लिए टैप करें।",
+      bestTitle: "सबसे अच्छा जवाब",
+      bestBody: "सिंथेसाइज़र की पसंद - हमेशा इमोशनली इंटेलिजेंट, कभी नेगिंग या मैनिपुलेशन नहीं, चाहे किसी कोच ने वो सुझाया हो।",
+      agentsTitle: "एक फ़ैसला, तीन नज़रिए",
+      agentsBody: "यहां हर जवाब एक असली बहस का नतीजा है, जो एक फ़ैसले में बदल गया।",
+    },
+    profile: {
+      languageTitle: "भाषा",
+      languageBody: "कभी भी ऐप और अपनी AI रीड्स की भाषा बदलें - ऑटो स्क्रीनशॉट से बातचीत की भाषा खुद पहचान लेता है।",
+    },
+  },
 };
 
 const ar: Dict = {
@@ -883,6 +1184,56 @@ const ar: Dict = {
     subtitle: "اختر لغة التطبيق ولغة قراءاتك.",
     autoNote: "يكتشف \"تلقائي\" لغة المحادثة من لقطة الشاشة تلقائياً.",
     updated: "تم تحديث اللغة",
+  },
+  tutorial: {
+    welcomeTitle: "تعرّف على مساعدك",
+    welcomeBody: "Bro Coach يقرأ الموقف بدلاً منك ويحوّله إلى خطوة واحدة واضحة.",
+    welcomePoint1: "أرفق لقطة شاشة أو صف الموقف - ثلاثة مدربين بالذكاء الاصطناعي يتناقشون مباشرة.",
+    welcomePoint2:
+      "آرثر (الهيبة) وكلارا (علم النفس) وليو (السحر) يتجادلون، ثم يعطيك المُلخِّص رداً واحداً أفضل - بدون تحقير وبدون ألاعيب أبداً.",
+    welcomePoint3: "تُعالَج لقطات الشاشة في الذاكرة فقط ثم تُحذف - يُحفظ الملخص فقط، لكل جهة اتصال.",
+    showMeAround: "أرني كيف يعمل",
+    skipTour: "تخطي الجولة",
+    stepOf: "الخطوة {step} من {total}",
+    back: "رجوع",
+    next: "التالي",
+    done: "فهمت",
+    skip: "تخطي",
+    replay: "إعادة الجولة التعريفية",
+    home: {
+      modeTitle: "وضع الليلة",
+      modeBody: "هذا يحدد لون الاقتراحات في التطبيق كله - حماس، هادئ، رومانسي أو مباشر. اضغط تغيير في أي وقت.",
+      playbookTitle: "الخطط",
+      playbookBody:
+        "كسر الجليد، تغيير الأجواء، خروج أنيق - ثلاث خطط جاهزة. كلها متساوية وليست تسلسلاً مقفلاً، فاذهب لأي واحدة تناسب موقفك.",
+      ctaTitle: "ابدأ قراءة",
+      ctaBody: "الزر الوحيد الذي يبدأ كل شيء - أرفق لقطة شاشة أو صف ما يحدث.",
+    },
+    live: {
+      contactsTitle: "احفظها لكل شخص",
+      contactsBody: "اربط القراءة بجهة اتصال وسيصبح مدربك أكثر دقة معها مع كل قراءة.",
+      scenarioTitle: "لقطة شاشة أو موقف",
+      scenarioBody: "أرفق لقطة شاشة، أو فقط اكتب ما يحدث - كلاهما يُفعّل نقاش المدربين الثلاثة كاملاً.",
+      sendTitle: "أرسلها",
+      sendBody: "سيتناقش آرثر وكلارا وليو في هذا مباشرة، ثم يعطيك المُلخِّص القرار النهائي.",
+    },
+    read: {
+      summaryTitle: "النقاش، مباشر",
+      summaryBody: "شاهد ثلاث آراء مستقلة تصل، ثم شاهدهم يتناقشون قبل أن يصدر الحكم.",
+    },
+    result: {
+      gaugeTitle: "مقياس الانجذاب",
+      gaugeBody: "قراءة من 0 إلى 100 لمدى اهتمامها. اضغط عليه لترى التفكير وراء الرقم.",
+      bestTitle: "أفضل رد",
+      bestBody: "اختيار المُلخِّص - دائماً بذكاء عاطفي، وبدون تحقير أو تلاعب أبداً، حتى لو اقترحه أحد المدربين.",
+      agentsTitle: "حكم واحد، ثلاث وجهات نظر",
+      agentsBody: "كل رد هنا هو نتيجة نقاش حقيقي، تم حسمه في قرار واحد.",
+    },
+    profile: {
+      languageTitle: "اللغة",
+      languageBody:
+        "غيّر لغة التطبيق وردود الذكاء الاصطناعي في أي وقت - يكتشف \"تلقائي\" لغة المحادثة مباشرة من لقطة الشاشة.",
+    },
   },
 };
 

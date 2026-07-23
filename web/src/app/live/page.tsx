@@ -3,13 +3,21 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { Coachmark, type CoachmarkStep } from "@/components/Coachmark";
 import { GlassCard } from "@/components/GlassCard";
 import { TabBar } from "@/components/TabBar";
 import { fetchContacts } from "@/lib/api";
 import { useAnalysis } from "@/lib/analysis";
 import { useT } from "@/lib/i18n";
+import { useTutorial } from "@/lib/tutorial";
 import type { ContactSummary, SuggestCategory } from "@/lib/types";
 import { clsx } from "@/lib/clsx";
+
+const LIVE_STEPS: CoachmarkStep[] = [
+  { target: "live-contacts", titleKey: "tutorial.live.contactsTitle", bodyKey: "tutorial.live.contactsBody" },
+  { target: "live-scenario", titleKey: "tutorial.live.scenarioTitle", bodyKey: "tutorial.live.scenarioBody" },
+  { target: "live-send", titleKey: "tutorial.live.sendTitle", bodyKey: "tutorial.live.sendBody" },
+];
 
 // Kept only as the lookup table for the `?mission=` URL param (see the
 // `useEffect` below) - the on-page mission chip row that used to render from
@@ -50,10 +58,16 @@ function LiveScenarioInput() {
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [readsExpanded, setReadsExpanded] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const welcomeSeen = useTutorial((s) => s.welcomeSeen);
+  const startPage = useTutorial((s) => s.startPage);
 
   useEffect(() => {
     fetchContacts().then(setContacts).catch(() => setContacts([]));
   }, []);
+
+  useEffect(() => {
+    startPage("live", LIVE_STEPS.length);
+  }, [welcomeSeen, startPage]);
 
   // R3: Home and Playbook link here via `/live?mission=<key>` instead of this
   // page hosting its own mission-picker chips. Reproduce exactly what tapping
@@ -142,6 +156,7 @@ function LiveScenarioInput() {
         </button>
       </div>
       <div
+        data-tutorial="live-contacts"
         className={clsx(
           "mt-2 flex gap-2 pb-1",
           readsExpanded
@@ -192,6 +207,7 @@ function LiveScenarioInput() {
       </div>
 
       <div
+        data-tutorial="live-scenario"
         onDragOver={(e) => {
           e.preventDefault();
           setIsDraggingFile(true);
@@ -277,6 +293,7 @@ function LiveScenarioInput() {
             <button
               type="button"
               aria-label={t("live.send")}
+              data-tutorial="live-send"
               onClick={submit}
               disabled={screenshots.length === 0 && !scenario.trim()}
               className="interactive flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(160deg,var(--mode),var(--mode-deep))] shadow-clay transition-transform active:translate-y-0.5 disabled:opacity-40"
@@ -292,6 +309,7 @@ function LiveScenarioInput() {
         {attachError ?? t("live.screenshotHint")}
       </p>
 
+      <Coachmark page="live" steps={LIVE_STEPS} />
       <TabBar />
     </main>
   );

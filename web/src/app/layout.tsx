@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 
 import { ModeSync } from "@/components/ModeSync";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { WelcomeModal } from "@/components/WelcomeModal";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans text-ink">
         <ModeSync />
         <ServiceWorkerRegister />
+        <WelcomeModal />
         <div className="app-shell mx-auto flex min-h-dvh w-full max-w-md flex-col px-5">
           {children}
         </div>

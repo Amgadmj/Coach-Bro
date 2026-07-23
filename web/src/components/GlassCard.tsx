@@ -4,7 +4,8 @@ export function GlassCard({
   className,
   strong = false,
   children,
-}: {
+  ...rest
+}: React.HTMLAttributes<HTMLDivElement> & {
   className?: string;
   strong?: boolean;
   children: React.ReactNode;
@@ -16,6 +17,7 @@ export function GlassCard({
         strong ? "bg-glass-strong" : "bg-glass",
         className,
       )}
+      {...rest}
     >
       {children}
     </div>

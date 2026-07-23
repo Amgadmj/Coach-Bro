@@ -5,12 +5,20 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { ClayButton, GhostButton } from "@/components/ClayButton";
+import { Coachmark, type CoachmarkStep } from "@/components/Coachmark";
 import { ExpandChevron, useExpandable } from "@/components/ExpandHint";
 import { Gauge } from "@/components/Gauge";
 import { GlassCard } from "@/components/GlassCard";
 import { TopBar } from "@/components/TopBar";
 import { useAnalysis } from "@/lib/analysis";
 import { useT } from "@/lib/i18n";
+import { useTutorial } from "@/lib/tutorial";
+
+const RESULT_STEPS: CoachmarkStep[] = [
+  { target: "result-gauge", titleKey: "tutorial.result.gaugeTitle", bodyKey: "tutorial.result.gaugeBody" },
+  { target: "result-best", titleKey: "tutorial.result.bestTitle", bodyKey: "tutorial.result.bestBody" },
+  { target: "result-agents", titleKey: "tutorial.result.agentsTitle", bodyKey: "tutorial.result.agentsBody" },
+];
 
 function GaugeDetail({ summary, detail }: { summary: string; detail: string }) {
   const { open, toggle, hoverHandlers } = useExpandable();
@@ -56,10 +64,16 @@ export default function ResultScreen() {
   const t = useT();
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
+  const welcomeSeen = useTutorial((s) => s.welcomeSeen);
+  const startPage = useTutorial((s) => s.startPage);
 
   useEffect(() => {
     if (!result) router.replace("/live");
   }, [result, router]);
+
+  useEffect(() => {
+    if (result) startPage("result", RESULT_STEPS.length);
+  }, [welcomeSeen, result, startPage]);
 
   if (!result) return null;
 
@@ -111,6 +125,7 @@ export default function ResultScreen() {
       </GlassCard>
 
       <motion.div
+        data-tutorial="result-gauge"
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 18 }}
@@ -127,7 +142,7 @@ export default function ResultScreen() {
         </span>
       </div>
 
-      <div className="mt-3 rounded-[20px] border border-glass-line bg-accent-soft p-3.5 shadow-card">
+      <div data-tutorial="result-best" className="mt-3 rounded-[20px] border border-glass-line bg-accent-soft p-3.5 shadow-card">
         <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-accent-deep">
           {t("result.bestResponse")}
         </div>
@@ -163,7 +178,7 @@ export default function ResultScreen() {
         {t("result.tryAgain")}
       </GhostButton>
 
-      <div className="mt-3.5 flex items-center justify-center gap-2">
+      <div data-tutorial="result-agents" className="mt-3.5 flex items-center justify-center gap-2">
         <div className="flex">
           {AGENT_DOTS.map((d, i) => (
             <span
@@ -189,6 +204,8 @@ export default function ResultScreen() {
           </span>
         </div>
       )}
+
+      <Coachmark page="result" steps={RESULT_STEPS} />
     </main>
   );
 }

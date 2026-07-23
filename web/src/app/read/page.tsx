@@ -5,15 +5,21 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { ClayButton, GhostButton } from "@/components/ClayButton";
+import { Coachmark, type CoachmarkStep } from "@/components/Coachmark";
 import { AgentAvatar, DebateBubble } from "@/components/DebateBubble";
 import { GlassCard } from "@/components/GlassCard";
 import { TopBar } from "@/components/TopBar";
 import { useAnalysis } from "@/lib/analysis";
 import { useT } from "@/lib/i18n";
+import { useTutorial } from "@/lib/tutorial";
 import type { AgentName } from "@/lib/types";
 import { clsx } from "@/lib/clsx";
 
 const AGENT_ORDER: AgentName[] = ["arthur", "clara", "leo"];
+
+const READ_STEPS: CoachmarkStep[] = [
+  { target: "read-summary", titleKey: "tutorial.read.summaryTitle", bodyKey: "tutorial.read.summaryBody" },
+];
 
 /** True when the surfaced error looks like a network failure rather than a
  * server-side one - covers the raw exception strings `fetch` throws across
@@ -57,6 +63,8 @@ export default function DebateRoom() {
   const { status, agentStatus, messages, error, imageCount, hasText, reset } = useAnalysis();
   const endRef = useRef<HTMLDivElement>(null);
   const t = useT();
+  const welcomeSeen = useTutorial((s) => s.welcomeSeen);
+  const startPage = useTutorial((s) => s.startPage);
 
   function retry() {
     reset();
@@ -66,6 +74,10 @@ export default function DebateRoom() {
   useEffect(() => {
     if (status === "idle") router.replace("/live");
   }, [status, router]);
+
+  useEffect(() => {
+    if (status !== "idle") startPage("read", READ_STEPS.length);
+  }, [welcomeSeen, status, startPage]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -84,7 +96,7 @@ export default function DebateRoom() {
     <main className="pb-24">
       <TopBar title={status === "done" ? t("read.spokenTitle") : t("read.readingTitle")} />
 
-      <GlassCard className="mt-3.5 flex items-center gap-3 rounded-[18px] p-3">
+      <GlassCard data-tutorial="read-summary" className="mt-3.5 flex items-center gap-3 rounded-[18px] p-3">
         <div className="flex h-12 w-12 flex-none items-center justify-center rounded-xl border border-dashed border-hairline bg-[repeating-linear-gradient(45deg,var(--ground2)_0_6px,transparent_6px_12px)] font-mono text-[8px] text-ink3">
           {imageCount > 0 ? "shot" : "text"}
         </div>
@@ -159,6 +171,7 @@ export default function DebateRoom() {
       </AnimatePresence>
 
       <div ref={endRef} />
+      <Coachmark page="read" steps={READ_STEPS} />
     </main>
   );
 }

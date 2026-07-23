@@ -4,12 +4,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
+import { useEffect } from "react";
+
 import { ClayButton } from "@/components/ClayButton";
+import { Coachmark, type CoachmarkStep } from "@/components/Coachmark";
 import { GlassCard } from "@/components/GlassCard";
 import { TabBar } from "@/components/TabBar";
 import { VibeSheet } from "@/components/VibeSheet";
 import { useT } from "@/lib/i18n";
 import { MODE_IMAGES, useSession } from "@/lib/session";
+import { useTutorial } from "@/lib/tutorial";
+
+const HOME_STEPS: CoachmarkStep[] = [
+  { target: "home-mode-card", titleKey: "tutorial.home.modeTitle", bodyKey: "tutorial.home.modeBody" },
+  { target: "home-playbook-card", titleKey: "tutorial.home.playbookTitle", bodyKey: "tutorial.home.playbookBody" },
+  { target: "home-cta", titleKey: "tutorial.home.ctaTitle", bodyKey: "tutorial.home.ctaBody" },
+];
 
 /** Peers, not steps - there's no unlock/progress backend, so these are not
  * numbered as a locked 01/02/03 sequence. Each gets a distinct icon instead. */
@@ -37,6 +47,15 @@ const MISSIONS = [
 export default function Dashboard() {
   const { mode, modeLocked } = useSession();
   const t = useT();
+  const welcomeSeen = useTutorial((s) => s.welcomeSeen);
+  const startPage = useTutorial((s) => s.startPage);
+
+  // Waits for a mode to actually be locked in - the "Start a read" CTA this
+  // tour's last step points at doesn't render until then, and VibeSheet's
+  // own mode-pick sheet already owns the screen up to that point.
+  useEffect(() => {
+    if (welcomeSeen && modeLocked) startPage("home", HOME_STEPS.length);
+  }, [welcomeSeen, modeLocked, startPage]);
 
   return (
     <main className="flex min-h-[calc(100dvh-8rem)] flex-col">
@@ -56,6 +75,7 @@ export default function Dashboard() {
           that the playbook section below is a compact summary (R5.1) */}
       <div className="flex flex-1 flex-col justify-center">
         <motion.div
+          data-tutorial="home-mode-card"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
@@ -101,7 +121,7 @@ export default function Dashboard() {
             /playbook (R3). This card is a single peer navigation target,
             not a second competing primary CTA (that's still "Start a read"
             below). */}
-        <Link href="/playbook" className="interactive mt-2.5 block">
+        <Link href="/playbook" data-tutorial="home-playbook-card" className="interactive mt-2.5 block">
           <GlassCard className="flex items-center gap-3 rounded-[20px] p-3.5">
             <div className="flex flex-none -space-x-2.5">
               {MISSIONS.map((m) => (
@@ -125,7 +145,7 @@ export default function Dashboard() {
         </Link>
 
         {modeLocked && (
-          <Link href="/live" className="interactive mt-5 block">
+          <Link href="/live" data-tutorial="home-cta" className="interactive mt-5 block">
             <ClayButton variant="mode" className="pointer-events-none">
               {t("dashboard.startRead")}
             </ClayButton>
@@ -134,6 +154,7 @@ export default function Dashboard() {
       </div>
 
       <VibeSheet />
+      <Coachmark page="home" steps={HOME_STEPS} />
       <TabBar />
     </main>
   );
