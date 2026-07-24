@@ -252,3 +252,19 @@ class ContactSummary(BaseModel):
 
 class SetMatchGenderRequest(BaseModel):
     match_gender: Gender | None = None
+
+
+class UserProfile(BaseModel):
+    """The app user's own name/phone, collected once during onboarding (see
+    web/src/components/NameSheet.tsx) and editable later. Scoped by device_id
+    like everything else in this no-auth app - see main.py::get_device_id.
+    `last_ip` is captured server-side from the request, never sent by the
+    client, and not returned by GET /profile (write-only, not user-facing)."""
+
+    display_name: str | None = None
+    phone_number: str | None = None
+
+
+class SetUserProfileRequest(BaseModel):
+    display_name: str | None = None
+    phone_number: str | None = None

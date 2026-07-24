@@ -34,12 +34,24 @@ interface SessionState {
    * this never resets and isn't tied to a session, since gender identity
    * isn't a nightly toggle. */
   identityLocked: boolean;
+  /** Collected once at onboarding (see components/NameSheet.tsx), used only
+   * for local display ("Hey {name}" on Home) - kept here so the greeting
+   * doesn't need a round-trip to the backend on every load. The phone number
+   * collected alongside it is deliberately NOT kept here - nothing in the UI
+   * ever displays it, so there's no reason to hold a second copy of that PII
+   * in localStorage beyond the one-time write to the backend (see
+   * lib/api.ts::setProfile, called directly from NameSheet). */
+  displayName: string | null;
+  /** Whether the once-ever NameSheet has been answered - same non-resetting
+   * shape as identityLocked. */
+  profileLocked: boolean;
   setMode: (mode: SocialMode) => void;
   lockMode: (mode: SocialMode) => void;
   setLanguage: (language: LanguageCode) => void;
   setGender: (gender: Gender) => void;
   setInterestedIn: (interestedIn: InterestedIn) => void;
   lockIdentity: (gender: Gender, interestedIn: InterestedIn) => void;
+  lockProfile: (displayName: string) => void;
 }
 
 export const useSession = create<SessionState>()(
@@ -51,12 +63,15 @@ export const useSession = create<SessionState>()(
       gender: null,
       interestedIn: null,
       identityLocked: false,
+      displayName: null,
+      profileLocked: false,
       setMode: (mode) => set({ mode }),
       lockMode: (mode) => set({ mode, modeLocked: true }),
       setLanguage: (language) => set({ language }),
       setGender: (gender) => set({ gender }),
       setInterestedIn: (interestedIn) => set({ interestedIn }),
       lockIdentity: (gender, interestedIn) => set({ gender, interestedIn, identityLocked: true }),
+      lockProfile: (displayName) => set({ displayName, profileLocked: true }),
     }),
     { name: "bro-coach-session" },
   ),

@@ -14,7 +14,7 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-from models.schemas import ContactSummary, MemoryRecord, SynthesisResult
+from models.schemas import ContactSummary, MemoryRecord, SynthesisResult, UserProfile
 
 _SCHEMA = """
 create table if not exists contacts (
@@ -41,6 +41,17 @@ create index if not exists idx_reads_contact on reads(device_id, contact_id, cre
 create table if not exists user_style (
   device_id text primary key,
   style text
+);
+-- Collected once at onboarding (see web/src/components/NameSheet.tsx),
+-- editable later. last_ip is captured server-side from the request that
+-- wrote this row - never sent by the client, never returned by GET /profile.
+create table if not exists user_profiles (
+  device_id text primary key,
+  display_name text,
+  phone_number text,
+  last_ip text,
+  created_at text not null,
+  updated_at text not null
 );
 """
 
@@ -204,6 +215,36 @@ class SQLiteMemoryStore:
                     "insert into user_style (device_id, style) values (?, ?) "
                     "on conflict(device_id) do update set style = excluded.style",
                     (device_id, style),
+                )
+
+        await asyncio.to_thread(work)
+
+    async def get_user_profile(self, device_id: str) -> UserProfile | None:
+        def work() -> UserProfile | None:
+            with self._connect() as conn:
+                row = conn.execute(
+                    "select display_name, phone_number from user_profiles where device_id = ?",
+                    (device_id,),
+                ).fetchone()
+            if not row:
+                return None
+            return UserProfile(display_name=row["display_name"], phone_number=row["phone_number"])
+
+        return await asyncio.to_thread(work)
+
+    async def upsert_user_profile(
+        self, device_id: str, display_name: str | None, phone_number: str | None, ip: str
+    ) -> None:
+        def work() -> None:
+            now = datetime.now(timezone.utc).isoformat()
+            with self._connect() as conn:
+                conn.execute(
+                    "insert into user_profiles (device_id, display_name, phone_number, last_ip, "
+                    "created_at, updated_at) values (?, ?, ?, ?, ?, ?) "
+                    "on conflict(device_id) do update set "
+                    "display_name = excluded.display_name, phone_number = excluded.phone_number, "
+                    "last_ip = excluded.last_ip, updated_at = excluded.updated_at",
+                    (device_id, display_name, phone_number, ip, now, now),
                 )
 
         await asyncio.to_thread(work)

@@ -13,7 +13,7 @@ import os
 from datetime import datetime, timezone
 
 from memory.embeddings import embed_summary
-from models.schemas import ContactSummary, MemoryRecord, SynthesisResult
+from models.schemas import ContactSummary, MemoryRecord, SynthesisResult, UserProfile
 
 
 class NoOpMemoryStore:
@@ -45,6 +45,14 @@ class NoOpMemoryStore:
 
     async def list_contacts(self, device_id: str) -> list[ContactSummary]:
         return []
+
+    async def get_user_profile(self, device_id: str) -> UserProfile | None:
+        return None
+
+    async def upsert_user_profile(
+        self, device_id: str, display_name: str | None, phone_number: str | None, ip: str
+    ) -> None:
+        return None
 
 
 class MemoryStore:
@@ -245,6 +253,45 @@ class MemoryStore:
             )
             for row in rows
         ]
+
+    async def get_user_profile(self, device_id: str) -> UserProfile | None:
+        import asyncpg
+
+        conn = await asyncpg.connect(self._db_url)
+        try:
+            row = await conn.fetchrow(
+                "select display_name, phone_number from user_profiles where device_id = $1", device_id
+            )
+        finally:
+            await conn.close()
+        if not row:
+            return None
+        return UserProfile(display_name=row["display_name"], phone_number=row["phone_number"])
+
+    async def upsert_user_profile(
+        self, device_id: str, display_name: str | None, phone_number: str | None, ip: str
+    ) -> None:
+        import asyncpg
+
+        conn = await asyncpg.connect(self._db_url)
+        try:
+            await conn.execute(
+                """
+                insert into user_profiles (device_id, display_name, phone_number, last_ip, updated_at)
+                values ($1, $2, $3, $4, now())
+                on conflict (device_id) do update set
+                  display_name = excluded.display_name,
+                  phone_number = excluded.phone_number,
+                  last_ip = excluded.last_ip,
+                  updated_at = excluded.updated_at
+                """,
+                device_id,
+                display_name,
+                phone_number,
+                ip,
+            )
+        finally:
+            await conn.close()
 
 
 def get_memory_store():

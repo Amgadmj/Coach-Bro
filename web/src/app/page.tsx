@@ -45,8 +45,10 @@ const MISSIONS = [
 ] as const;
 
 export default function Dashboard() {
-  const { mode, modeLocked } = useSession();
+  const { mode, modeLocked, displayName } = useSession();
   const t = useT();
+  const firstName = displayName?.trim().split(/\s+/)[0] || t("dashboard.fallbackName");
+  const avatarInitial = firstName.charAt(0).toUpperCase();
   const welcomeSeen = useTutorial((s) => s.welcomeSeen);
   const startPage = useTutorial((s) => s.startPage);
 
@@ -61,13 +63,13 @@ export default function Dashboard() {
     <main className="flex min-h-[calc(100dvh-8rem)] flex-col">
       <header className="flex items-center justify-between">
         <div>
-          <div className="text-xs text-ink2">{t("dashboard.greeting", { name: "Adam" })}</div>
+          <div className="text-xs text-ink2">{t("dashboard.greeting", { name: firstName })}</div>
           <h1 className="font-display text-2xl font-extrabold leading-tight tracking-tight text-balance">
             {t("dashboard.heading")}
           </h1>
         </div>
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--romantic),var(--direct))] font-display text-[13px] font-bold text-white">
-          A
+          {avatarInitial}
         </div>
       </header>
 

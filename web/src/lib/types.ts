@@ -121,3 +121,11 @@ export interface ContactSummary {
   // null until set via PATCH /contacts/{contact_id} (see lib/api.ts::setContactGender).
   match_gender?: Gender | null;
 }
+
+// The app user's own name/phone - collected once at onboarding (see
+// components/NameSheet.tsx), editable later. Mirrors backend/models/schemas.py::
+// UserProfile - never includes an IP, that's captured server-side and write-only.
+export interface UserProfile {
+  display_name: string | null;
+  phone_number: string | null;
+}

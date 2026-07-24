@@ -13,6 +13,16 @@ from collections import defaultdict, deque
 from fastapi import HTTPException, Request
 
 
+def get_client_ip(request: Request) -> str:
+    """Respects proxy headers (Render/Fly terminate TLS in front of us) - the
+    same extraction RateLimiter already used, factored out so main.py's
+    profile endpoint can log an IP with a request without duplicating it."""
+    forwarded = request.headers.get("x-forwarded-for")
+    return forwarded.split(",")[0].strip() if forwarded else (
+        request.client.host if request.client else "unknown"
+    )
+
+
 class RateLimiter:
     def __init__(self, max_requests: int, window_seconds: int) -> None:
         self._max = max_requests
@@ -20,11 +30,7 @@ class RateLimiter:
         self._hits: dict[str, deque[float]] = defaultdict(deque)
 
     async def __call__(self, request: Request) -> None:
-        # Respect proxy headers (Render/Fly terminate TLS in front of us).
-        forwarded = request.headers.get("x-forwarded-for")
-        client_ip = forwarded.split(",")[0].strip() if forwarded else (
-            request.client.host if request.client else "unknown"
-        )
+        client_ip = get_client_ip(request)
 
         now = time.monotonic()
         hits = self._hits[client_ip]

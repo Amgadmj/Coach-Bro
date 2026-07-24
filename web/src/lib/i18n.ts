@@ -68,6 +68,10 @@ export interface Dict {
     playbookSummaryTitle: string;
     playbookSummaryDesc: string;
     startRead: string;
+    /** Used in the greeting/avatar-initial when the once-ever NameSheet
+     * hasn't been answered yet (shouldn't normally happen post-onboarding,
+     * but session state can predate this feature) - see app/page.tsx. */
+    fallbackName: string;
   };
   vibe: { eyebrow: string; title: string; subtitle: string; lockIn: string };
   /** Copy for the once-ever IdentitySheet (onboarding) and IdentityPicker
@@ -88,6 +92,20 @@ export interface Dict {
   };
   genders: { male: string; female: string; nonBinary: string };
   interests: { men: string; women: string; everyone: string };
+  /** Copy for the once-ever NameSheet (onboarding) - see
+   * components/NameSheet.tsx. Collects display name + phone number,
+   * persisted via lib/api.ts::setProfile. */
+  name: {
+    eyebrow: string;
+    sheetTitle: string;
+    sheetSubtitle: string;
+    nameLabel: string;
+    namePlaceholder: string;
+    phoneLabel: string;
+    phonePlaceholder: string;
+    disclosure: string;
+    continueCta: string;
+  };
   live: {
     yourReads: string;
     newContactPrompt: string;
@@ -246,7 +264,8 @@ const en: Dict = {
     playbookTitle: "Wingman Playbook",
     playbookSummaryTitle: "3 missions ready",
     playbookSummaryDesc: "Icebreakers, vibe shifts, exit lines — all in one place.",
-    startRead: "Start a read",
+    startRead: "Start Vibe Check",
+    fallbackName: "there",
   },
   vibe: {
     eyebrow: "First thing tonight",
@@ -267,8 +286,19 @@ const en: Dict = {
   },
   genders: { male: "Male", female: "Female", nonBinary: "Non-binary" },
   interests: { men: "Men", women: "Women", everyone: "Everyone" },
+  name: {
+    eyebrow: "Last thing",
+    sheetTitle: "What should we call you?",
+    sheetSubtitle: "Used to personalize your experience - change it anytime in Profile.",
+    nameLabel: "Your name",
+    namePlaceholder: "First name",
+    phoneLabel: "Phone number (optional)",
+    phonePlaceholder: "555-0100",
+    disclosure: "We only use this to personalize Bro Code for you - never shared, never spammed.",
+    continueCta: "Continue",
+  },
   live: {
-    yourReads: "Your reads",
+    yourReads: "Your Contacts",
     newContactPrompt: "Who are you talking to? (first name is fine)",
     contactGenderPrompt: "Are they a man, woman, or non-binary? (leave blank to skip)",
     newChip: "＋ New",
@@ -439,7 +469,8 @@ const es: Dict = {
     playbookTitle: "Jugadas del Wingman",
     playbookSummaryTitle: "3 misiones listas",
     playbookSummaryDesc: "Rompehielos, cambios de ambiente, salidas — todo en un solo lugar.",
-    startRead: "Empezar una lectura",
+    startRead: "Iniciar Vibe Check",
+    fallbackName: "amigo",
   },
   vibe: {
     eyebrow: "Lo primero esta noche",
@@ -460,8 +491,19 @@ const es: Dict = {
   },
   genders: { male: "Hombre", female: "Mujer", nonBinary: "No binario" },
   interests: { men: "Hombres", women: "Mujeres", everyone: "Todos" },
+  name: {
+    eyebrow: "Última cosa",
+    sheetTitle: "¿Cómo te llamamos?",
+    sheetSubtitle: "Se usa para personalizar tu experiencia - cámbialo cuando quieras en Perfil.",
+    nameLabel: "Tu nombre",
+    namePlaceholder: "Nombre",
+    phoneLabel: "Número de teléfono (opcional)",
+    phonePlaceholder: "555-0100",
+    disclosure: "Solo lo usamos para personalizar Bro Code para ti - nunca lo compartimos ni lo usamos para spam.",
+    continueCta: "Continuar",
+  },
   live: {
-    yourReads: "Tus lecturas",
+    yourReads: "Tus Contactos",
     newContactPrompt: "¿Con quién estás hablando? (con el nombre basta)",
     contactGenderPrompt: "¿Es hombre, mujer o no binario? (déjalo en blanco para omitir)",
     newChip: "＋ Nuevo",
@@ -632,7 +674,8 @@ const fr: Dict = {
     playbookTitle: "Playbook du Wingman",
     playbookSummaryTitle: "3 missions prêtes",
     playbookSummaryDesc: "Brise-glace, changements d'ambiance, sorties — tout au même endroit.",
-    startRead: "Commencer une lecture",
+    startRead: "Lancer le Vibe Check",
+    fallbackName: "toi",
   },
   vibe: {
     eyebrow: "En premier ce soir",
@@ -653,8 +696,19 @@ const fr: Dict = {
   },
   genders: { male: "Homme", female: "Femme", nonBinary: "Non-binaire" },
   interests: { men: "Hommes", women: "Femmes", everyone: "Tout le monde" },
+  name: {
+    eyebrow: "Dernière chose",
+    sheetTitle: "Comment on t'appelle ?",
+    sheetSubtitle: "Sert à personnaliser ton expérience - modifiable à tout moment dans Profil.",
+    nameLabel: "Ton prénom",
+    namePlaceholder: "Prénom",
+    phoneLabel: "Numéro de téléphone (facultatif)",
+    phonePlaceholder: "555-0100",
+    disclosure: "On l'utilise uniquement pour personnaliser Bro Code pour toi - jamais partagé, jamais de spam.",
+    continueCta: "Continuer",
+  },
   live: {
-    yourReads: "Tes lectures",
+    yourReads: "Tes Contacts",
     newContactPrompt: "À qui parles-tu ? (le prénom suffit)",
     contactGenderPrompt: "C'est un homme, une femme, ou non-binaire ? (laisse vide pour passer)",
     newChip: "＋ Nouveau",
@@ -826,7 +880,8 @@ const pt: Dict = {
     playbookTitle: "Playbook do Wingman",
     playbookSummaryTitle: "3 missões prontas",
     playbookSummaryDesc: "Quebra-gelo, mudanças de clima, saídas — tudo num só lugar.",
-    startRead: "Começar uma leitura",
+    startRead: "Iniciar o Vibe Check",
+    fallbackName: "aí",
   },
   vibe: {
     eyebrow: "Primeira coisa da noite",
@@ -847,8 +902,19 @@ const pt: Dict = {
   },
   genders: { male: "Homem", female: "Mulher", nonBinary: "Não binário" },
   interests: { men: "Homens", women: "Mulheres", everyone: "Todos" },
+  name: {
+    eyebrow: "Última coisa",
+    sheetTitle: "Como podemos te chamar?",
+    sheetSubtitle: "Usado para personalizar sua experiência - mude quando quiser no Perfil.",
+    nameLabel: "Seu nome",
+    namePlaceholder: "Primeiro nome",
+    phoneLabel: "Número de telefone (opcional)",
+    phonePlaceholder: "555-0100",
+    disclosure: "Usamos isso só para personalizar o Bro Code pra você - nunca compartilhado, nunca spam.",
+    continueCta: "Continuar",
+  },
   live: {
-    yourReads: "Suas leituras",
+    yourReads: "Seus Contatos",
     newContactPrompt: "Com quem você está falando? (o primeiro nome já basta)",
     contactGenderPrompt: "É homem, mulher ou não binário? (deixe em branco pra pular)",
     newChip: "＋ Novo",
@@ -1019,7 +1085,8 @@ const hi: Dict = {
     playbookTitle: "विंगमैन प्लेबुक",
     playbookSummaryTitle: "3 मिशन तैयार",
     playbookSummaryDesc: "आइसब्रेकर, माहौल बदलना, एग्ज़िट — सब एक ही जगह।",
-    startRead: "रीड शुरू करें",
+    startRead: "Vibe Check शुरू करें",
+    fallbackName: "दोस्त",
   },
   vibe: {
     eyebrow: "आज रात सबसे पहले",
@@ -1040,8 +1107,19 @@ const hi: Dict = {
   },
   genders: { male: "पुरुष", female: "महिला", nonBinary: "नॉन-बाइनरी" },
   interests: { men: "पुरुष", women: "महिलाएं", everyone: "सभी" },
+  name: {
+    eyebrow: "आखिरी बात",
+    sheetTitle: "आपको क्या कहकर बुलाएं?",
+    sheetSubtitle: "आपके अनुभव को पर्सनलाइज़ करने के लिए इस्तेमाल होता है - प्रोफ़ाइल में कभी भी बदलें।",
+    nameLabel: "आपका नाम",
+    namePlaceholder: "पहला नाम",
+    phoneLabel: "फ़ोन नंबर (वैकल्पिक)",
+    phonePlaceholder: "555-0100",
+    disclosure: "हम इसका इस्तेमाल सिर्फ़ Bro Code को आपके लिए पर्सनलाइज़ करने में करते हैं - कभी शेयर नहीं, कभी स्पैम नहीं।",
+    continueCta: "जारी रखें",
+  },
   live: {
-    yourReads: "आपकी रीड्स",
+    yourReads: "आपके संपर्क",
     newContactPrompt: "आप किससे बात कर रहे हैं? (सिर्फ़ पहला नाम काफ़ी है)",
     contactGenderPrompt: "क्या वो पुरुष हैं, महिला हैं, या नॉन-बाइनरी? (छोड़ने के लिए खाली रहने दें)",
     newChip: "＋ नया",
@@ -1209,7 +1287,8 @@ const ar: Dict = {
     playbookTitle: "خطط الونجمان",
     playbookSummaryTitle: "3 مهام جاهزة",
     playbookSummaryDesc: "كسر الجليد، تغيير الأجواء، خروج أنيق — كل ذلك في مكان واحد.",
-    startRead: "ابدأ قراءة",
+    startRead: "ابدأ Vibe Check",
+    fallbackName: "صديقي",
   },
   vibe: {
     eyebrow: "أول شيء الليلة",
@@ -1230,8 +1309,19 @@ const ar: Dict = {
   },
   genders: { male: "ذكر", female: "أنثى", nonBinary: "غير ثنائي" },
   interests: { men: "الرجال", women: "النساء", everyone: "الجميع" },
+  name: {
+    eyebrow: "آخر شيء",
+    sheetTitle: "بماذا ننادِيك؟",
+    sheetSubtitle: "يُستخدم لتخصيص تجربتك - يمكنك تغييره في أي وقت من الملف الشخصي.",
+    nameLabel: "اسمك",
+    namePlaceholder: "الاسم الأول",
+    phoneLabel: "رقم الهاتف (اختياري)",
+    phonePlaceholder: "555-0100",
+    disclosure: "نستخدم هذا فقط لتخصيص Bro Code لك - لا مشاركة أبدًا، ولا رسائل مزعجة أبدًا.",
+    continueCta: "متابعة",
+  },
   live: {
-    yourReads: "قراءاتك",
+    yourReads: "جهات اتصالك",
     newContactPrompt: "مع من تتحدث؟ (يكفي الاسم الأول)",
     contactGenderPrompt: "هل هو رجل أم امرأة أم غير ثنائي؟ (اتركه فارغاً للتخطي)",
     newChip: "＋ جديد",

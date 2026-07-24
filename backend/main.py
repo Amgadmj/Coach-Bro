@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 load_dotenv()  # backend/.env - keys and mode; must run before any os.environ reads
 
 import pillow_heif
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from PIL import Image, UnidentifiedImageError
@@ -37,12 +37,14 @@ from models.schemas import (
     Gender,
     MemoryRecord,
     SetMatchGenderRequest,
+    SetUserProfileRequest,
     SocialMode,
     SuggestRequest,
     SuggestResponse,
     SupportedLanguage,
+    UserProfile,
 )
-from rate_limit import RateLimiter
+from rate_limit import RateLimiter, get_client_ip
 from swarm_orchestrator import SwarmOrchestrator
 
 app = FastAPI(title="RESET AI backend")
@@ -359,6 +361,28 @@ async def set_contact_gender(
     right after naming a new contact."""
     store = get_memory_store()
     await store.upsert_match_gender(device_id, contact_id, request.match_gender)
+    return {"status": "ok"}
+
+
+@app.get("/profile")
+async def get_profile(device_id: str = Depends(get_device_id)) -> UserProfile:
+    """The app user's own name/phone - collected once at onboarding (see
+    web/src/components/NameSheet.tsx), editable later. Never returns last_ip -
+    that's write-only, captured server-side, not a value the client ever needs
+    back."""
+    store = get_memory_store()
+    profile = await store.get_user_profile(device_id)
+    return profile or UserProfile()
+
+
+@app.patch("/profile")
+async def set_profile(
+    request: Request,
+    body: SetUserProfileRequest,
+    device_id: str = Depends(get_device_id),
+) -> dict[str, str]:
+    store = get_memory_store()
+    await store.upsert_user_profile(device_id, body.display_name, body.phone_number, get_client_ip(request))
     return {"status": "ok"}
 
 

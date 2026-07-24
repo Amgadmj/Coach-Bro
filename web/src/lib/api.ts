@@ -10,6 +10,7 @@ import type {
   SuggestCategory,
   SuggestResponse,
   SupportedLanguage,
+  UserProfile,
 } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -194,4 +195,30 @@ export async function setContactGender(contactId: string, gender: Gender | null)
     body: JSON.stringify({ match_gender: gender }),
   });
   if (!response.ok) throw new Error(`setContactGender failed: ${response.status}`);
+}
+
+/**
+ * GET/PATCH /profile - the app user's own name/phone, collected once at
+ * onboarding (see components/NameSheet.tsx). The local session store (see
+ * lib/session.ts) is the source of truth for display purposes (no round-trip
+ * needed to show "Hey {name}"); setProfile is a fire-and-forget write so it's
+ * also persisted server-side, per-device, per the explicit decision to store
+ * this (see conversation history - name/phone/device-id, deliberately not IP
+ * on the client's side, that's captured server-side from the request).
+ */
+export async function fetchProfile(): Promise<UserProfile> {
+  const response = await fetch(`${API_BASE_URL}/profile`, {
+    headers: { "X-Device-Id": getDeviceId() },
+  });
+  if (!response.ok) throw new Error(`/profile failed: ${response.status}`);
+  return response.json();
+}
+
+export async function setProfile(displayName: string | null, phoneNumber: string | null): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/profile`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", "X-Device-Id": getDeviceId() },
+    body: JSON.stringify({ display_name: displayName, phone_number: phoneNumber }),
+  });
+  if (!response.ok) throw new Error(`setProfile failed: ${response.status}`);
 }
